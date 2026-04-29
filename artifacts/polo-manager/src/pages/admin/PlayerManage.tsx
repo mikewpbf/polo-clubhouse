@@ -33,6 +33,14 @@ export function PlayerManage() {
 
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "super_admin";
+  // The player's home-club admins (and super_admins) may change the link.
+  // Mirrors backend `userCanEditPlayerFull`: super_admin OR club_admin of the
+  // player's canonical home club. Team managers and other roles cannot link.
+  const playerHomeClubId = (data as any)?.homeClubId ?? null;
+  const userClubMemberships: Array<{ clubId: string }> = (user as any)?.clubMemberships ?? [];
+  const canManageLink = isSuperAdmin || (
+    !!playerHomeClubId && userClubMemberships.some(m => m.clubId === playerHomeClubId)
+  );
 
   const [name, setName] = useState("");
   const [handicap, setHandicap] = useState("");
@@ -92,8 +100,8 @@ export function PlayerManage() {
         bio: bio || null,
         headshotUrl,
       };
-      // Only super_admins are permitted to mutate the user-link assignment.
-      if (isSuperAdmin) payload.managedByUserId = managedByUserId || null;
+      // Only super_admins or this player's home club admins may mutate the link.
+      if (canManageLink) payload.managedByUserId = managedByUserId || null;
       await update.mutateAsync({ playerId, data: payload });
       setSaveMsg("Saved");
       refetch();
@@ -206,14 +214,15 @@ export function PlayerManage() {
           )}
         </div>
 
-        {isSuperAdmin && (
+        {canManageLink && (
           <div className="bg-white rounded-[12px] p-5 card-shadow">
             <h2 className="font-display text-lg font-bold text-ink mb-3 flex items-center gap-2">
               <Link2 className="w-4 h-4" /> Linked User Account
             </h2>
             <p className="text-[12px] text-ink3 mb-3">
               When a user account is linked, that user can edit this player's public profile from
-              {" "}<span className="font-mono">/my-profile</span>. Only super admins can change this link.
+              {" "}<span className="font-mono">/my-profile</span>. Super admins and this player's
+              home-club admins can change this link.
             </p>
             {managedByUserId ? (
               <div className="flex items-center justify-between bg-bg2 rounded-[8px] px-3 py-2.5">
@@ -277,12 +286,12 @@ function UserLinkPicker({ onPick }: { onPick: (u: { id: string; email: string | 
       setSearching(true);
       try {
         const token = getStoredToken();
-        const r = await fetch(`/api/admin/users?search=${encodeURIComponent(term)}`, {
+        const r = await fetch(`/api/users/search?q=${encodeURIComponent(term)}&limit=8`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (r.ok) {
           const rows = await r.json();
-          setResults((rows || []).slice(0, 8));
+          setResults(rows || []);
         } else {
           setResults([]);
         }

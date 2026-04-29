@@ -15,6 +15,7 @@ import aiWizardRouter from "./ai-wizard";
 import storageRouter from "./storage";
 import imageProxyRouter from "./image-proxy";
 import playersRouter from "./players";
+import usersRouter from "./users";
 
 const router: IRouter = Router();
 
@@ -34,5 +35,6 @@ router.use(invitesRouter);
 router.use(adminUsersRouter);
 router.use(aiWizardRouter);
 router.use(playersRouter);
+router.use(usersRouter);
 
 export default router;

@@ -3296,6 +3296,9 @@ components:
           type: string
           format: uuid
           nullable: true
+        hasLinkedUser:
+          type: boolean
+          description: True when this player is linked to a user account (verified player).
         age:
           type: integer
           nullable: true

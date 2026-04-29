@@ -4,7 +4,7 @@ import { SpectatorLayout } from "@/components/layout/SpectatorLayout";
 import { PageLoading, EmptyState } from "@/components/LoadingBar";
 import { PlayerHeadshot } from "@/components/PlayerHeadshot";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, Trophy, Award, Calendar, MapPin } from "lucide-react";
+import { ChevronRight, Trophy, Award, Calendar, MapPin, BadgeCheck } from "lucide-react";
 
 export function PlayerProfile() {
   const [, params] = useRoute("/players/:id");
@@ -29,7 +29,17 @@ export function PlayerProfile() {
           <div className="flex items-start gap-5">
             <PlayerHeadshot url={data.headshotUrl} name={data.name} size={96} />
             <div className="flex-1 min-w-0">
-              <h1 className="font-display text-2xl font-bold text-ink">{data.name}</h1>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="font-display text-2xl font-bold text-ink">{data.name}</h1>
+                {(data as any).hasLinkedUser && (
+                  <span
+                    className="inline-flex items-center gap-1 text-[11px] font-sans font-semibold text-g700 bg-g50 border border-g100 rounded-full px-2 py-0.5"
+                    title="This player has claimed their account and can edit their own profile."
+                  >
+                    <BadgeCheck className="w-3 h-3" /> Verified player
+                  </span>
+                )}
+              </div>
               <div className="mt-2 flex flex-wrap items-center gap-3 text-[13px] text-ink2">
                 {data.handicap != null && (
                   <Badge variant="status">Handicap {data.handicap}</Badge>

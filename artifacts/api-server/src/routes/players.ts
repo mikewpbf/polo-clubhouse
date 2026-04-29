@@ -352,6 +352,7 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
       homeClubSlug: club?.slug ?? null,
       managedByUserId: player.managedByUserId,
       managedByUser,
+      hasLinkedUser: !!player.managedByUserId,
       age: calcAge(player.dateOfBirth as any),
       stats: { seasonGoals, seasonWins, careerGoals, careerWins, mvpAwards, bppAwards },
       teams,

@@ -33,7 +33,7 @@ artifacts-monorepo/
 ├── artifacts/
 │   ├── api-server/         # Express API server (port 8080)
 │   │   └── src/
-│   │       ├── routes/     # auth, clubs, fields, teams, tournaments, matches, out-dates, play-dates, schedule, invites, ai-wizard
+│   │       ├── routes/     # auth, clubs, fields, teams, tournaments, matches, out-dates, play-dates, schedule, invites, ai-wizard, players, users (admin autocomplete)
 │   │       └── lib/        # auth.ts (JWT middleware), scheduler.ts (round-robin schedule generator)
 │   ├── polo-manager/       # React + Vite frontend (spectator, admin, team manager)
 │   │   └── src/

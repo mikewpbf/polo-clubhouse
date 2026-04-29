@@ -2852,6 +2852,12 @@ export const GetPlayerProfileResponse = zod.object({
   homeClubName: zod.string().nullish(),
   homeClubSlug: zod.string().nullish(),
   managedByUserId: zod.string().uuid().nullish(),
+  hasLinkedUser: zod
+    .boolean()
+    .optional()
+    .describe(
+      "True when this player is linked to a user account (verified player).",
+    ),
   age: zod.number().nullish(),
   stats: zod.object({
     seasonGoals: zod.number(),

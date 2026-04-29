@@ -20,6 +20,8 @@ export interface PlayerProfile {
   homeClubName?: string | null;
   homeClubSlug?: string | null;
   managedByUserId?: string | null;
+  /** True when this player is linked to a user account (verified player). */
+  hasLinkedUser?: boolean;
   age?: number | null;
   stats: PlayerStats;
   teams: PlayerTeamHistory[];

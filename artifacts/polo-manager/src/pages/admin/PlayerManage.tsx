@@ -2,12 +2,16 @@ import { useState, useEffect, useRef } from "react";
 import { useRoute, useLocation, Link } from "wouter";
 import {
   useGetPlayerProfile,
+  getGetPlayerProfileQueryKey,
   useUpdatePlayer,
   useDeletePlayer,
   useAddPlayerHorse,
   useRemovePlayerHorse,
   useListClubs,
+  type PlayerProfile,
+  type Club,
 } from "@workspace/api-client-react";
+
 import { AdminLayout } from "@/pages/admin/AdminLayout";
 import { PageLoading, EmptyState } from "@/components/LoadingBar";
 import { ImageCropUpload } from "@/components/ImageCropUpload";
@@ -19,11 +23,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { ArrowLeft, Trash2, Plus, Search, Link2, X } from "lucide-react";
 import { useAuth, getStoredToken } from "@/hooks/use-auth";
 
+interface PlayerProfileWithUser extends PlayerProfile {
+  managedByUser?: { id: string; email?: string; displayName?: string } | null;
+}
+
 export function PlayerManage() {
   const [, params] = useRoute("/admin/players/:id");
   const [, navigate] = useLocation();
   const playerId = params?.id ?? "";
-  const { data, isLoading, refetch } = useGetPlayerProfile(playerId, { query: { enabled: !!playerId } as any });
+  const { data: rawData, isLoading, refetch } = useGetPlayerProfile(playerId, { query: { enabled: !!playerId, queryKey: getGetPlayerProfileQueryKey(playerId) } });
+  const data = rawData as PlayerProfileWithUser | undefined;
   const { data: clubs } = useListClubs();
   const update = useUpdatePlayer();
   const del = useDeletePlayer();
@@ -35,8 +44,8 @@ export function PlayerManage() {
   // The player's home-club admins (and super_admins) may change the link.
   // Mirrors backend `userCanEditPlayerFull`: super_admin OR club_admin of the
   // player's canonical home club. Team managers and other roles cannot link.
-  const playerHomeClubId = (data as any)?.homeClubId ?? null;
-  const userClubMemberships: Array<{ clubId: string }> = (user as any)?.clubMemberships ?? [];
+  const playerHomeClubId = data?.homeClubId ?? null;
+  const userClubMemberships: Array<{ clubId: string }> = user?.clubMemberships ?? [];
   const canManageLink = isSuperAdmin || (
     !!playerHomeClubId && userClubMemberships.some(m => m.clubId === playerHomeClubId)
   );
@@ -62,9 +71,9 @@ export function PlayerManage() {
       setDateOfBirth(data.dateOfBirth ?? "");
       setBio(data.bio ?? "");
       setHeadshotUrl(data.headshotUrl ?? null);
-      const muid = (data as any).managedByUserId ?? null;
+      const muid = data?.managedByUserId ?? null;
       setManagedByUserId(muid);
-      const linkedUser = (data as any).managedByUser;
+      const linkedUser = data?.managedByUser;
       if (linkedUser) {
         setLinkedUserLabel(`${linkedUser.displayName ?? linkedUser.email ?? "User"} (${linkedUser.email ?? ""})`);
       } else {
@@ -136,7 +145,7 @@ export function PlayerManage() {
                 <Label>Home Club</Label>
                 <select className="w-full border border-line rounded-[8px] px-3 py-2 text-[14px]" value={homeClubId} onChange={(e) => setHomeClubId(e.target.value)}>
                   <option value="">— None —</option>
-                  {(clubs as any[] | undefined)?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {(clubs as Club[] | undefined)?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
               <div>

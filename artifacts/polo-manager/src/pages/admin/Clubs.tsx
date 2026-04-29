@@ -1,4 +1,5 @@
 import { useAuth, getStoredToken } from "@/hooks/use-auth";
+import { ImageCropUpload } from "@/components/ImageCropUpload";
 import { AdminLayout } from "./AdminLayout";
 import { PageLoading, EmptyState } from "@/components/LoadingBar";
 import { Card } from "@/components/ui/card";
@@ -88,57 +89,10 @@ function ClubLogoUpload({
   onLogoChange: (url: string) => void;
   initials: string;
 }) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPreview(URL.createObjectURL(file));
-    setUploading(true);
-    try {
-      const url = await uploadLogo(file);
-      onLogoChange(url);
-    } catch {
-      setPreview(null);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const displayUrl = preview || currentLogo;
-
   return (
     <div className="flex flex-col items-center gap-2">
-      <button
-        type="button"
-        onClick={() => fileRef.current?.click()}
-        className="relative w-20 h-20 rounded-[12px] overflow-hidden border-2 border-line hover:border-g300 transition-colors cursor-pointer group"
-      >
-        {displayUrl ? (
-          <img src={displayUrl} alt="Club logo" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-g50">
-            <span className="font-medium text-sm text-g500">{initials}</span>
-          </div>
-        )}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          {uploading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <ImageIcon className="w-5 h-5 text-white" />
-          )}
-        </div>
-      </button>
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFile}
-      />
-      <span className="text-[11px] text-ink3">{uploading ? "Uploading..." : "Club logo"}</span>
+      <ImageCropUpload value={currentLogo ?? null} onChange={onLogoChange} name={initials} shape="square" size={80} />
+      <span className="text-[11px] text-ink3">Club logo</span>
     </div>
   );
 }

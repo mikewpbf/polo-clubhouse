@@ -10,14 +10,13 @@ import {
 } from "@workspace/api-client-react";
 import { AdminLayout } from "@/pages/admin/AdminLayout";
 import { PageLoading, EmptyState } from "@/components/LoadingBar";
-import { PlayerHeadshot } from "@/components/PlayerHeadshot";
+import { ImageCropUpload } from "@/components/ImageCropUpload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, Trash2, Upload, Plus, Search, Link2, X } from "lucide-react";
-import { uploadImageFile } from "@/lib/upload";
+import { ArrowLeft, Trash2, Plus, Search, Link2, X } from "lucide-react";
 import { useAuth, getStoredToken } from "@/hooks/use-auth";
 
 export function PlayerManage() {
@@ -50,7 +49,7 @@ export function PlayerManage() {
   const [headshotUrl, setHeadshotUrl] = useState<string | null>(null);
   const [managedByUserId, setManagedByUserId] = useState<string | null>(null);
   const [linkedUserLabel, setLinkedUserLabel] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [showHorseDialog, setShowHorseDialog] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -76,18 +75,6 @@ export function PlayerManage() {
 
   if (isLoading) return <AdminLayout><PageLoading /></AdminLayout>;
   if (!data) return <AdminLayout><EmptyState title="Player not found" /></AdminLayout>;
-
-  const handleUpload = async (file: File) => {
-    setUploading(true);
-    try {
-      const url = await uploadImageFile(file);
-      setHeadshotUrl(url);
-    } catch (e: any) {
-      alert(e?.message || "Upload failed");
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handleSave = async () => {
     setSaveMsg(null);
@@ -131,15 +118,7 @@ export function PlayerManage() {
           <h2 className="font-display text-lg font-bold text-ink mb-4">Profile</h2>
           <div className="flex items-start gap-5 mb-5">
             <div className="flex flex-col items-center gap-2">
-              <PlayerHeadshot url={headshotUrl} name={name || data.name} size={96} />
-              <label className="text-[12px] text-g700 cursor-pointer hover:underline inline-flex items-center gap-1">
-                <Upload className="w-3 h-3" />
-                {uploading ? "Uploading…" : (headshotUrl ? "Change" : "Upload")}
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) handleUpload(f);
-                }} />
-              </label>
+              <ImageCropUpload value={headshotUrl} onChange={setHeadshotUrl} name={name || data.name} size={96} />
               {headshotUrl && (
                 <button className="text-[11px] text-red-600 hover:underline" onClick={() => setHeadshotUrl(null)}>Remove</button>
               )}

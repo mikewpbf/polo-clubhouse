@@ -216,21 +216,9 @@ export function CropDialog() {
             {/* Crop area */}
             <div className="bg-gray-900 flex items-center justify-center py-8 select-none">
               <div className="relative" style={{ width: CIRCLE_SIZE, height: CIRCLE_SIZE }}>
-                {/* Outer dim overlay with circular cutout */}
+                {/* Circle ring */}
                 <div
-                  className="absolute inset-0 z-10 pointer-events-none"
-                  style={{
-                    background: `radial-gradient(circle ${CIRCLE_SIZE / 2}px at center, transparent ${CIRCLE_SIZE / 2}px, rgba(0,0,0,0.65) ${CIRCLE_SIZE / 2}px)`,
-                    width: CIRCLE_SIZE * 1.5,
-                    height: CIRCLE_SIZE * 1.5,
-                    left: -CIRCLE_SIZE * 0.25,
-                    top: -CIRCLE_SIZE * 0.25,
-                  }}
-                />
-                {/* Circle border */}
-                <div
-                  className="absolute z-20 pointer-events-none rounded-full border-2 border-white/70"
-                  style={{ inset: 0 }}
+                  className="absolute inset-0 z-20 pointer-events-none rounded-full ring-2 ring-white/60"
                 />
                 {/* Move hint */}
                 <div className="absolute z-20 bottom-2 right-2 pointer-events-none">

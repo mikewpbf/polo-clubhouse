@@ -712,6 +712,10 @@ export interface PlayerSummary {
     homeClubName?: string | null;
     homeClubSlug?: string | null;
     lastMatchDate?: string | null;
+    /** Total career goals scored. */
+    careerGoals: number;
+    /** Total distinct matches the player appeared in. */
+    careerGames: number;
 }
 export interface PlayerStats {
     seasonGoals: number;

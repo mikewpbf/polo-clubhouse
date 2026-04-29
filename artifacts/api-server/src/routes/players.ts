@@ -200,24 +200,49 @@ router.get("/players", optionalAuth, async (req, res) => {
 router.get("/players/top", async (req, res) => {
   try {
     const limit = Math.max(1, Math.min(50, Number(req.query.limit ?? 8)));
-    const rows = await db.select().from(playersTable)
-      .where(and(eq(playersTable.isActive, true), isNotNull(playersTable.handicap)))
-      .orderBy(desc(playersTable.handicap))
-      .limit(limit);
-    const clubIds = Array.from(new Set(rows.map(r => r.homeClubId).filter((x): x is string => !!x)));
+    // Rank by career goals DESC, then games played DESC, then player name.
+    // Only include players who have appeared in at least one match event.
+    const rows = await db.execute(sql`
+      SELECT
+        p.id,
+        p.name,
+        p.handicap,
+        p.headshot_url,
+        p.home_club_id,
+        COUNT(CASE WHEN me.event_type = 'goal' THEN 1 END)::int  AS career_goals,
+        COUNT(DISTINCT me.match_id)::int                          AS career_games
+      FROM players p
+      JOIN match_events me ON me.player_id = p.id
+      WHERE p.is_active = true
+      GROUP BY p.id
+      ORDER BY career_goals DESC, career_games DESC, p.name ASC
+      LIMIT ${limit}
+    `);
+
+    type TopRow = {
+      id: string; name: string; handicap: string | null;
+      headshot_url: string | null; home_club_id: string | null;
+      career_goals: number; career_games: number;
+    };
+    const players = rows.rows as unknown as TopRow[];
+
+    const clubIds = Array.from(new Set(players.map(r => r.home_club_id).filter((x): x is string => !!x)));
     const clubsRows = clubIds.length > 0 ? await db.select().from(clubsTable).where(inArray(clubsTable.id, clubIds)) : [];
     const clubMap = new Map(clubsRows.map(c => [c.id, c]));
-    res.json(rows.map(p => {
-      const club = p.homeClubId ? clubMap.get(p.homeClubId) : undefined;
+
+    res.json(players.map(p => {
+      const club = p.home_club_id ? clubMap.get(p.home_club_id) : undefined;
       return {
         id: p.id,
         name: p.name,
         handicap: p.handicap,
-        headshotUrl: p.headshotUrl,
-        homeClubId: p.homeClubId,
+        headshotUrl: p.headshot_url,
+        homeClubId: p.home_club_id,
         homeClubName: club?.name ?? null,
         homeClubSlug: club?.slug ?? null,
         lastMatchDate: null,
+        careerGoals: Number(p.career_goals),
+        careerGames: Number(p.career_games),
       };
     }));
   } catch (e: any) {

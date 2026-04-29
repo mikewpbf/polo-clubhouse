@@ -335,6 +335,18 @@ export function Home() {
                           {hcLabel}
                         </div>
                       )}
+                      <div className="mt-2 flex items-center justify-center gap-3 text-[11px] font-sans text-ink2">
+                        <span className="flex items-center gap-0.5">
+                          <Trophy className="w-3 h-3 text-amber-500" />
+                          <span className="font-semibold text-ink">{p.careerGoals}</span>
+                          <span className="text-ink3">g</span>
+                        </span>
+                        <span className="flex items-center gap-0.5">
+                          <Calendar className="w-3 h-3 text-g400" />
+                          <span className="font-semibold text-ink">{p.careerGames}</span>
+                          <span className="text-ink3">gm</span>
+                        </span>
+                      </div>
                       {p.homeClubName && (
                         <div className="mt-1 text-[11px] font-sans text-ink3 truncate">{p.homeClubName}</div>
                       )}

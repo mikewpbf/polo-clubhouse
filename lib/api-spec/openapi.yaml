@@ -3216,9 +3216,17 @@ components:
           type: string
           format: date
           nullable: true
+        careerGoals:
+          type: integer
+          description: Total career goals scored.
+        careerGames:
+          type: integer
+          description: Total distinct matches the player appeared in.
       required:
         - id
         - name
+        - careerGoals
+        - careerGames
 
     PlayerStats:
       type: object

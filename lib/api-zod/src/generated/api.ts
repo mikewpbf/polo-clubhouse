@@ -2797,6 +2797,10 @@ export const ListPlayersResponseItem = zod.object({
   homeClubName: zod.string().nullish(),
   homeClubSlug: zod.string().nullish(),
   lastMatchDate: zod.date().nullish(),
+  careerGoals: zod.number().describe("Total career goals scored."),
+  careerGames: zod
+    .number()
+    .describe("Total distinct matches the player appeared in."),
 });
 export const ListPlayersResponse = zod.array(ListPlayersResponseItem);
 
@@ -2831,6 +2835,10 @@ export const ListTopPlayersResponseItem = zod.object({
   homeClubName: zod.string().nullish(),
   homeClubSlug: zod.string().nullish(),
   lastMatchDate: zod.date().nullish(),
+  careerGoals: zod.number().describe("Total career goals scored."),
+  careerGames: zod
+    .number()
+    .describe("Total distinct matches the player appeared in."),
 });
 export const ListTopPlayersResponse = zod.array(ListTopPlayersResponseItem);
 

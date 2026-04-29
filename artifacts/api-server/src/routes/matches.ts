@@ -924,7 +924,35 @@ async function buildBroadcastPayload(matchId: string) {
       if (!scorerMap[key]) scorerMap[key] = { playerId: evt.playerId ?? null, name: evt.playerName, goals: 0, teamSide: side };
       scorerMap[key].goals++;
     }
+    // Hydrate display names from canonical players: when a goal event is linked by
+    // playerId, prefer the live player.name so renames/edits propagate to live match
+    // top-scorer displays without requiring back-fills of cached match_events.playerName.
+    const scorerPlayerIds = Array.from(new Set(
+      Object.values(scorerMap).map(s => s.playerId).filter((x): x is string => !!x)
+    ));
+    if (scorerPlayerIds.length > 0) {
+      const canonicalScorers = await db.select({ id: playersTable.id, name: playersTable.name })
+        .from(playersTable)
+        .where(inArray(playersTable.id, scorerPlayerIds));
+      const nameById = new Map(canonicalScorers.map(p => [p.id, p.name]));
+      for (const s of Object.values(scorerMap)) {
+        if (s.playerId && nameById.has(s.playerId)) s.name = nameById.get(s.playerId)!;
+      }
+    }
     const topScorers = Object.values(scorerMap).sort((a, b) => b.goals - a.goals).slice(0, 2);
+
+    // Hydrate lastGoalScorerName: if the cached scorer name is stale relative to the
+    // canonical player record, prefer the canonical name. We resolve by matching the
+    // most recent goal event for this match (whose playerId still points at canonical).
+    let liveLastGoalScorerName = match.lastGoalScorerName;
+    const lastGoalEvt = [...allEvents]
+      .filter(e => e.eventType === "goal" && e.playerId)
+      .sort((a, b) => new Date(b.timestamp as any).getTime() - new Date(a.timestamp as any).getTime())[0];
+    if (lastGoalEvt?.playerId) {
+      const [livePlayer] = await db.select({ name: playersTable.name }).from(playersTable)
+        .where(eq(playersTable.id, lastGoalEvt.playerId)).limit(1);
+      if (livePlayer?.name) liveLastGoalScorerName = livePlayer.name;
+    }
 
     const bHomeName = homeTeam?.name || "";
     const bAwayName = awayTeam?.name || "";
@@ -952,7 +980,7 @@ async function buildBroadcastPayload(matchId: string) {
       broadcast4kOffsetX: match.broadcast4kOffsetX ?? 0,
       broadcast4kOffsetY: match.broadcast4kOffsetY ?? 0,
       broadcastChannel: match.broadcastChannel || null,
-      lastGoalScorerName: match.lastGoalScorerName,
+      lastGoalScorerName: liveLastGoalScorerName,
       lastGoalTeamSide: bSwap ? (match.lastGoalTeamSide === "home" ? "away" : match.lastGoalTeamSide === "away" ? "home" : match.lastGoalTeamSide) : match.lastGoalTeamSide,
       lastGoalTimestamp: match.lastGoalTimestamp,
       lastStoppageEvent,

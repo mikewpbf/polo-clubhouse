@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { db } from "@workspace/db";
-import { tournamentsTable, tournamentTeamsTable, teamsTable, matchesTable, playDatesTable, clubsTable, fieldsTable, adminClubMembershipsTable, matchEventsTable, teamOutDatesTable, teamManagerAssignmentsTable, userInvitesTable, playersTable, horsesTable } from "@workspace/db/schema";
+import { tournamentsTable, tournamentTeamsTable, teamsTable, matchesTable, playDatesTable, clubsTable, fieldsTable, adminClubMembershipsTable, matchEventsTable, teamOutDatesTable, teamManagerAssignmentsTable, userInvitesTable, playersTable, horsesTable, teamPlayersTable } from "@workspace/db/schema";
 import { eq, and, ilike, count, inArray, desc, asc } from "drizzle-orm";
 import { requireAuth, optionalAuth, isSuperAdmin, requireSuperAdmin } from "../lib/auth";
 import OpenAI from "openai";
@@ -701,8 +701,16 @@ router.put("/tournaments/:tournamentId/mvp", requireAuth, requireAdminForTournam
       if (ttEntries.length === 0) { res.status(400).json({ message: "Team is not in this tournament" }); return; }
     }
     if (playerId && teamId) {
+      // Accept membership via the canonical team_players link (current rosters) OR the
+      // legacy players.team_id pointer. Required because new player profiles are linked
+      // through team_players only and never set the legacy column.
       const [player] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
-      if (!player || player.teamId !== teamId) { res.status(400).json({ message: "Player does not belong to selected team" }); return; }
+      if (!player) { res.status(400).json({ message: "Player not found" }); return; }
+      const onLegacy = player.teamId === teamId;
+      const [link] = onLegacy ? [null] : await db.select({ id: teamPlayersTable.id })
+        .from(teamPlayersTable)
+        .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId))).limit(1);
+      if (!onLegacy && !link) { res.status(400).json({ message: "Player does not belong to selected team" }); return; }
     }
 
     await db.update(tournamentsTable).set({
@@ -785,8 +793,14 @@ router.put("/tournaments/:tournamentId/bpp", requireAuth, requireAdminForTournam
       if (ttEntries.length === 0) { res.status(400).json({ message: "Team is not in this tournament" }); return; }
     }
     if (playerId && teamId) {
+      // Accept membership via team_players link OR legacy players.team_id (see MVP handler).
       const [player] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
-      if (!player || player.teamId !== teamId) { res.status(400).json({ message: "Player does not belong to selected team" }); return; }
+      if (!player) { res.status(400).json({ message: "Player not found" }); return; }
+      const onLegacy = player.teamId === teamId;
+      const [link] = onLegacy ? [null] : await db.select({ id: teamPlayersTable.id })
+        .from(teamPlayersTable)
+        .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId))).limit(1);
+      if (!onLegacy && !link) { res.status(400).json({ message: "Player does not belong to selected team" }); return; }
     }
     if (horseId && playerId) {
       const [horse] = await db.select().from(horsesTable).where(eq(horsesTable.id, horseId));

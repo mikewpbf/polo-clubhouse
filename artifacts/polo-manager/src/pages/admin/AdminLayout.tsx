@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { Calendar, Users, Building2, Trophy, Activity, LogOut, Home, Shield, Sparkles, Settings } from "lucide-react";
+import { Calendar, Users, Building2, Trophy, Activity, LogOut, Home, Shield, Sparkles, Settings, UserCircle } from "lucide-react";
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
@@ -15,6 +15,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     ...(hasClub ? [{ href: "/admin/club-settings", label: "Club Settings", icon: Settings }] : []),
     { href: "/admin/tournaments", label: "Tournaments", icon: Trophy },
     { href: "/admin/teams", label: "Teams Directory", icon: Users },
+    { href: "/admin/players", label: "Players", icon: UserCircle },
     { href: "/admin/matchday", label: "Match Day", icon: Calendar },
     ...(isSuperAdmin ? [
       { href: "/admin/users", label: "Users", icon: Shield },

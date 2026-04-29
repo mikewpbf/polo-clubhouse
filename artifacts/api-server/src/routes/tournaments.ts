@@ -820,61 +820,11 @@ router.put("/tournaments/:tournamentId/bpp", requireAuth, requireAdminForTournam
   }
 });
 
-router.get("/players/:playerId/horses", async (req, res) => {
-  try {
-    const playerId = String(req.params.playerId);
-    const horses = await db.select().from(horsesTable).where(eq(horsesTable.playerId, playerId));
-    res.json(horses);
-  } catch (e: any) {
-    res.status(500).json({ message: e.message });
-  }
-});
-
-router.post("/players/:playerId/horses", requireAuth, async (req, res) => {
-  try {
-    if (!req.user) { res.status(401).json({ message: "Authentication required" }); return; }
-    if (!isSuperAdmin(req.user)) {
-      const memberships = await db.select().from(adminClubMembershipsTable).where(eq(adminClubMembershipsTable.userId, req.user.id));
-      if (memberships.length === 0) { res.status(403).json({ message: "Admin access required" }); return; }
-    }
-    const playerId = String(req.params.playerId);
-    const [player] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
-    if (!player) { res.status(404).json({ message: "Player not found" }); return; }
-    const { horseName, owner, breeder, ownedAndBredBy, age, color, sex, typeOrBreed, sire, dam, notes } = req.body;
-    if (!horseName) { res.status(400).json({ message: "Horse name is required" }); return; }
-    const [horse] = await db.insert(horsesTable).values({
-      playerId,
-      horseName,
-      owner: owner || null,
-      breeder: breeder || null,
-      ownedAndBredBy: ownedAndBredBy || null,
-      age: age ? Number(age) : null,
-      color: color || null,
-      sex: sex || null,
-      typeOrBreed: typeOrBreed || null,
-      sire: sire || null,
-      dam: dam || null,
-      notes: notes || null,
-    }).returning();
-    res.status(201).json(horse);
-  } catch (e: any) {
-    res.status(400).json({ message: e.message });
-  }
-});
-
-router.delete("/horses/:horseId", requireAuth, async (req, res) => {
-  try {
-    if (!req.user) { res.status(401).json({ message: "Authentication required" }); return; }
-    if (!isSuperAdmin(req.user)) {
-      const memberships = await db.select().from(adminClubMembershipsTable).where(eq(adminClubMembershipsTable.userId, req.user.id));
-      if (memberships.length === 0) { res.status(403).json({ message: "Admin access required" }); return; }
-    }
-    const horseId = String(req.params.horseId);
-    await db.delete(horsesTable).where(eq(horsesTable.id, horseId));
-    res.json({ message: "Horse deleted" });
-  } catch (e: any) {
-    res.status(400).json({ message: e.message });
-  }
-});
+// NOTE: legacy player-horse routes (`GET /players/:playerId/horses`,
+// `POST /players/:playerId/horses`, `DELETE /horses/:horseId`) used to live
+// here. They were removed because they shadowed the canonical, stricter
+// authorization in `routes/players.ts` (where mutations are restricted to
+// admins via requireSelfOrEditor(false)). Roster-scoped horse mutations are
+// served by `/teams/:teamId/players/:playerId/horses[/:horseId]` in teams.ts.
 
 export default router;

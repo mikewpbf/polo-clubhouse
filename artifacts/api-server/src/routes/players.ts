@@ -37,21 +37,16 @@ function calcAge(dob: string | null | undefined): number | null {
 
 async function userCanEditPlayerFull(userId: string, userRole: string, playerId: string): Promise<boolean> {
   if (userRole === "super_admin") return true;
-  // Club admins can edit any player whose home club they admin
+  // Club admins may only edit players whose canonical home club they administer.
+  // Editing players based on transient roster membership (team→club) is intentionally
+  // disallowed — it would let a visiting-club admin mutate another club's canonical
+  // player records simply because that player happens to be on a guest roster.
   const memberships = await db.select().from(adminClubMembershipsTable).where(eq(adminClubMembershipsTable.userId, userId));
   if (memberships.length > 0) {
     const [player] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
     if (player?.homeClubId && memberships.some(m => m.clubId === player.homeClubId)) return true;
-    // Also: club admin of any club whose team the player is on (current season)
-    const tps = await db.select().from(teamPlayersTable).where(eq(teamPlayersTable.playerId, playerId));
-    for (const tp of tps) {
-      const [team] = await db.select().from(teamsTable).where(eq(teamsTable.id, tp.teamId));
-      if (team?.clubId && memberships.some(m => m.clubId === team.clubId)) return true;
-    }
   }
-  // Team managers are intentionally read-only for player records: they may view rosters
-  // but must not mutate identity-level fields (name, handicap, headshot, bio, ...).
-  // Roster membership changes go through team-player join routes, not the player record.
+  // Team managers are intentionally read-only for player records.
   return false;
 }
 
@@ -105,26 +100,16 @@ router.get("/players", optionalAuth, async (req, res) => {
     // manage; spectators / unauthenticated callers see the public active directory.
     if (req.user && req.user.role !== "super_admin") {
       if (req.user.role === "admin") {
+        // Club-admin directory scope: only players whose canonical home club is one
+        // of the clubs this user administers. Players merely visiting on a guest
+        // roster of an admin's team are intentionally excluded — they appear in the
+        // team's roster view but not in this club's player directory.
         const memberships = await db.select({ clubId: adminClubMembershipsTable.clubId })
           .from(adminClubMembershipsTable)
           .where(eq(adminClubMembershipsTable.userId, req.user.id));
         const adminClubIds = memberships.map(m => m.clubId).filter((x): x is string => !!x);
         if (adminClubIds.length === 0) { res.json([]); return; }
-        // Players: homeClubId in adminClubs OR on any team in adminClubs
-        const teamRows = await db.select({ id: teamsTable.id })
-          .from(teamsTable)
-          .where(inArray(teamsTable.clubId, adminClubIds));
-        const teamIds = teamRows.map(t => t.id);
-        const tpRows = teamIds.length > 0
-          ? await db.select({ playerId: teamPlayersTable.playerId })
-              .from(teamPlayersTable)
-              .where(inArray(teamPlayersTable.teamId, teamIds))
-          : [];
-        const playersOnAdminTeams = Array.from(new Set(tpRows.map(t => t.playerId)));
-        const scopeOr = playersOnAdminTeams.length > 0
-          ? or(inArray(playersTable.homeClubId, adminClubIds), inArray(playersTable.id, playersOnAdminTeams))!
-          : inArray(playersTable.homeClubId, adminClubIds);
-        conditions.push(scopeOr);
+        conditions.push(inArray(playersTable.homeClubId, adminClubIds));
       } else if (req.user.role === "team_manager") {
         const assignments = await db.select({ teamId: teamManagerAssignmentsTable.teamId })
           .from(teamManagerAssignmentsTable)

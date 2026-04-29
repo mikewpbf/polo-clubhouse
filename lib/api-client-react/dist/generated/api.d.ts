@@ -1679,7 +1679,7 @@ export declare const useCreatePlayer: <TError = ErrorType<unknown>, TContext = u
     data: BodyType<CreatePlayerRequest>;
 }, TContext>;
 /**
- * @summary Top players by handicap
+ * @summary Top players by career goals and games played
  */
 export declare const getListTopPlayersUrl: (params?: ListTopPlayersParams) => string;
 export declare const listTopPlayers: (params?: ListTopPlayersParams, options?: RequestInit) => Promise<PlayerSummary[]>;
@@ -1693,7 +1693,7 @@ export declare const getListTopPlayersQueryOptions: <TData = Awaited<ReturnType<
 export type ListTopPlayersQueryResult = NonNullable<Awaited<ReturnType<typeof listTopPlayers>>>;
 export type ListTopPlayersQueryError = ErrorType<unknown>;
 /**
- * @summary Top players by handicap
+ * @summary Top players by career goals and games played
  */
 export declare function useListTopPlayers<TData = Awaited<ReturnType<typeof listTopPlayers>>, TError = ErrorType<unknown>>(params?: ListTopPlayersParams, options?: {
     query?: UseQueryOptions<Awaited<ReturnType<typeof listTopPlayers>>, TError, TData>;

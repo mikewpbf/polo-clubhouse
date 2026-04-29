@@ -1476,7 +1476,7 @@ paths:
     get:
       operationId: listTopPlayers
       tags: [players]
-      summary: Top players by handicap
+      summary: Top players by career goals and games played
       parameters:
         - name: limit
           in: query
@@ -3218,15 +3218,15 @@ components:
           nullable: true
         careerGoals:
           type: integer
-          description: Total career goals scored.
+          nullable: true
+          description: Total career goals scored. Present on top-players endpoint; may be absent on list endpoints.
         careerGames:
           type: integer
-          description: Total distinct matches the player appeared in.
+          nullable: true
+          description: Total distinct matches the player appeared in. Present on top-players endpoint; may be absent on list endpoints.
       required:
         - id
         - name
-        - careerGoals
-        - careerGames
 
     PlayerStats:
       type: object

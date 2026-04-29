@@ -2797,10 +2797,18 @@ export const ListPlayersResponseItem = zod.object({
   homeClubName: zod.string().nullish(),
   homeClubSlug: zod.string().nullish(),
   lastMatchDate: zod.date().nullish(),
-  careerGoals: zod.number().describe("Total career goals scored."),
+  careerGoals: zod
+    .number()
+    .nullish()
+    .describe(
+      "Total career goals scored. Present on top-players endpoint; may be absent on list endpoints.",
+    ),
   careerGames: zod
     .number()
-    .describe("Total distinct matches the player appeared in."),
+    .nullish()
+    .describe(
+      "Total distinct matches the player appeared in. Present on top-players endpoint; may be absent on list endpoints.",
+    ),
 });
 export const ListPlayersResponse = zod.array(ListPlayersResponseItem);
 
@@ -2818,7 +2826,7 @@ export const CreatePlayerBody = zod.object({
 });
 
 /**
- * @summary Top players by handicap
+ * @summary Top players by career goals and games played
  */
 export const listTopPlayersQueryLimitDefault = 8;
 
@@ -2835,10 +2843,18 @@ export const ListTopPlayersResponseItem = zod.object({
   homeClubName: zod.string().nullish(),
   homeClubSlug: zod.string().nullish(),
   lastMatchDate: zod.date().nullish(),
-  careerGoals: zod.number().describe("Total career goals scored."),
+  careerGoals: zod
+    .number()
+    .nullish()
+    .describe(
+      "Total career goals scored. Present on top-players endpoint; may be absent on list endpoints.",
+    ),
   careerGames: zod
     .number()
-    .describe("Total distinct matches the player appeared in."),
+    .nullish()
+    .describe(
+      "Total distinct matches the player appeared in. Present on top-players endpoint; may be absent on list endpoints.",
+    ),
 });
 export const ListTopPlayersResponse = zod.array(ListTopPlayersResponseItem);
 

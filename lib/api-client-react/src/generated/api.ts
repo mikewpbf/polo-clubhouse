@@ -5855,7 +5855,7 @@ export const useCreatePlayer = <
 };
 
 /**
- * @summary Top players by handicap
+ * @summary Top players by career goals and games played
  */
 export const getListTopPlayersUrl = (params?: ListTopPlayersParams) => {
   const normalizedParams = new URLSearchParams();
@@ -5922,7 +5922,7 @@ export type ListTopPlayersQueryResult = NonNullable<
 export type ListTopPlayersQueryError = ErrorType<unknown>;
 
 /**
- * @summary Top players by handicap
+ * @summary Top players by career goals and games played
  */
 
 export function useListTopPlayers<

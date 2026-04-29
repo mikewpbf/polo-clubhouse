@@ -15,8 +15,8 @@ export interface PlayerSummary {
   homeClubName?: string | null;
   homeClubSlug?: string | null;
   lastMatchDate?: Date | null;
-  /** Total career goals scored. */
-  careerGoals: number;
-  /** Total distinct matches the player appeared in. */
-  careerGames: number;
+  /** Total career goals scored. Present on top-players endpoint; may be absent on list endpoints. */
+  careerGoals?: number | null;
+  /** Total distinct matches the player appeared in. Present on top-players endpoint; may be absent on list endpoints. */
+  careerGames?: number | null;
 }

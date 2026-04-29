@@ -221,7 +221,46 @@ describe("cross-team / cross-profile authorization regressions", () => {
     expect(rows[0].teamId).toBe(teamBId);
   });
 
-  // (3) Happy path: the linked managed user CAN PATCH their own profile.
+  // (3) DELETE /players/:playerId — `requireSelfOrEditor(false)` must only allow
+  // a club admin to delete players whose canonical homeClubId they administer,
+  // and must never allow a team manager to delete a player just because that
+  // player is on a roster they manage.
+  it("club-A admin cannot DELETE /players/:playerOnClubB (403, player still exists)", async () => {
+    const res = await request(app)
+      .delete(`/api/players/${playerOnTeamBId}`)
+      .set("Authorization", `Bearer ${clubAAdminToken}`);
+    expect(res.status).toBe(403);
+
+    const rows = await db.select().from(playersTable)
+      .where(eq(playersTable.id, playerOnTeamBId));
+    expect(rows.length).toBe(1);
+    expect(rows[0].homeClubId).toBe(clubBId);
+  });
+
+  it("team-A manager cannot DELETE /players/:playerOnTeamA (403, player still exists)", async () => {
+    const res = await request(app)
+      .delete(`/api/players/${playerOnTeamAId}`)
+      .set("Authorization", `Bearer ${teamAManagerToken}`);
+    expect(res.status).toBe(403);
+
+    const rows = await db.select().from(playersTable)
+      .where(eq(playersTable.id, playerOnTeamAId));
+    expect(rows.length).toBe(1);
+    expect(rows[0].homeClubId).toBe(clubAId);
+  });
+
+  it("club-A admin CAN DELETE /players/:playerOnClubA (200, player gone)", async () => {
+    const res = await request(app)
+      .delete(`/api/players/${playerOnTeamAId}`)
+      .set("Authorization", `Bearer ${clubAAdminToken}`);
+    expect(res.status).toBe(200);
+
+    const rows = await db.select().from(playersTable)
+      .where(eq(playersTable.id, playerOnTeamAId));
+    expect(rows.length).toBe(0);
+  });
+
+  // (4) Happy path: the linked managed user CAN PATCH their own profile.
   it("linked managed user can PATCH /players/:id/profile (200)", async () => {
     const res = await request(app)
       .patch(`/api/players/${linkedPlayerId}/profile`)

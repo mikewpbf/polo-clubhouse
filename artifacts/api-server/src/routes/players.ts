@@ -290,35 +290,72 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
     const allEvents = await db.select().from(matchEventsTable).where(eq(matchEventsTable.playerId, playerId));
     const careerGoals = allEvents.filter(e => e.eventType === "goal").length;
 
-    // wins: find matches where this player appeared and his side won
-    const matchIds = Array.from(new Set(allEvents.map(e => e.matchId).filter((x): x is string => !!x)));
+    // Wins are computed across every match the player participated in, regardless of
+    // whether they scored. We collect candidate matches from BOTH directions so that
+    // legacy data without team_players rows still works:
+    //   1. team_players → all matches involving any team this player has been on.
+    //   2. match_events → matches where this player has at least one event recorded
+    //      (covers players added directly to a tournament without a roster link).
+    const playerTeamIds = Array.from(new Set(tps.map(t => t.teamId)));
+    const matchesViaTeams = playerTeamIds.length > 0
+      ? await db.select().from(matchesTable).where(or(
+          inArray(matchesTable.homeTeamId, playerTeamIds),
+          inArray(matchesTable.awayTeamId, playerTeamIds),
+        )!)
+      : [];
+    const matchIdsViaEvents = Array.from(new Set(allEvents.map(e => e.matchId).filter((x): x is string => !!x)));
+    const missingMatchIds = matchIdsViaEvents.filter(id => !matchesViaTeams.some(m => m.id === id));
+    const matchesViaEvents = missingMatchIds.length > 0
+      ? await db.select().from(matchesTable).where(inArray(matchesTable.id, missingMatchIds))
+      : [];
+    const matchRows = [...matchesViaTeams, ...matchesViaEvents];
+    const matchById = new Map(matchRows.map(m => [m.id, m]));
+
+    // For each match we need to know which side ("home" or "away") this player was on.
+    // Prefer team_players (canonical roster), but fall back to match_events.team_id
+    // when no roster link exists for that match.
+    const playerTeamsAllSeasons = new Set(playerTeamIds);
+    const playerSideByMatch = new Map<string, "home" | "away">();
+    for (const m of matchRows) {
+      if (m.homeTeamId && playerTeamsAllSeasons.has(m.homeTeamId)) {
+        playerSideByMatch.set(m.id, "home");
+      } else if (m.awayTeamId && playerTeamsAllSeasons.has(m.awayTeamId)) {
+        playerSideByMatch.set(m.id, "away");
+      }
+    }
+    for (const ev of allEvents) {
+      if (!ev.matchId || !ev.teamId) continue;
+      if (playerSideByMatch.has(ev.matchId)) continue;
+      const m = matchById.get(ev.matchId);
+      if (!m) continue;
+      if (ev.teamId === m.homeTeamId) playerSideByMatch.set(ev.matchId, "home");
+      else if (ev.teamId === m.awayTeamId) playerSideByMatch.set(ev.matchId, "away");
+    }
+
     let careerWins = 0;
     let seasonWins = 0;
     let seasonGoals = 0;
     const yr = currentSeasonYear();
-    if (matchIds.length > 0) {
-      const matchRows = await db.select().from(matchesTable).where(inArray(matchesTable.id, matchIds));
-      const matchById = new Map(matchRows.map(m => [m.id, m]));
-      // map player -> set of teams the player has been on
-      const playerTeams = new Set(tps.map(t => t.teamId));
-      for (const m of matchRows) {
-        const homeWin = (m.homeScore ?? 0) > (m.awayScore ?? 0);
-        const awayWin = (m.awayScore ?? 0) > (m.homeScore ?? 0);
-        if (!homeWin && !awayWin) continue;
-        const playerSideHome = m.homeTeamId && playerTeams.has(m.homeTeamId);
-        const playerSideAway = m.awayTeamId && playerTeams.has(m.awayTeamId);
-        const won = (homeWin && playerSideHome) || (awayWin && playerSideAway);
-        if (won) careerWins++;
-        const matchYr = m.scheduledAt ? new Date(m.scheduledAt as any).getUTCFullYear() : null;
-        if (won && matchYr === yr) seasonWins++;
-      }
-      for (const ev of allEvents) {
-        if (ev.eventType !== "goal" || !ev.matchId) continue;
-        const m = matchById.get(ev.matchId);
-        if (!m) continue;
-        const matchYr = m.scheduledAt ? new Date(m.scheduledAt as any).getUTCFullYear() : null;
-        if (matchYr === yr) seasonGoals++;
-      }
+    for (const m of matchRows) {
+      // Only finalized matches count toward wins to avoid in-progress score noise.
+      if (m.status !== "final") continue;
+      const homeWin = (m.homeScore ?? 0) > (m.awayScore ?? 0);
+      const awayWin = (m.awayScore ?? 0) > (m.homeScore ?? 0);
+      if (!homeWin && !awayWin) continue;
+      const side = playerSideByMatch.get(m.id);
+      if (!side) continue;
+      const won = (homeWin && side === "home") || (awayWin && side === "away");
+      if (!won) continue;
+      careerWins++;
+      const matchYr = m.scheduledAt ? new Date(m.scheduledAt as any).getUTCFullYear() : null;
+      if (matchYr === yr) seasonWins++;
+    }
+    for (const ev of allEvents) {
+      if (ev.eventType !== "goal" || !ev.matchId) continue;
+      const m = matchById.get(ev.matchId);
+      if (!m) continue;
+      const matchYr = m.scheduledAt ? new Date(m.scheduledAt as any).getUTCFullYear() : null;
+      if (matchYr === yr) seasonGoals++;
     }
 
     // MVP/BPP: tournament scalar fields

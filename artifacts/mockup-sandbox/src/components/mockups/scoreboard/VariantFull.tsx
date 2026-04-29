@@ -73,7 +73,7 @@ function ScoreBug({ data }: { data: MockData }) {
   const awayColor = away?.primaryColor || '#374151';
   const homeTheme = getOnColorTheme(homeColor);
   const awayTheme = getOnColorTheme(awayColor);
-  const BAR_H = 72;
+  const BAR_H = 64;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', borderRadius: 8, overflow: 'hidden', fontFamily: "'Inter','Helvetica Neue',sans-serif", boxShadow: '0 4px 24px rgba(0,0,0,0.5)' }}>
       {data.tournament?.name && <TournamentTitleBar name={data.tournament.name} />}
@@ -90,8 +90,8 @@ function ScoreBug({ data }: { data: MockData }) {
         </div>
         {/* Center: clock */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '3px 16px 8px', background: NEAR_BLACK, minWidth: 96 }}>
-          <span style={{ fontFamily: "'JetBrains Mono','SF Mono',monospace", fontSize: 26, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{data.currentChukker}</span>
-          <span style={{ fontFamily: "'JetBrains Mono','SF Mono',monospace", fontSize: 24, fontWeight: 700, color: '#fff', lineHeight: 1, letterSpacing: 0.5 }}>{data.status === 'halftime' ? 'HT' : data.clock}</span>
+          <span style={{ fontFamily: "'JetBrains Mono','SF Mono',monospace", fontSize: 24, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{data.currentChukker}</span>
+          <span style={{ fontFamily: "'JetBrains Mono','SF Mono',monospace", fontSize: 22, fontWeight: 700, color: '#fff', lineHeight: 1, letterSpacing: 0.5 }}>{data.status === 'halftime' ? 'HT' : data.clock}</span>
         </div>
         {/* Away */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', background: `linear-gradient(135deg, ${awayColor}bb, ${awayColor}dd)`, width: 270, height: '100%', boxSizing: 'border-box' }}>

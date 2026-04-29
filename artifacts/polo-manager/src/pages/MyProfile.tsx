@@ -201,7 +201,7 @@ export function MyProfile() {
               {recentMatches.map(m => (
                 <div key={m.matchId} className="py-2.5 flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <Link href={`/matches/${m.matchId}`} className="text-[14px] text-ink font-medium hover:text-g700 hover:underline truncate block">
+                    <Link href={`/match/${m.matchId}`} className="text-[14px] text-ink font-medium hover:text-g700 hover:underline truncate block">
                       {m.playerTeamName ?? "My Team"} vs {m.opponentTeamName ?? "Opponent"}
                     </Link>
                     <div className="text-[12px] text-ink3">{m.tournamentName}{m.scheduledAt ? ` · ${m.scheduledAt.slice(0, 10)}` : ""}</div>

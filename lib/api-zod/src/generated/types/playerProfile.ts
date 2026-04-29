@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Horse } from "./horse";
+import type { PlayerRecentMatch } from "./playerRecentMatch";
 import type { PlayerStats } from "./playerStats";
 import type { PlayerTeamHistory } from "./playerTeamHistory";
 
@@ -26,4 +27,6 @@ export interface PlayerProfile {
   stats: PlayerStats;
   teams: PlayerTeamHistory[];
   horses: Horse[];
+  /** Most recent matches this player participated in, newest first. */
+  recentMatches: PlayerRecentMatch[];
 }

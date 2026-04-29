@@ -2892,6 +2892,33 @@ export const GetPlayerProfileResponse = zod.object({
       notes: zod.string().nullish(),
     }),
   ),
+  recentMatches: zod
+    .array(
+      zod.object({
+        matchId: zod.string().uuid(),
+        scheduledAt: zod.date().nullish(),
+        status: zod.enum([
+          "scheduled",
+          "live",
+          "halftime",
+          "final",
+          "postponed",
+          "cancelled",
+        ]),
+        tournamentId: zod.string().uuid(),
+        tournamentName: zod.string(),
+        playerSide: zod.enum(["home", "away"]).nullish(),
+        playerTeamName: zod.string().nullish(),
+        playerTeamLogoUrl: zod.string().nullish(),
+        opponentTeamName: zod.string().nullish(),
+        opponentTeamLogoUrl: zod.string().nullish(),
+        playerScore: zod.number(),
+        opponentScore: zod.number(),
+        result: zod.enum(["win", "loss", "draw", "pending"]),
+        playerGoals: zod.number(),
+      }),
+    )
+    .describe("Most recent matches this player participated in, newest first."),
 });
 
 /**

@@ -1,13 +1,14 @@
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { useGetPlayerProfile, getGetPlayerProfileQueryKey } from "@workspace/api-client-react";
 import { SpectatorLayout } from "@/components/layout/SpectatorLayout";
 import { PageLoading, EmptyState } from "@/components/LoadingBar";
 import { PlayerHeadshot } from "@/components/PlayerHeadshot";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, Trophy, Award, Calendar, MapPin, BadgeCheck } from "lucide-react";
+import { Trophy, Award, Calendar, MapPin, BadgeCheck, ChevronRight } from "lucide-react";
 
 export function PlayerProfile() {
   const [, params] = useRoute("/players/:id");
+  const [, navigate] = useLocation();
   const playerId = params?.id ?? "";
   const { data, isLoading, error } = useGetPlayerProfile(playerId, {
     query: { enabled: !!playerId, queryKey: getGetPlayerProfileQueryKey(playerId) },
@@ -68,6 +69,89 @@ export function PlayerProfile() {
             <StatCard label="BPP Awards" value={data.stats.bppAwards} icon={<Award className="w-3 h-3" />} />
           </div>
         </div>
+
+        {data.recentMatches && data.recentMatches.length > 0 && (
+          <div>
+            <h2 className="font-display text-lg font-bold text-ink mb-3">Recent Matches</h2>
+            <div className="space-y-2">
+              {data.recentMatches.map(m => {
+                const dateStr = m.scheduledAt
+                  ? new Date(m.scheduledAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+                  : "Unscheduled";
+                const resultStyle =
+                  m.result === "win"  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : m.result === "loss" ? "bg-rose-50 text-rose-700 border-rose-200"
+                : m.result === "draw" ? "bg-amber-50 text-amber-700 border-amber-200"
+                : "bg-g50 text-g700 border-g100";
+                const resultLabel =
+                  m.result === "win"  ? "W"
+                : m.result === "loss" ? "L"
+                : m.result === "draw" ? "D"
+                : m.status === "live" ? "LIVE"
+                : m.status === "halftime" ? "HT"
+                : "—";
+                return (
+                  <div
+                    key={m.matchId}
+                    role="link"
+                    tabIndex={0}
+                    onClick={() => navigate(`/match/${m.matchId}`)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        navigate(`/match/${m.matchId}`);
+                      }
+                    }}
+                    className="bg-white rounded-[10px] p-4 card-shadow hover:shadow-md transition-shadow cursor-pointer focus:outline-none focus:ring-2 focus:ring-g300"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`flex-shrink-0 w-10 h-10 rounded-full border flex items-center justify-center font-display font-bold text-[13px] ${resultStyle}`}>
+                        {resultLabel}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 text-[12px] text-ink3">
+                          <Calendar className="w-3 h-3" />
+                          <span>{dateStr}</span>
+                          <span className="text-ink3">·</span>
+                          <Link
+                            href={`/tournaments/${m.tournamentId}`}
+                            onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                            className="text-g700 hover:underline truncate"
+                          >
+                            {m.tournamentName}
+                          </Link>
+                        </div>
+                        <div className="mt-1 flex items-center gap-2 text-[14px] font-sans">
+                          {m.playerTeamLogoUrl ? (
+                            <img src={m.playerTeamLogoUrl} alt="" className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
+                          ) : null}
+                          <span className="font-semibold text-ink truncate">{m.playerTeamName ?? "—"}</span>
+                          <span className="text-ink3">vs</span>
+                          {m.opponentTeamLogoUrl ? (
+                            <img src={m.opponentTeamLogoUrl} alt="" className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
+                          ) : null}
+                          <span className="text-ink truncate">{m.opponentTeamName ?? "TBD"}</span>
+                        </div>
+                        <div className="mt-1 flex items-center gap-3 text-[12px] text-ink2">
+                          <span className="font-display font-bold text-ink">{m.playerScore} – {m.opponentScore}</span>
+                          {m.playerGoals > 0 && (
+                            <span className="inline-flex items-center gap-1">
+                              <Trophy className="w-3 h-3" /> {m.playerGoals} {m.playerGoals === 1 ? "goal" : "goals"}
+                            </span>
+                          )}
+                          {m.status !== "final" && (
+                            <span className="uppercase tracking-wide text-[10px] font-semibold text-g500">{m.status}</span>
+                          )}
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-ink3 flex-shrink-0" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {currentTeams.length > 0 && (
           <div>

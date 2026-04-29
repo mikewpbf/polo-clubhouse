@@ -3312,12 +3312,71 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Horse"
+        recentMatches:
+          type: array
+          description: Most recent matches this player participated in, newest first.
+          items:
+            $ref: "#/components/schemas/PlayerRecentMatch"
       required:
         - id
         - name
         - stats
         - teams
         - horses
+        - recentMatches
+
+    PlayerRecentMatch:
+      type: object
+      properties:
+        matchId:
+          type: string
+          format: uuid
+        scheduledAt:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          enum: [scheduled, live, halftime, final, postponed, cancelled]
+        tournamentId:
+          type: string
+          format: uuid
+        tournamentName:
+          type: string
+        playerSide:
+          type: string
+          enum: [home, away]
+          nullable: true
+        playerTeamName:
+          type: string
+          nullable: true
+        playerTeamLogoUrl:
+          type: string
+          nullable: true
+        opponentTeamName:
+          type: string
+          nullable: true
+        opponentTeamLogoUrl:
+          type: string
+          nullable: true
+        playerScore:
+          type: integer
+        opponentScore:
+          type: integer
+        result:
+          type: string
+          enum: [win, loss, draw, pending]
+        playerGoals:
+          type: integer
+      required:
+        - matchId
+        - status
+        - tournamentId
+        - tournamentName
+        - playerScore
+        - opponentScore
+        - result
+        - playerGoals
 
     CreatePlayerRequest:
       type: object

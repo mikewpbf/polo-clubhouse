@@ -866,6 +866,54 @@ export interface Horse {
   notes?: string | null;
 }
 
+export type PlayerRecentMatchStatus =
+  (typeof PlayerRecentMatchStatus)[keyof typeof PlayerRecentMatchStatus];
+
+export const PlayerRecentMatchStatus = {
+  scheduled: "scheduled",
+  live: "live",
+  halftime: "halftime",
+  final: "final",
+  postponed: "postponed",
+  cancelled: "cancelled",
+} as const;
+
+export type PlayerRecentMatchPlayerSide =
+  | (typeof PlayerRecentMatchPlayerSide)[keyof typeof PlayerRecentMatchPlayerSide]
+  | null;
+
+export const PlayerRecentMatchPlayerSide = {
+  home: "home",
+  away: "away",
+} as const;
+
+export type PlayerRecentMatchResult =
+  (typeof PlayerRecentMatchResult)[keyof typeof PlayerRecentMatchResult];
+
+export const PlayerRecentMatchResult = {
+  win: "win",
+  loss: "loss",
+  draw: "draw",
+  pending: "pending",
+} as const;
+
+export interface PlayerRecentMatch {
+  matchId: string;
+  scheduledAt?: string | null;
+  status: PlayerRecentMatchStatus;
+  tournamentId: string;
+  tournamentName: string;
+  playerSide?: PlayerRecentMatchPlayerSide;
+  playerTeamName?: string | null;
+  playerTeamLogoUrl?: string | null;
+  opponentTeamName?: string | null;
+  opponentTeamLogoUrl?: string | null;
+  playerScore: number;
+  opponentScore: number;
+  result: PlayerRecentMatchResult;
+  playerGoals: number;
+}
+
 export interface PlayerProfile {
   id: string;
   name: string;
@@ -883,6 +931,8 @@ export interface PlayerProfile {
   stats: PlayerStats;
   teams: PlayerTeamHistory[];
   horses: Horse[];
+  /** Most recent matches this player participated in, newest first. */
+  recentMatches: PlayerRecentMatch[];
 }
 
 export interface CreatePlayerRequest {

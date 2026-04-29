@@ -377,6 +377,74 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
       if (u) managedByUser = { id: u.id, email: u.email, displayName: u.displayName };
     }
 
+    // Recent matches: pick the most recent matches the player participated in
+    // (by team_players OR by event), newest first. Includes tournament + opponent
+    // info so the spectator profile can deep-link into a match or its tournament.
+    const RECENT_LIMIT = 10;
+    const goalsByMatch = new Map<string, number>();
+    for (const ev of allEvents) {
+      if (ev.eventType !== "goal" || !ev.matchId) continue;
+      goalsByMatch.set(ev.matchId, (goalsByMatch.get(ev.matchId) ?? 0) + 1);
+    }
+    const sortedMatches = matchRows
+      .filter(m => playerSideByMatch.has(m.id) || goalsByMatch.has(m.id))
+      .sort((a, b) => {
+        const aT = a.scheduledAt ? new Date(a.scheduledAt as any).getTime() : 0;
+        const bT = b.scheduledAt ? new Date(b.scheduledAt as any).getTime() : 0;
+        if (aT !== bT) return bT - aT;
+        const aC = a.createdAt ? new Date(a.createdAt as any).getTime() : 0;
+        const bC = b.createdAt ? new Date(b.createdAt as any).getTime() : 0;
+        return bC - aC;
+      })
+      .slice(0, RECENT_LIMIT);
+
+    const recentTeamIds = Array.from(new Set(
+      sortedMatches.flatMap(m => [m.homeTeamId, m.awayTeamId]).filter((x): x is string => !!x),
+    ));
+    const recentTeamRows = recentTeamIds.length > 0
+      ? await db.select().from(teamsTable).where(inArray(teamsTable.id, recentTeamIds))
+      : [];
+    const recentTeamMap = new Map(recentTeamRows.map(t => [t.id, t]));
+    const recentTournamentIds = Array.from(new Set(sortedMatches.map(m => m.tournamentId).filter((x): x is string => !!x)));
+    const recentTournamentRows = recentTournamentIds.length > 0
+      ? await db.select({ id: tournamentsTable.id, name: tournamentsTable.name })
+          .from(tournamentsTable)
+          .where(inArray(tournamentsTable.id, recentTournamentIds))
+      : [];
+    const recentTournamentMap = new Map(recentTournamentRows.map(t => [t.id, t.name]));
+
+    const recentMatches = sortedMatches.map(m => {
+      const side = playerSideByMatch.get(m.id) ?? null;
+      const playerTeamId = side === "home" ? m.homeTeamId : side === "away" ? m.awayTeamId : null;
+      const opponentTeamId = side === "home" ? m.awayTeamId : side === "away" ? m.homeTeamId : null;
+      const playerTeam = playerTeamId ? recentTeamMap.get(playerTeamId) : null;
+      const opponentTeam = opponentTeamId ? recentTeamMap.get(opponentTeamId) : null;
+      const playerScore = side === "home" ? (m.homeScore ?? 0) : side === "away" ? (m.awayScore ?? 0) : 0;
+      const opponentScore = side === "home" ? (m.awayScore ?? 0) : side === "away" ? (m.homeScore ?? 0) : 0;
+      let result: "win" | "loss" | "draw" | "pending" = "pending";
+      if (m.status === "final" && side) {
+        if (playerScore > opponentScore) result = "win";
+        else if (playerScore < opponentScore) result = "loss";
+        else result = "draw";
+      }
+      return {
+        matchId: m.id,
+        scheduledAt: m.scheduledAt ?? null,
+        status: m.status,
+        tournamentId: m.tournamentId,
+        tournamentName: recentTournamentMap.get(m.tournamentId) ?? "",
+        playerSide: side,
+        playerTeamName: playerTeam?.name ?? null,
+        playerTeamLogoUrl: playerTeam?.logoUrl ?? null,
+        opponentTeamName: opponentTeam?.name ?? null,
+        opponentTeamLogoUrl: opponentTeam?.logoUrl ?? null,
+        playerScore,
+        opponentScore,
+        result,
+        playerGoals: goalsByMatch.get(m.id) ?? 0,
+      };
+    });
+
     res.json({
       id: player.id,
       name: player.name,
@@ -394,6 +462,7 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
       stats: { seasonGoals, seasonWins, careerGoals, careerWins, mvpAwards, bppAwards },
       teams,
       horses,
+      recentMatches,
     });
   } catch (e: any) {
     res.status(500).json({ message: e.message });

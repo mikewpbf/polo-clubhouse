@@ -742,6 +742,43 @@ export interface Horse {
     typeOrBreed?: string | null;
     notes?: string | null;
 }
+export type PlayerRecentMatchStatus = (typeof PlayerRecentMatchStatus)[keyof typeof PlayerRecentMatchStatus];
+export declare const PlayerRecentMatchStatus: {
+    readonly scheduled: "scheduled";
+    readonly live: "live";
+    readonly halftime: "halftime";
+    readonly final: "final";
+    readonly postponed: "postponed";
+    readonly cancelled: "cancelled";
+};
+export type PlayerRecentMatchPlayerSide = (typeof PlayerRecentMatchPlayerSide)[keyof typeof PlayerRecentMatchPlayerSide] | null;
+export declare const PlayerRecentMatchPlayerSide: {
+    readonly home: "home";
+    readonly away: "away";
+};
+export type PlayerRecentMatchResult = (typeof PlayerRecentMatchResult)[keyof typeof PlayerRecentMatchResult];
+export declare const PlayerRecentMatchResult: {
+    readonly win: "win";
+    readonly loss: "loss";
+    readonly draw: "draw";
+    readonly pending: "pending";
+};
+export interface PlayerRecentMatch {
+    matchId: string;
+    scheduledAt?: string | null;
+    status: PlayerRecentMatchStatus;
+    tournamentId: string;
+    tournamentName: string;
+    playerSide?: PlayerRecentMatchPlayerSide;
+    playerTeamName?: string | null;
+    playerTeamLogoUrl?: string | null;
+    opponentTeamName?: string | null;
+    opponentTeamLogoUrl?: string | null;
+    playerScore: number;
+    opponentScore: number;
+    result: PlayerRecentMatchResult;
+    playerGoals: number;
+}
 export interface PlayerProfile {
     id: string;
     name: string;
@@ -753,10 +790,14 @@ export interface PlayerProfile {
     homeClubName?: string | null;
     homeClubSlug?: string | null;
     managedByUserId?: string | null;
+    /** True when this player is linked to a user account (verified player). */
+    hasLinkedUser?: boolean;
     age?: number | null;
     stats: PlayerStats;
     teams: PlayerTeamHistory[];
     horses: Horse[];
+    /** Most recent matches this player participated in, newest first. */
+    recentMatches: PlayerRecentMatch[];
 }
 export interface CreatePlayerRequest {
     name: string;

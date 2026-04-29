@@ -99,6 +99,50 @@ router.get("/players", optionalAuth, async (req, res) => {
     if (search) conditions.push(ilike(playersTable.name, `%${search}%`));
     if (clubId) conditions.push(eq(playersTable.homeClubId, clubId));
 
+    // Role-based directory scoping: super_admin sees all; club admins see players
+    // tied to their managed clubs (via homeClub OR any team→club they administer);
+    // team managers (without admin role) see only players currently on teams they
+    // manage; spectators / unauthenticated callers see the public active directory.
+    if (req.user && req.user.role !== "super_admin") {
+      if (req.user.role === "admin") {
+        const memberships = await db.select({ clubId: adminClubMembershipsTable.clubId })
+          .from(adminClubMembershipsTable)
+          .where(eq(adminClubMembershipsTable.userId, req.user.id));
+        const adminClubIds = memberships.map(m => m.clubId).filter((x): x is string => !!x);
+        if (adminClubIds.length === 0) { res.json([]); return; }
+        // Players: homeClubId in adminClubs OR on any team in adminClubs
+        const teamRows = await db.select({ id: teamsTable.id })
+          .from(teamsTable)
+          .where(inArray(teamsTable.clubId, adminClubIds));
+        const teamIds = teamRows.map(t => t.id);
+        const tpRows = teamIds.length > 0
+          ? await db.select({ playerId: teamPlayersTable.playerId })
+              .from(teamPlayersTable)
+              .where(inArray(teamPlayersTable.teamId, teamIds))
+          : [];
+        const playersOnAdminTeams = Array.from(new Set(tpRows.map(t => t.playerId)));
+        const scopeOr = playersOnAdminTeams.length > 0
+          ? or(inArray(playersTable.homeClubId, adminClubIds), inArray(playersTable.id, playersOnAdminTeams))!
+          : inArray(playersTable.homeClubId, adminClubIds);
+        conditions.push(scopeOr);
+      } else if (req.user.role === "team_manager") {
+        const assignments = await db.select({ teamId: teamManagerAssignmentsTable.teamId })
+          .from(teamManagerAssignmentsTable)
+          .where(and(
+            eq(teamManagerAssignmentsTable.userId, req.user.id),
+            eq(teamManagerAssignmentsTable.status, "active"),
+          ));
+        const managedTeamIds = assignments.map(a => a.teamId).filter((x): x is string => !!x);
+        if (managedTeamIds.length === 0) { res.json([]); return; }
+        const tpRows = await db.select({ playerId: teamPlayersTable.playerId })
+          .from(teamPlayersTable)
+          .where(inArray(teamPlayersTable.teamId, managedTeamIds));
+        const allowedIds = Array.from(new Set(tpRows.map(t => t.playerId)));
+        if (allowedIds.length === 0) { res.json([]); return; }
+        conditions.push(inArray(playersTable.id, allowedIds));
+      }
+    }
+
     let playerIds: string[] | null = null;
     if (teamIdFilter) {
       const tps = await db.select({ playerId: teamPlayersTable.playerId })

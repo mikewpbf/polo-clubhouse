@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { useGetMyLinkedPlayer, useUpdateMyProfile, useListClubs } from "@workspace/api-client-react";
+import { useGetMyLinkedPlayer, useUpdateMyProfile, useListClubs, getGetMyLinkedPlayerQueryKey, type Player, type Club } from "@workspace/api-client-react";
 import { SpectatorLayout } from "@/components/layout/SpectatorLayout";
 import { PageLoading, EmptyState } from "@/components/LoadingBar";
 import { PlayerHeadshot } from "@/components/PlayerHeadshot";
@@ -14,8 +14,10 @@ import { useAuth } from "@/hooks/use-auth";
 
 export function MyProfile() {
   const { isAuthenticated } = useAuth();
-  const { data: linked, isLoading, refetch } = useGetMyLinkedPlayer({ query: { enabled: isAuthenticated } as any });
-  const { data: clubs } = useListClubs();
+  const { data: linkedRaw, isLoading, refetch } = useGetMyLinkedPlayer({ query: { enabled: isAuthenticated, queryKey: getGetMyLinkedPlayerQueryKey() } });
+  const linked = linkedRaw as Player | null | undefined;
+  const { data: clubsRaw } = useListClubs();
+  const clubs = clubsRaw as Club[] | undefined;
   const update = useUpdateMyProfile();
 
   const [name, setName] = useState("");
@@ -29,10 +31,10 @@ export function MyProfile() {
   useEffect(() => {
     if (linked) {
       setName(linked.name);
-      setHomeClubId((linked as any).homeClubId ?? "");
-      setDateOfBirth((linked as any).dateOfBirth ?? "");
-      setBio((linked as any).bio ?? "");
-      setHeadshotUrl((linked as any).headshotUrl ?? null);
+      setHomeClubId(linked.homeClubId ?? "");
+      setDateOfBirth(linked.dateOfBirth ?? "");
+      setBio(linked.bio ?? "");
+      setHeadshotUrl(linked.headshotUrl ?? null);
     }
   }, [linked]);
 
@@ -77,7 +79,7 @@ export function MyProfile() {
     setSaveMsg(null);
     try {
       await update.mutateAsync({
-        playerId: (linked as any).id,
+        playerId: linked.id,
         data: {
           name: name.trim(),
           homeClubId: homeClubId || null,
@@ -105,7 +107,7 @@ export function MyProfile() {
         <div className="bg-white rounded-[12px] p-5 card-shadow">
           <div className="flex items-start gap-5 mb-5">
             <div className="flex flex-col items-center gap-2">
-              <PlayerHeadshot url={headshotUrl} name={name || (linked as any).name} size={96} />
+              <PlayerHeadshot url={headshotUrl} name={name || linked.name} size={96} />
               <label className="text-[12px] text-g700 cursor-pointer hover:underline inline-flex items-center gap-1">
                 <Upload className="w-3 h-3" />
                 {uploading ? "Uploading…" : (headshotUrl ? "Change" : "Upload")}
@@ -127,7 +129,7 @@ export function MyProfile() {
                 <Label>Home Club</Label>
                 <select className="w-full border border-line rounded-[8px] px-3 py-2 text-[14px]" value={homeClubId} onChange={(e) => setHomeClubId(e.target.value)}>
                   <option value="">— None —</option>
-                  {(clubs as any[] | undefined)?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {clubs?.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
               <div>
@@ -143,7 +145,7 @@ export function MyProfile() {
           <div className="flex items-center gap-3">
             <Button onClick={handleSave} disabled={update.isPending}>{update.isPending ? "Saving…" : "Save"}</Button>
             {saveMsg && <span className="text-[13px] text-ink2">{saveMsg}</span>}
-            <Link href={`/players/${(linked as any).id}`} className="ml-auto text-g700 hover:underline text-[13px]">View public profile →</Link>
+            <Link href={`/players/${linked.id}`} className="ml-auto text-g700 hover:underline text-[13px]">View public profile →</Link>
           </div>
         </div>
       </div>

@@ -655,10 +655,7 @@ function RosterTab({ teamId }: { teamId: string }) {
   const { toast } = useToast();
   const [players, setPlayers] = useState<PlayerItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newName, setNewName] = useState("");
-  const [newHandicap, setNewHandicap] = useState("");
   const [adding, setAdding] = useState(false);
-  const [showCreateNew, setShowCreateNew] = useState(false);
 
   const [pickerQuery, setPickerQuery] = useState("");
   const [pickerResults, setPickerResults] = useState<Array<{ id: string; name: string; handicap: string | null; homeClubName: string | null }>>([]);
@@ -705,29 +702,6 @@ function RosterTab({ teamId }: { teamId: string }) {
       setPickerQuery("");
       setPickerResults([]);
       setPickerOpen(false);
-      fetchPlayers();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to add player";
-      toast({ title: "Error", description: msg, variant: "destructive" });
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  const handleAdd = async () => {
-    if (!newName.trim()) return;
-    setAdding(true);
-    try {
-      await apiFetch(`/teams/${teamId}/players`, {
-        method: "POST",
-        body: JSON.stringify({
-          name: newName.trim(),
-          handicap: newHandicap ? parseFloat(newHandicap) : null,
-        }),
-      });
-      setNewName("");
-      setNewHandicap("");
-      setShowCreateNew(false);
       fetchPlayers();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to add player";
@@ -813,48 +787,9 @@ function RosterTab({ teamId }: { teamId: string }) {
           )}
         </div>
 
-        {!showCreateNew ? (
-          <button
-            type="button"
-            onClick={() => setShowCreateNew(true)}
-            className="text-[12px] text-g500 hover:text-g700 hover:underline"
-          >
-            + Create a new player record instead
-          </button>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className="flex-1 h-8 text-[13px]"
-              placeholder="New player name"
-              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAdd())}
-            />
-            <Input
-              value={newHandicap}
-              onChange={(e) => setNewHandicap(e.target.value)}
-              className="w-16 h-8 text-[13px] text-center"
-              placeholder="HC"
-              type="number"
-              step="0.5"
-              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAdd())}
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={handleAdd}
-              disabled={adding || !newName.trim()}
-              className="h-8 gap-1"
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              Create
-            </Button>
-            <Button type="button" variant="ghost" size="sm" className="h-8" onClick={() => { setShowCreateNew(false); setNewName(""); setNewHandicap(""); }}>
-              Cancel
-            </Button>
-          </div>
-        )}
+        <p className="text-[11px] text-ink3">
+          Don&apos;t see them? <a href="/admin/players" className="text-g700 hover:underline">Create the player profile in Players</a>, then add them here.
+        </p>
       </div>
     </div>
   );

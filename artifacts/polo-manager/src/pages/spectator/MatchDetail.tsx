@@ -1,4 +1,4 @@
-import { useRoute } from "wouter";
+import { useRoute, Link } from "wouter";
 import { useGetMatch, useListMatchEvents } from "@workspace/api-client-react";
 import { SpectatorLayout } from "@/components/layout/SpectatorLayout";
 import { PageLoading, EmptyState } from "@/components/LoadingBar";
@@ -109,7 +109,11 @@ export function MatchDetail() {
   if (isLoading) return <SpectatorLayout><PageLoading /></SpectatorLayout>;
   if (!match) return <SpectatorLayout><EmptyState title="Match not found" /></SpectatorLayout>;
 
-  const m = match as any;
+  // Match payload is enriched server-side beyond the OpenAPI MatchDetail schema
+  // (rosters on home/away teams, streamUrl, lastGoal* fields). Casting to a loose
+  // record matches the established pattern in this file and avoids a giant
+  // duplicate type definition. Property accesses below are runtime-defensive.
+  const m = match as Record<string, any>;
   const homeTeam = m.homeTeam;
   const awayTeam = m.awayTeam;
   const field = m.field;
@@ -356,7 +360,7 @@ export function MatchDetail() {
           const scorerMap = new Map<string, { playerId: string | null; name: string; teamName: string | null; teamColor: string | null; goals: number }>();
           for (const evt of goalEvents) {
             if (!evt.playerName) continue;
-            const pid = (evt as any).playerId ?? null;
+            const pid = (evt as { playerId?: string | null }).playerId ?? null;
             const key = pid ? `id:${pid}` : `name:${evt.playerName}`;
             if (!scorerMap.has(key)) {
               scorerMap.set(key, { playerId: pid, name: evt.playerName, teamName: evt.teamName, teamColor: evt.teamColor, goals: 0 });

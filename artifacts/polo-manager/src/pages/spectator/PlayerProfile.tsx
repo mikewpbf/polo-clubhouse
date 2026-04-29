@@ -1,5 +1,5 @@
 import { useRoute, Link } from "wouter";
-import { useGetPlayerProfile } from "@workspace/api-client-react";
+import { useGetPlayerProfile, getGetPlayerProfileQueryKey } from "@workspace/api-client-react";
 import { SpectatorLayout } from "@/components/layout/SpectatorLayout";
 import { PageLoading, EmptyState } from "@/components/LoadingBar";
 import { PlayerHeadshot } from "@/components/PlayerHeadshot";
@@ -10,7 +10,7 @@ export function PlayerProfile() {
   const [, params] = useRoute("/players/:id");
   const playerId = params?.id ?? "";
   const { data, isLoading, error } = useGetPlayerProfile(playerId, {
-    query: { enabled: !!playerId } as any,
+    query: { enabled: !!playerId, queryKey: getGetPlayerProfileQueryKey(playerId) },
   });
 
   if (isLoading) return <SpectatorLayout><PageLoading /></SpectatorLayout>;

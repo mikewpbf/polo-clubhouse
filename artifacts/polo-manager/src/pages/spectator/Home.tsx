@@ -1,4 +1,4 @@
-import { useListLiveMatches, useListTodayMatches, useListUpcomingMatches, useListAllTournaments, useListTopPlayers } from "@workspace/api-client-react";
+import { useListLiveMatches, useListTodayMatches, useListUpcomingMatches, useListAllTournaments, useListTopPlayers, type PlayerSummary } from "@workspace/api-client-react";
 import { SpectatorLayout } from "@/components/layout/SpectatorLayout";
 import { PageLoading, EmptyState } from "@/components/LoadingBar";
 import { MatchClock } from "@/components/MatchClock";
@@ -320,7 +320,7 @@ export function Home() {
               </Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {topPlayers.map((p: Record<string, any>) => {
+              {(topPlayers as PlayerSummary[]).map((p) => {
                 const hcRaw = p.handicap;
                 const hcNum = hcRaw == null ? null : Number(hcRaw);
                 const hcLabel = hcNum == null || Number.isNaN(hcNum) ? null : (hcNum > 0 ? `+${hcNum}` : `${hcNum}`);

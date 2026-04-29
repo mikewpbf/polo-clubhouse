@@ -15,6 +15,7 @@ export * from "./spectator-follows";
 export * from "./push-subscriptions";
 export * from "./user-invites";
 export * from "./players";
+export * from "./team-players";
 export * from "./horses";
 export * from "./possession-segments";
 export * from "./field-weather-cache";

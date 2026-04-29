@@ -1,0 +1,122 @@
+import { z } from "zod/v4";
+export declare const teamPlayersTable: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "team_players";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "team_players";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: true;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        teamId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "team_id";
+            tableName: "team_players";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        playerId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "player_id";
+            tableName: "team_players";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        seasonYear: import("drizzle-orm/pg-core").PgColumn<{
+            name: "season_year";
+            tableName: "team_players";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        position: import("drizzle-orm/pg-core").PgColumn<{
+            name: "position";
+            tableName: "team_players";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_at";
+            tableName: "team_players";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
+export declare const insertTeamPlayerSchema: z.ZodObject<{
+    teamId: z.ZodUUID;
+    position: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
+    playerId: z.ZodUUID;
+    seasonYear: z.ZodInt;
+}, {
+    out: {};
+    in: {};
+}>;
+export type InsertTeamPlayer = z.infer<typeof insertTeamPlayerSchema>;
+export type TeamPlayer = typeof teamPlayersTable.$inferSelect;
+//# sourceMappingURL=team-players.d.ts.map

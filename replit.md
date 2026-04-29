@@ -70,8 +70,9 @@ artifacts-monorepo/
 - **spectator_follows** - Club follow relationships
 - **push_subscriptions** - Push notification subscriptions
 - **user_invites** - Invite tokens for admin/team-manager onboarding
-- **players** - Player roster per team (name, position, handicap)
-- **horses** - Horses per team
+- **players** - Top-level player entity (name, handicap, headshot_url, date_of_birth, home_club_id, bio, managed_by_user_id, is_active). Legacy team_id/position kept nullable for backward compat (drop in follow-up). Real per-season rosters live in team_players.
+- **team_players** - Per-season roster join (team_id, player_id, season_year, position) with unique(team_id, player_id, season_year)
+- **horses** - Horses per player (player_id FK, name, age, color, sex, owner, breeder)
 - **possession_segments** - Possession tracking segments per match (state: home/away/loose, start/end timestamps, duration)
 - **field_weather_cache** - Persistent Open-Meteo response cache per field (5 min TTL via `expires_at`); survives API restarts and is shared across instances
 
@@ -98,6 +99,10 @@ artifacts-monorepo/
 - `POST /matches/:matchId/possession/token` — generate shareable possession tracker token (admin only)
 - `GET /matches/:matchId/possession/verify-token` — verify token for helper access
 - `POST /invites/team-manager|admin`, `GET /invites`, `GET /invites/:token`, `POST /invites/accept`, `POST /invites/:token/accept`
+- `GET /players` (search), `POST /players` (super_admin), `GET /players/top?limit=N`
+- `GET /players/:playerId` (full profile: stats, teams, horses), `PUT /players/:playerId` (full edit), `PATCH /players/:playerId/profile` (self-edit only — managed user or super_admin), `DELETE /players/:playerId`
+- `POST /players/:playerId/horses`, `DELETE /players/:playerId/horses/:horseId`
+- `GET /me/linked-player`
 
 ## Key Commands
 

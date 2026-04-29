@@ -330,6 +330,95 @@ export declare const matchesTable: import("drizzle-orm/pg-core").PgTableWithColu
         }, {}, {
             length: 20;
         }>;
+        broadcastResolution: import("drizzle-orm/pg-core").PgColumn<{
+            name: "broadcast_resolution";
+            tableName: "matches";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 10;
+        }>;
+        broadcast4kScale: import("drizzle-orm/pg-core").PgColumn<{
+            name: "broadcast_4k_scale";
+            tableName: "matches";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: false;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        broadcast4kOffsetX: import("drizzle-orm/pg-core").PgColumn<{
+            name: "broadcast_4k_offset_x";
+            tableName: "matches";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: false;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        broadcast4kOffsetY: import("drizzle-orm/pg-core").PgColumn<{
+            name: "broadcast_4k_offset_y";
+            tableName: "matches";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: false;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        broadcastChannel: import("drizzle-orm/pg-core").PgColumn<{
+            name: "broadcast_channel";
+            tableName: "matches";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 8;
+        }>;
         lastGoalScorerName: import("drizzle-orm/pg-core").PgColumn<{
             name: "last_goal_scorer_name";
             tableName: "matches";
@@ -450,6 +539,11 @@ export declare const insertMatchSchema: z.ZodObject<{
     isLocked: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;
     broadcastVisible: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;
     broadcastStyle: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    broadcastResolution: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    broadcast4kScale: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
+    broadcast4kOffsetX: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
+    broadcast4kOffsetY: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
+    broadcastChannel: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     lastGoalScorerName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     lastGoalTeamSide: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     lastGoalTimestamp: z.ZodOptional<z.ZodNullable<z.ZodDate>>;

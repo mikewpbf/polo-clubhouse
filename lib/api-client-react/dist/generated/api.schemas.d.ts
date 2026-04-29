@@ -229,6 +229,7 @@ export interface CreateTeamRequest {
     contactName?: string;
     contactPhone?: string;
     notes?: string;
+    logoUrl?: string;
 }
 export interface UpdateTeamRequest {
     name?: string;
@@ -238,6 +239,7 @@ export interface UpdateTeamRequest {
     contactName?: string;
     contactPhone?: string;
     notes?: string;
+    logoUrl?: string;
 }
 export type TournamentWithClubStatus = (typeof TournamentWithClubStatus)[keyof typeof TournamentWithClubStatus];
 export declare const TournamentWithClubStatus: {
@@ -688,6 +690,113 @@ export interface WidgetFixtures {
     club: Club;
     fixtures: MatchWithTeams[];
 }
+export interface Player {
+    id: string;
+    name: string;
+    handicap?: string | null;
+    headshotUrl?: string | null;
+    dateOfBirth?: string | null;
+    homeClubId?: string | null;
+    bio?: string | null;
+    managedByUserId?: string | null;
+    isActive: boolean;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+}
+export interface PlayerSummary {
+    id: string;
+    name: string;
+    handicap?: string | null;
+    headshotUrl?: string | null;
+    homeClubId?: string | null;
+    homeClubName?: string | null;
+    homeClubSlug?: string | null;
+    lastMatchDate?: string | null;
+}
+export interface PlayerStats {
+    seasonGoals: number;
+    seasonWins: number;
+    careerGoals: number;
+    careerWins: number;
+    mvpAwards: number;
+    bppAwards: number;
+}
+export interface PlayerTeamHistory {
+    teamId: string;
+    teamName: string;
+    teamLogoUrl?: string | null;
+    seasonYear: number;
+}
+export interface Horse {
+    id: string;
+    playerId: string;
+    horseName: string;
+    owner?: string | null;
+    breeder?: string | null;
+    ownedAndBredBy?: string | null;
+    sire?: string | null;
+    dam?: string | null;
+    age?: number | null;
+    color?: string | null;
+    sex?: string | null;
+    typeOrBreed?: string | null;
+    notes?: string | null;
+}
+export interface PlayerProfile {
+    id: string;
+    name: string;
+    handicap?: string | null;
+    headshotUrl?: string | null;
+    dateOfBirth?: string | null;
+    bio?: string | null;
+    homeClubId?: string | null;
+    homeClubName?: string | null;
+    homeClubSlug?: string | null;
+    managedByUserId?: string | null;
+    age?: number | null;
+    stats: PlayerStats;
+    teams: PlayerTeamHistory[];
+    horses: Horse[];
+}
+export interface CreatePlayerRequest {
+    name: string;
+    handicap?: string | null;
+    homeClubId?: string | null;
+    headshotUrl?: string | null;
+    dateOfBirth?: string | null;
+    bio?: string | null;
+    managedByUserId?: string | null;
+}
+export interface UpdatePlayerRequest {
+    name?: string;
+    handicap?: string | null;
+    homeClubId?: string | null;
+    headshotUrl?: string | null;
+    dateOfBirth?: string | null;
+    bio?: string | null;
+    managedByUserId?: string | null;
+    isActive?: boolean;
+}
+export interface SelfEditPlayerRequest {
+    name?: string;
+    headshotUrl?: string | null;
+    dateOfBirth?: string | null;
+    homeClubId?: string | null;
+    bio?: string | null;
+}
+export interface CreateHorseRequest {
+    horseName: string;
+    owner?: string | null;
+    breeder?: string | null;
+    ownedAndBredBy?: string | null;
+    sire?: string | null;
+    dam?: string | null;
+    age?: number | null;
+    color?: string | null;
+    sex?: string | null;
+    typeOrBreed?: string | null;
+    notes?: string | null;
+}
 export type ListClubsParams = {
     search?: string;
     country?: string;
@@ -711,6 +820,13 @@ export type ListMatchesParams = {
 };
 export type ListTodayMatchesParams = {
     clubId?: string;
+    tz?: string;
+};
+export type ListUpcomingMatchesParams = {
+    limit?: number;
+    offset?: number;
+    clubId?: string;
+    clubIds?: string;
 };
 export type GetAdminDashboardParams = {
     clubId: string;
@@ -720,5 +836,16 @@ export type ListClubMembershipsParams = {
 };
 export type GetMyTeamScheduleParams = {
     tournamentId?: string;
+};
+export type ListPlayersParams = {
+    search?: string;
+    clubId?: string;
+    /**
+     * When provided, return only that team's current-season roster (intended for team_managers)
+     */
+    teamId?: string;
+};
+export type ListTopPlayersParams = {
+    limit?: number;
 };
 //# sourceMappingURL=api.schemas.d.ts.map

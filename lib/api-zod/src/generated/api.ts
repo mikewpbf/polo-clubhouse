@@ -1895,6 +1895,7 @@ export const ListLiveMatchesResponse = zod.array(ListLiveMatchesResponseItem);
  */
 export const ListTodayMatchesQueryParams = zod.object({
   clubId: zod.coerce.string().uuid().optional(),
+  tz: zod.coerce.string().optional(),
 });
 
 export const ListTodayMatchesResponseItem = zod.object({
@@ -1975,6 +1976,97 @@ export const ListTodayMatchesResponseItem = zod.object({
     .optional(),
 });
 export const ListTodayMatchesResponse = zod.array(ListTodayMatchesResponseItem);
+
+/**
+ * @summary List upcoming matches
+ */
+export const ListUpcomingMatchesQueryParams = zod.object({
+  limit: zod.coerce.number().optional(),
+  offset: zod.coerce.number().optional(),
+  clubId: zod.coerce.string().uuid().optional(),
+  clubIds: zod.coerce.string().optional(),
+});
+
+export const ListUpcomingMatchesResponseItem = zod.object({
+  id: zod.string().uuid(),
+  tournamentId: zod.string().uuid(),
+  homeTeamId: zod.string().uuid().nullish(),
+  awayTeamId: zod.string().uuid().nullish(),
+  fieldId: zod.string().uuid().nullish(),
+  scheduledAt: zod.date().nullish(),
+  homeScore: zod.number(),
+  awayScore: zod.number(),
+  currentChukker: zod.number(),
+  clockStartedAt: zod.date().nullish(),
+  clockElapsedSeconds: zod.number(),
+  clockIsRunning: zod.boolean(),
+  status: zod.enum([
+    "scheduled",
+    "live",
+    "halftime",
+    "final",
+    "postponed",
+    "cancelled",
+  ]),
+  round: zod.string().nullish(),
+  bracketPosition: zod.number().nullish(),
+  isLocked: zod.boolean(),
+  notes: zod.string().nullish(),
+  homeTeam: zod
+    .object({
+      id: zod.string().uuid(),
+      clubId: zod.string().uuid(),
+      name: zod.string(),
+      shortName: zod.string().nullish(),
+      logoUrl: zod.string().nullish(),
+      logoThumbUrl: zod.string().nullish(),
+      primaryColor: zod.string().nullish(),
+      handicap: zod.string().nullish(),
+      contactName: zod.string().nullish(),
+      contactPhone: zod.string().nullish(),
+      notes: zod.string().nullish(),
+    })
+    .optional(),
+  awayTeam: zod
+    .object({
+      id: zod.string().uuid(),
+      clubId: zod.string().uuid(),
+      name: zod.string(),
+      shortName: zod.string().nullish(),
+      logoUrl: zod.string().nullish(),
+      logoThumbUrl: zod.string().nullish(),
+      primaryColor: zod.string().nullish(),
+      handicap: zod.string().nullish(),
+      contactName: zod.string().nullish(),
+      contactPhone: zod.string().nullish(),
+      notes: zod.string().nullish(),
+    })
+    .optional(),
+  field: zod
+    .object({
+      id: zod.string().uuid(),
+      clubId: zod.string().uuid(),
+      name: zod.string().nullish(),
+      number: zod.number().nullish(),
+      lat: zod.string().nullish(),
+      lng: zod.string().nullish(),
+      surfaceType: zod.string().nullish(),
+      isActive: zod.boolean().optional(),
+    })
+    .optional(),
+  tournament: zod
+    .object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+      chukkersPerMatch: zod.number(),
+      clubId: zod.string().uuid(),
+      clubName: zod.string(),
+    })
+    .optional(),
+});
+export const ListUpcomingMatchesResponse = zod.array(
+  ListUpcomingMatchesResponseItem,
+);
 
 /**
  * @summary Get admin dashboard data
@@ -2680,6 +2772,246 @@ export const GetWidgetFixturesResponse = zod.object({
     }),
   ),
 });
+
+/**
+ * @summary List/search players
+ */
+export const ListPlayersQueryParams = zod.object({
+  search: zod.coerce.string().optional(),
+  clubId: zod.coerce.string().uuid().optional(),
+  teamId: zod.coerce
+    .string()
+    .uuid()
+    .optional()
+    .describe(
+      "When provided, return only that team's current-season roster (intended for team_managers)",
+    ),
+});
+
+export const ListPlayersResponseItem = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  handicap: zod.string().nullish(),
+  headshotUrl: zod.string().nullish(),
+  homeClubId: zod.string().uuid().nullish(),
+  homeClubName: zod.string().nullish(),
+  homeClubSlug: zod.string().nullish(),
+  lastMatchDate: zod.date().nullish(),
+});
+export const ListPlayersResponse = zod.array(ListPlayersResponseItem);
+
+/**
+ * @summary Create a player
+ */
+export const CreatePlayerBody = zod.object({
+  name: zod.string(),
+  handicap: zod.string().nullish(),
+  homeClubId: zod.string().uuid().nullish(),
+  headshotUrl: zod.string().nullish(),
+  dateOfBirth: zod.date().nullish(),
+  bio: zod.string().nullish(),
+  managedByUserId: zod.string().uuid().nullish(),
+});
+
+/**
+ * @summary Top players by handicap
+ */
+export const listTopPlayersQueryLimitDefault = 8;
+
+export const ListTopPlayersQueryParams = zod.object({
+  limit: zod.coerce.number().default(listTopPlayersQueryLimitDefault),
+});
+
+export const ListTopPlayersResponseItem = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  handicap: zod.string().nullish(),
+  headshotUrl: zod.string().nullish(),
+  homeClubId: zod.string().uuid().nullish(),
+  homeClubName: zod.string().nullish(),
+  homeClubSlug: zod.string().nullish(),
+  lastMatchDate: zod.date().nullish(),
+});
+export const ListTopPlayersResponse = zod.array(ListTopPlayersResponseItem);
+
+/**
+ * @summary Public player profile with computed stats
+ */
+export const GetPlayerProfileParams = zod.object({
+  playerId: zod.coerce.string().uuid(),
+});
+
+export const GetPlayerProfileResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  handicap: zod.string().nullish(),
+  headshotUrl: zod.string().nullish(),
+  dateOfBirth: zod.date().nullish(),
+  bio: zod.string().nullish(),
+  homeClubId: zod.string().uuid().nullish(),
+  homeClubName: zod.string().nullish(),
+  homeClubSlug: zod.string().nullish(),
+  managedByUserId: zod.string().uuid().nullish(),
+  age: zod.number().nullish(),
+  stats: zod.object({
+    seasonGoals: zod.number(),
+    seasonWins: zod.number(),
+    careerGoals: zod.number(),
+    careerWins: zod.number(),
+    mvpAwards: zod.number(),
+    bppAwards: zod.number(),
+  }),
+  teams: zod.array(
+    zod.object({
+      teamId: zod.string().uuid(),
+      teamName: zod.string(),
+      teamLogoUrl: zod.string().nullish(),
+      seasonYear: zod.number(),
+    }),
+  ),
+  horses: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      playerId: zod.string().uuid(),
+      horseName: zod.string(),
+      owner: zod.string().nullish(),
+      breeder: zod.string().nullish(),
+      ownedAndBredBy: zod.string().nullish(),
+      sire: zod.string().nullish(),
+      dam: zod.string().nullish(),
+      age: zod.number().nullish(),
+      color: zod.string().nullish(),
+      sex: zod.string().nullish(),
+      typeOrBreed: zod.string().nullish(),
+      notes: zod.string().nullish(),
+    }),
+  ),
+});
+
+/**
+ * @summary Full edit (admin)
+ */
+export const UpdatePlayerParams = zod.object({
+  playerId: zod.coerce.string().uuid(),
+});
+
+export const UpdatePlayerBody = zod.object({
+  name: zod.string().optional(),
+  handicap: zod.string().nullish(),
+  homeClubId: zod.string().uuid().nullish(),
+  headshotUrl: zod.string().nullish(),
+  dateOfBirth: zod.date().nullish(),
+  bio: zod.string().nullish(),
+  managedByUserId: zod.string().uuid().nullish(),
+  isActive: zod.boolean().optional(),
+});
+
+export const UpdatePlayerResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  handicap: zod.string().nullish(),
+  headshotUrl: zod.string().nullish(),
+  dateOfBirth: zod.date().nullish(),
+  homeClubId: zod.string().uuid().nullish(),
+  bio: zod.string().nullish(),
+  managedByUserId: zod.string().uuid().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.date().nullish(),
+  updatedAt: zod.date().nullish(),
+});
+
+/**
+ * @summary Delete a player (admin)
+ */
+export const DeletePlayerParams = zod.object({
+  playerId: zod.coerce.string().uuid(),
+});
+
+export const DeletePlayerResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary Self-edit limited profile fields
+ */
+export const UpdateMyProfileParams = zod.object({
+  playerId: zod.coerce.string().uuid(),
+});
+
+export const UpdateMyProfileBody = zod.object({
+  name: zod.string().optional(),
+  headshotUrl: zod.string().nullish(),
+  dateOfBirth: zod.date().nullish(),
+  homeClubId: zod.string().uuid().nullish(),
+  bio: zod.string().nullish(),
+});
+
+export const UpdateMyProfileResponse = zod.object({
+  id: zod.string().uuid(),
+  name: zod.string(),
+  handicap: zod.string().nullish(),
+  headshotUrl: zod.string().nullish(),
+  dateOfBirth: zod.date().nullish(),
+  homeClubId: zod.string().uuid().nullish(),
+  bio: zod.string().nullish(),
+  managedByUserId: zod.string().uuid().nullish(),
+  isActive: zod.boolean(),
+  createdAt: zod.date().nullish(),
+  updatedAt: zod.date().nullish(),
+});
+
+/**
+ * @summary Add a horse to a player's string
+ */
+export const AddPlayerHorseParams = zod.object({
+  playerId: zod.coerce.string().uuid(),
+});
+
+export const AddPlayerHorseBody = zod.object({
+  horseName: zod.string(),
+  owner: zod.string().nullish(),
+  breeder: zod.string().nullish(),
+  ownedAndBredBy: zod.string().nullish(),
+  sire: zod.string().nullish(),
+  dam: zod.string().nullish(),
+  age: zod.number().nullish(),
+  color: zod.string().nullish(),
+  sex: zod.string().nullish(),
+  typeOrBreed: zod.string().nullish(),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Remove a horse
+ */
+export const RemovePlayerHorseParams = zod.object({
+  playerId: zod.coerce.string().uuid(),
+  horseId: zod.coerce.string().uuid(),
+});
+
+export const RemovePlayerHorseResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary Get the player record linked to the current user, if any
+ */
+export const GetMyLinkedPlayerResponse = zod.union([
+  zod.object({
+    id: zod.string().uuid(),
+    name: zod.string(),
+    handicap: zod.string().nullish(),
+    headshotUrl: zod.string().nullish(),
+    dateOfBirth: zod.date().nullish(),
+    homeClubId: zod.string().uuid().nullish(),
+    bio: zod.string().nullish(),
+    managedByUserId: zod.string().uuid().nullish(),
+    isActive: zod.boolean(),
+    createdAt: zod.date().nullish(),
+    updatedAt: zod.date().nullish(),
+  }),
+  zod.null(),
+]);
 
 /**
  * @summary Publish a tournament

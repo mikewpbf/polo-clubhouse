@@ -40,6 +40,8 @@ tags:
     description: AI advisor
   - name: widget
     description: Embeddable widget
+  - name: players
+    description: Player profiles and management
 
 paths:
   /healthz:
@@ -1091,9 +1093,46 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: tz
+          in: query
+          schema:
+            type: string
       responses:
         "200":
           description: Today matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MatchWithTeams"
+
+  /matches/upcoming:
+    get:
+      operationId: listUpcomingMatches
+      tags: [matches]
+      summary: List upcoming matches
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: offset
+          in: query
+          schema:
+            type: integer
+        - name: clubId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: clubIds
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Upcoming matches
           content:
             application/json:
               schema:
@@ -1384,6 +1423,230 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WidgetFixtures"
+
+  /players:
+    get:
+      operationId: listPlayers
+      tags: [players]
+      summary: List/search players
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: clubId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: teamId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: When provided, return only that team's current-season roster (intended for team_managers)
+      responses:
+        "200":
+          description: Players list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PlayerSummary"
+    post:
+      operationId: createPlayer
+      tags: [players]
+      summary: Create a player
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePlayerRequest"
+      responses:
+        "201":
+          description: Player created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+  /players/top:
+    get:
+      operationId: listTopPlayers
+      tags: [players]
+      summary: Top players by handicap
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 8
+      responses:
+        "200":
+          description: Top players
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PlayerSummary"
+
+  /players/{playerId}:
+    get:
+      operationId: getPlayerProfile
+      tags: [players]
+      summary: Public player profile with computed stats
+      parameters:
+        - name: playerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Player profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayerProfile"
+    put:
+      operationId: updatePlayer
+      tags: [players]
+      summary: Full edit (admin)
+      parameters:
+        - name: playerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePlayerRequest"
+      responses:
+        "200":
+          description: Player updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+    delete:
+      operationId: deletePlayer
+      tags: [players]
+      summary: Delete a player (admin)
+      parameters:
+        - name: playerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /players/{playerId}/profile:
+    patch:
+      operationId: updateMyProfile
+      tags: [players]
+      summary: Self-edit limited profile fields
+      parameters:
+        - name: playerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SelfEditPlayerRequest"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Player"
+
+  /players/{playerId}/horses:
+    post:
+      operationId: addPlayerHorse
+      tags: [players]
+      summary: Add a horse to a player's string
+      parameters:
+        - name: playerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateHorseRequest"
+      responses:
+        "201":
+          description: Horse added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Horse"
+
+  /players/{playerId}/horses/{horseId}:
+    delete:
+      operationId: removePlayerHorse
+      tags: [players]
+      summary: Remove a horse
+      parameters:
+        - name: playerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: horseId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Horse removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /me/linked-player:
+    get:
+      operationId: getMyLinkedPlayer
+      tags: [players]
+      summary: Get the player record linked to the current user, if any
+      responses:
+        "200":
+          description: Linked player or null
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Player"
+                  - type: "null"
 
   /tournaments/{tournamentId}/publish:
     post:
@@ -2880,3 +3143,337 @@ components:
       required:
         - club
         - fixtures
+
+    Player:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        handicap:
+          type: string
+          nullable: true
+        headshotUrl:
+          type: string
+          nullable: true
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+        homeClubId:
+          type: string
+          format: uuid
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        managedByUserId:
+          type: string
+          format: uuid
+          nullable: true
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - name
+        - isActive
+
+    PlayerSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        handicap:
+          type: string
+          nullable: true
+        headshotUrl:
+          type: string
+          nullable: true
+        homeClubId:
+          type: string
+          format: uuid
+          nullable: true
+        homeClubName:
+          type: string
+          nullable: true
+        homeClubSlug:
+          type: string
+          nullable: true
+        lastMatchDate:
+          type: string
+          format: date
+          nullable: true
+      required:
+        - id
+        - name
+
+    PlayerStats:
+      type: object
+      properties:
+        seasonGoals:
+          type: integer
+        seasonWins:
+          type: integer
+        careerGoals:
+          type: integer
+        careerWins:
+          type: integer
+        mvpAwards:
+          type: integer
+        bppAwards:
+          type: integer
+      required:
+        - seasonGoals
+        - seasonWins
+        - careerGoals
+        - careerWins
+        - mvpAwards
+        - bppAwards
+
+    PlayerTeamHistory:
+      type: object
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        teamName:
+          type: string
+        teamLogoUrl:
+          type: string
+          nullable: true
+        seasonYear:
+          type: integer
+      required:
+        - teamId
+        - teamName
+        - seasonYear
+
+    PlayerProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        handicap:
+          type: string
+          nullable: true
+        headshotUrl:
+          type: string
+          nullable: true
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        homeClubId:
+          type: string
+          format: uuid
+          nullable: true
+        homeClubName:
+          type: string
+          nullable: true
+        homeClubSlug:
+          type: string
+          nullable: true
+        managedByUserId:
+          type: string
+          format: uuid
+          nullable: true
+        age:
+          type: integer
+          nullable: true
+        stats:
+          $ref: "#/components/schemas/PlayerStats"
+        teams:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlayerTeamHistory"
+        horses:
+          type: array
+          items:
+            $ref: "#/components/schemas/Horse"
+      required:
+        - id
+        - name
+        - stats
+        - teams
+        - horses
+
+    CreatePlayerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        handicap:
+          type: string
+          nullable: true
+        homeClubId:
+          type: string
+          format: uuid
+          nullable: true
+        headshotUrl:
+          type: string
+          nullable: true
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        managedByUserId:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+        - name
+
+    UpdatePlayerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        handicap:
+          type: string
+          nullable: true
+        homeClubId:
+          type: string
+          format: uuid
+          nullable: true
+        headshotUrl:
+          type: string
+          nullable: true
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        managedByUserId:
+          type: string
+          format: uuid
+          nullable: true
+        isActive:
+          type: boolean
+
+    SelfEditPlayerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        headshotUrl:
+          type: string
+          nullable: true
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+        homeClubId:
+          type: string
+          format: uuid
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+
+    Horse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        playerId:
+          type: string
+          format: uuid
+        horseName:
+          type: string
+        owner:
+          type: string
+          nullable: true
+        breeder:
+          type: string
+          nullable: true
+        ownedAndBredBy:
+          type: string
+          nullable: true
+        sire:
+          type: string
+          nullable: true
+        dam:
+          type: string
+          nullable: true
+        age:
+          type: integer
+          nullable: true
+        color:
+          type: string
+          nullable: true
+        sex:
+          type: string
+          nullable: true
+        typeOrBreed:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required:
+        - id
+        - playerId
+        - horseName
+
+    CreateHorseRequest:
+      type: object
+      properties:
+        horseName:
+          type: string
+        owner:
+          type: string
+          nullable: true
+        breeder:
+          type: string
+          nullable: true
+        ownedAndBredBy:
+          type: string
+          nullable: true
+        sire:
+          type: string
+          nullable: true
+        dam:
+          type: string
+          nullable: true
+        age:
+          type: integer
+          nullable: true
+        color:
+          type: string
+          nullable: true
+        sex:
+          type: string
+          nullable: true
+        typeOrBreed:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required:
+        - horseName

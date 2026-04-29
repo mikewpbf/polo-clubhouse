@@ -11,6 +11,9 @@ import { TournamentDetail } from "@/pages/spectator/TournamentDetail";
 import { MatchDetail } from "@/pages/spectator/MatchDetail";
 import { ClubsPage } from "@/pages/spectator/Clubs";
 import { ClubDetail } from "@/pages/spectator/ClubDetail";
+import { PlayersDirectory } from "@/pages/spectator/Players";
+import { PlayerProfile } from "@/pages/spectator/PlayerProfile";
+import { MyProfile } from "@/pages/MyProfile";
 import { Login } from "@/pages/Login";
 import { Signup } from "@/pages/Signup";
 import { AcceptInvite } from "@/pages/AcceptInvite";
@@ -23,6 +26,8 @@ import { MatchDay } from "@/pages/admin/MatchDay";
 import { MatchControl } from "@/pages/admin/MatchControl";
 import { AdminUsers } from "@/pages/admin/Users";
 import { AdminClubs } from "@/pages/admin/Clubs";
+import { AdminPlayers } from "@/pages/admin/Players";
+import { PlayerManage } from "@/pages/admin/PlayerManage";
 import { ClubSettings } from "@/pages/admin/ClubSettings";
 import { AiWizard } from "@/pages/admin/AiWizard";
 import { MatchGraphics } from "@/pages/admin/MatchGraphics";
@@ -48,6 +53,9 @@ function Router() {
       <Route path="/tournaments" component={TournamentsPage} />
       <Route path="/tournaments/:id" component={TournamentDetail} />
       <Route path="/match/:id" component={MatchDetail} />
+      <Route path="/players" component={PlayersDirectory} />
+      <Route path="/players/:id" component={PlayerProfile} />
+      <Route path="/my-profile" component={MyProfile} />
       <Route path="/accept-invite/:token" component={AcceptInvite} />
 
       <Route path="/admin" component={AdminDashboard} />
@@ -60,6 +68,8 @@ function Router() {
       <Route path="/admin/clubs" component={AdminClubs} />
       <Route path="/admin/club-settings" component={ClubSettings} />
       <Route path="/admin/ai-wizard" component={AiWizard} />
+      <Route path="/admin/players" component={AdminPlayers} />
+      <Route path="/admin/players/:id" component={PlayerManage} />
 
       <Route path="/my-team" component={TeamDashboard} />
       <Route path="/my-team/:teamId" component={TeamDashboard} />

@@ -1,5 +1,5 @@
 import type { QueryKey, UseMutationOptions, UseMutationResult, UseQueryOptions, UseQueryResult } from "@tanstack/react-query";
-import type { AcceptInviteRequest, AddTournamentTeamRequest, AdminDashboard, AssignTeamManagerRequest, AuthResponse, Club, ClubDetail, ClubMembership, CreateClubMembershipRequest, CreateClubRequest, CreateFieldRequest, CreatePlayDateRequest, CreateTeamOutDateRequest, CreateTeamRequest, CreateTournamentRequest, Field, GenerateScheduleResponse, GetAdminDashboardParams, GetMyTeamScheduleParams, HealthStatus, InviteDetail, ListAllTournamentsParams, ListClubMembershipsParams, ListClubsParams, ListMatchesParams, ListTeamsParams, ListTodayMatchesParams, ListTournamentsParams, LoginRequest, MatchDetail, MatchEvent, MatchWithTeams, MessageResponse, MyTeamAssignment, PlayDate, RecommendFormatRequest, RecommendFormatResponse, SignupRequest, StandingsEntry, Team, TeamDetail, TeamManagerAssignment, TeamManagerDashboard, TeamOutDate, Tournament, TournamentDetail, TournamentTeamWithDetails, TournamentWithClub, UpdateClockRequest, UpdateClubRequest, UpdateFieldRequest, UpdateMatchRequest, UpdateMatchStatusRequest, UpdatePlayDateRequest, UpdateScoreRequest, UpdateTeamRequest, UpdateTournamentRequest, UpdateTournamentTeamRequest, UserWithRoles, WidgetFixtures } from "./api.schemas";
+import type { AcceptInviteRequest, AddTournamentTeamRequest, AdminDashboard, AssignTeamManagerRequest, AuthResponse, Club, ClubDetail, ClubMembership, CreateClubMembershipRequest, CreateClubRequest, CreateFieldRequest, CreateHorseRequest, CreatePlayDateRequest, CreatePlayerRequest, CreateTeamOutDateRequest, CreateTeamRequest, CreateTournamentRequest, Field, GenerateScheduleResponse, GetAdminDashboardParams, GetMyTeamScheduleParams, HealthStatus, Horse, InviteDetail, ListAllTournamentsParams, ListClubMembershipsParams, ListClubsParams, ListMatchesParams, ListPlayersParams, ListTeamsParams, ListTodayMatchesParams, ListTopPlayersParams, ListTournamentsParams, ListUpcomingMatchesParams, LoginRequest, MatchDetail, MatchEvent, MatchWithTeams, MessageResponse, MyTeamAssignment, PlayDate, Player, PlayerProfile, PlayerSummary, RecommendFormatRequest, RecommendFormatResponse, SelfEditPlayerRequest, SignupRequest, StandingsEntry, Team, TeamDetail, TeamManagerAssignment, TeamManagerDashboard, TeamOutDate, Tournament, TournamentDetail, TournamentTeamWithDetails, TournamentWithClub, UpdateClockRequest, UpdateClubRequest, UpdateFieldRequest, UpdateMatchRequest, UpdateMatchStatusRequest, UpdatePlayDateRequest, UpdatePlayerRequest, UpdateScoreRequest, UpdateTeamRequest, UpdateTournamentRequest, UpdateTournamentTeamRequest, UserWithRoles, WidgetFixtures } from "./api.schemas";
 import { customFetch } from "../custom-fetch";
 import type { ErrorType, BodyType } from "../custom-fetch";
 type AwaitedInput<T> = PromiseLike<T> | T;
@@ -1258,6 +1258,29 @@ export declare function useListTodayMatches<TData = Awaited<ReturnType<typeof li
     queryKey: QueryKey;
 };
 /**
+ * @summary List upcoming matches
+ */
+export declare const getListUpcomingMatchesUrl: (params?: ListUpcomingMatchesParams) => string;
+export declare const listUpcomingMatches: (params?: ListUpcomingMatchesParams, options?: RequestInit) => Promise<MatchWithTeams[]>;
+export declare const getListUpcomingMatchesQueryKey: (params?: ListUpcomingMatchesParams) => readonly ["/api/matches/upcoming", ...ListUpcomingMatchesParams[]];
+export declare const getListUpcomingMatchesQueryOptions: <TData = Awaited<ReturnType<typeof listUpcomingMatches>>, TError = ErrorType<unknown>>(params?: ListUpcomingMatchesParams, options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof listUpcomingMatches>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseQueryOptions<Awaited<ReturnType<typeof listUpcomingMatches>>, TError, TData> & {
+    queryKey: QueryKey;
+};
+export type ListUpcomingMatchesQueryResult = NonNullable<Awaited<ReturnType<typeof listUpcomingMatches>>>;
+export type ListUpcomingMatchesQueryError = ErrorType<unknown>;
+/**
+ * @summary List upcoming matches
+ */
+export declare function useListUpcomingMatches<TData = Awaited<ReturnType<typeof listUpcomingMatches>>, TError = ErrorType<unknown>>(params?: ListUpcomingMatchesParams, options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof listUpcomingMatches>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+};
+/**
  * @summary Get admin dashboard data
  */
 export declare const getGetAdminDashboardUrl: (params: GetAdminDashboardParams) => string;
@@ -1601,6 +1624,274 @@ export type GetWidgetFixturesQueryError = ErrorType<unknown>;
  */
 export declare function useGetWidgetFixtures<TData = Awaited<ReturnType<typeof getWidgetFixtures>>, TError = ErrorType<unknown>>(clubSlug: string, options?: {
     query?: UseQueryOptions<Awaited<ReturnType<typeof getWidgetFixtures>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+};
+/**
+ * @summary List/search players
+ */
+export declare const getListPlayersUrl: (params?: ListPlayersParams) => string;
+export declare const listPlayers: (params?: ListPlayersParams, options?: RequestInit) => Promise<PlayerSummary[]>;
+export declare const getListPlayersQueryKey: (params?: ListPlayersParams) => readonly ["/api/players", ...ListPlayersParams[]];
+export declare const getListPlayersQueryOptions: <TData = Awaited<ReturnType<typeof listPlayers>>, TError = ErrorType<unknown>>(params?: ListPlayersParams, options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof listPlayers>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseQueryOptions<Awaited<ReturnType<typeof listPlayers>>, TError, TData> & {
+    queryKey: QueryKey;
+};
+export type ListPlayersQueryResult = NonNullable<Awaited<ReturnType<typeof listPlayers>>>;
+export type ListPlayersQueryError = ErrorType<unknown>;
+/**
+ * @summary List/search players
+ */
+export declare function useListPlayers<TData = Awaited<ReturnType<typeof listPlayers>>, TError = ErrorType<unknown>>(params?: ListPlayersParams, options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof listPlayers>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+};
+/**
+ * @summary Create a player
+ */
+export declare const getCreatePlayerUrl: () => string;
+export declare const createPlayer: (createPlayerRequest: CreatePlayerRequest, options?: RequestInit) => Promise<Player>;
+export declare const getCreatePlayerMutationOptions: <TError = ErrorType<unknown>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof createPlayer>>, TError, {
+        data: BodyType<CreatePlayerRequest>;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationOptions<Awaited<ReturnType<typeof createPlayer>>, TError, {
+    data: BodyType<CreatePlayerRequest>;
+}, TContext>;
+export type CreatePlayerMutationResult = NonNullable<Awaited<ReturnType<typeof createPlayer>>>;
+export type CreatePlayerMutationBody = BodyType<CreatePlayerRequest>;
+export type CreatePlayerMutationError = ErrorType<unknown>;
+/**
+ * @summary Create a player
+ */
+export declare const useCreatePlayer: <TError = ErrorType<unknown>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof createPlayer>>, TError, {
+        data: BodyType<CreatePlayerRequest>;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationResult<Awaited<ReturnType<typeof createPlayer>>, TError, {
+    data: BodyType<CreatePlayerRequest>;
+}, TContext>;
+/**
+ * @summary Top players by handicap
+ */
+export declare const getListTopPlayersUrl: (params?: ListTopPlayersParams) => string;
+export declare const listTopPlayers: (params?: ListTopPlayersParams, options?: RequestInit) => Promise<PlayerSummary[]>;
+export declare const getListTopPlayersQueryKey: (params?: ListTopPlayersParams) => readonly ["/api/players/top", ...ListTopPlayersParams[]];
+export declare const getListTopPlayersQueryOptions: <TData = Awaited<ReturnType<typeof listTopPlayers>>, TError = ErrorType<unknown>>(params?: ListTopPlayersParams, options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof listTopPlayers>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseQueryOptions<Awaited<ReturnType<typeof listTopPlayers>>, TError, TData> & {
+    queryKey: QueryKey;
+};
+export type ListTopPlayersQueryResult = NonNullable<Awaited<ReturnType<typeof listTopPlayers>>>;
+export type ListTopPlayersQueryError = ErrorType<unknown>;
+/**
+ * @summary Top players by handicap
+ */
+export declare function useListTopPlayers<TData = Awaited<ReturnType<typeof listTopPlayers>>, TError = ErrorType<unknown>>(params?: ListTopPlayersParams, options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof listTopPlayers>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+};
+/**
+ * @summary Public player profile with computed stats
+ */
+export declare const getGetPlayerProfileUrl: (playerId: string) => string;
+export declare const getPlayerProfile: (playerId: string, options?: RequestInit) => Promise<PlayerProfile>;
+export declare const getGetPlayerProfileQueryKey: (playerId: string) => readonly [`/api/players/${string}`];
+export declare const getGetPlayerProfileQueryOptions: <TData = Awaited<ReturnType<typeof getPlayerProfile>>, TError = ErrorType<unknown>>(playerId: string, options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getPlayerProfile>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseQueryOptions<Awaited<ReturnType<typeof getPlayerProfile>>, TError, TData> & {
+    queryKey: QueryKey;
+};
+export type GetPlayerProfileQueryResult = NonNullable<Awaited<ReturnType<typeof getPlayerProfile>>>;
+export type GetPlayerProfileQueryError = ErrorType<unknown>;
+/**
+ * @summary Public player profile with computed stats
+ */
+export declare function useGetPlayerProfile<TData = Awaited<ReturnType<typeof getPlayerProfile>>, TError = ErrorType<unknown>>(playerId: string, options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getPlayerProfile>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+};
+/**
+ * @summary Full edit (admin)
+ */
+export declare const getUpdatePlayerUrl: (playerId: string) => string;
+export declare const updatePlayer: (playerId: string, updatePlayerRequest: UpdatePlayerRequest, options?: RequestInit) => Promise<Player>;
+export declare const getUpdatePlayerMutationOptions: <TError = ErrorType<unknown>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof updatePlayer>>, TError, {
+        playerId: string;
+        data: BodyType<UpdatePlayerRequest>;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationOptions<Awaited<ReturnType<typeof updatePlayer>>, TError, {
+    playerId: string;
+    data: BodyType<UpdatePlayerRequest>;
+}, TContext>;
+export type UpdatePlayerMutationResult = NonNullable<Awaited<ReturnType<typeof updatePlayer>>>;
+export type UpdatePlayerMutationBody = BodyType<UpdatePlayerRequest>;
+export type UpdatePlayerMutationError = ErrorType<unknown>;
+/**
+ * @summary Full edit (admin)
+ */
+export declare const useUpdatePlayer: <TError = ErrorType<unknown>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof updatePlayer>>, TError, {
+        playerId: string;
+        data: BodyType<UpdatePlayerRequest>;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationResult<Awaited<ReturnType<typeof updatePlayer>>, TError, {
+    playerId: string;
+    data: BodyType<UpdatePlayerRequest>;
+}, TContext>;
+/**
+ * @summary Delete a player (admin)
+ */
+export declare const getDeletePlayerUrl: (playerId: string) => string;
+export declare const deletePlayer: (playerId: string, options?: RequestInit) => Promise<MessageResponse>;
+export declare const getDeletePlayerMutationOptions: <TError = ErrorType<unknown>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof deletePlayer>>, TError, {
+        playerId: string;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationOptions<Awaited<ReturnType<typeof deletePlayer>>, TError, {
+    playerId: string;
+}, TContext>;
+export type DeletePlayerMutationResult = NonNullable<Awaited<ReturnType<typeof deletePlayer>>>;
+export type DeletePlayerMutationError = ErrorType<unknown>;
+/**
+ * @summary Delete a player (admin)
+ */
+export declare const useDeletePlayer: <TError = ErrorType<unknown>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof deletePlayer>>, TError, {
+        playerId: string;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationResult<Awaited<ReturnType<typeof deletePlayer>>, TError, {
+    playerId: string;
+}, TContext>;
+/**
+ * @summary Self-edit limited profile fields
+ */
+export declare const getUpdateMyProfileUrl: (playerId: string) => string;
+export declare const updateMyProfile: (playerId: string, selfEditPlayerRequest: SelfEditPlayerRequest, options?: RequestInit) => Promise<Player>;
+export declare const getUpdateMyProfileMutationOptions: <TError = ErrorType<unknown>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateMyProfile>>, TError, {
+        playerId: string;
+        data: BodyType<SelfEditPlayerRequest>;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationOptions<Awaited<ReturnType<typeof updateMyProfile>>, TError, {
+    playerId: string;
+    data: BodyType<SelfEditPlayerRequest>;
+}, TContext>;
+export type UpdateMyProfileMutationResult = NonNullable<Awaited<ReturnType<typeof updateMyProfile>>>;
+export type UpdateMyProfileMutationBody = BodyType<SelfEditPlayerRequest>;
+export type UpdateMyProfileMutationError = ErrorType<unknown>;
+/**
+ * @summary Self-edit limited profile fields
+ */
+export declare const useUpdateMyProfile: <TError = ErrorType<unknown>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateMyProfile>>, TError, {
+        playerId: string;
+        data: BodyType<SelfEditPlayerRequest>;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationResult<Awaited<ReturnType<typeof updateMyProfile>>, TError, {
+    playerId: string;
+    data: BodyType<SelfEditPlayerRequest>;
+}, TContext>;
+/**
+ * @summary Add a horse to a player's string
+ */
+export declare const getAddPlayerHorseUrl: (playerId: string) => string;
+export declare const addPlayerHorse: (playerId: string, createHorseRequest: CreateHorseRequest, options?: RequestInit) => Promise<Horse>;
+export declare const getAddPlayerHorseMutationOptions: <TError = ErrorType<unknown>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof addPlayerHorse>>, TError, {
+        playerId: string;
+        data: BodyType<CreateHorseRequest>;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationOptions<Awaited<ReturnType<typeof addPlayerHorse>>, TError, {
+    playerId: string;
+    data: BodyType<CreateHorseRequest>;
+}, TContext>;
+export type AddPlayerHorseMutationResult = NonNullable<Awaited<ReturnType<typeof addPlayerHorse>>>;
+export type AddPlayerHorseMutationBody = BodyType<CreateHorseRequest>;
+export type AddPlayerHorseMutationError = ErrorType<unknown>;
+/**
+ * @summary Add a horse to a player's string
+ */
+export declare const useAddPlayerHorse: <TError = ErrorType<unknown>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof addPlayerHorse>>, TError, {
+        playerId: string;
+        data: BodyType<CreateHorseRequest>;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationResult<Awaited<ReturnType<typeof addPlayerHorse>>, TError, {
+    playerId: string;
+    data: BodyType<CreateHorseRequest>;
+}, TContext>;
+/**
+ * @summary Remove a horse
+ */
+export declare const getRemovePlayerHorseUrl: (playerId: string, horseId: string) => string;
+export declare const removePlayerHorse: (playerId: string, horseId: string, options?: RequestInit) => Promise<MessageResponse>;
+export declare const getRemovePlayerHorseMutationOptions: <TError = ErrorType<unknown>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof removePlayerHorse>>, TError, {
+        playerId: string;
+        horseId: string;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationOptions<Awaited<ReturnType<typeof removePlayerHorse>>, TError, {
+    playerId: string;
+    horseId: string;
+}, TContext>;
+export type RemovePlayerHorseMutationResult = NonNullable<Awaited<ReturnType<typeof removePlayerHorse>>>;
+export type RemovePlayerHorseMutationError = ErrorType<unknown>;
+/**
+ * @summary Remove a horse
+ */
+export declare const useRemovePlayerHorse: <TError = ErrorType<unknown>, TContext = unknown>(options?: {
+    mutation?: UseMutationOptions<Awaited<ReturnType<typeof removePlayerHorse>>, TError, {
+        playerId: string;
+        horseId: string;
+    }, TContext>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseMutationResult<Awaited<ReturnType<typeof removePlayerHorse>>, TError, {
+    playerId: string;
+    horseId: string;
+}, TContext>;
+/**
+ * @summary Get the player record linked to the current user, if any
+ */
+export declare const getGetMyLinkedPlayerUrl: () => string;
+export declare const getMyLinkedPlayer: (options?: RequestInit) => Promise<Player | null>;
+export declare const getGetMyLinkedPlayerQueryKey: () => readonly ["/api/me/linked-player"];
+export declare const getGetMyLinkedPlayerQueryOptions: <TData = Awaited<ReturnType<typeof getMyLinkedPlayer>>, TError = ErrorType<unknown>>(options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getMyLinkedPlayer>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseQueryOptions<Awaited<ReturnType<typeof getMyLinkedPlayer>>, TError, TData> & {
+    queryKey: QueryKey;
+};
+export type GetMyLinkedPlayerQueryResult = NonNullable<Awaited<ReturnType<typeof getMyLinkedPlayer>>>;
+export type GetMyLinkedPlayerQueryError = ErrorType<unknown>;
+/**
+ * @summary Get the player record linked to the current user, if any
+ */
+export declare function useGetMyLinkedPlayer<TData = Awaited<ReturnType<typeof getMyLinkedPlayer>>, TError = ErrorType<unknown>>(options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getMyLinkedPlayer>>, TError, TData>;
     request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

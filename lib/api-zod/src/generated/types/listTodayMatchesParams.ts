@@ -8,4 +8,5 @@
 
 export type ListTodayMatchesParams = {
   clubId?: string;
+  tz?: string;
 };

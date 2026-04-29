@@ -1,10 +1,11 @@
-import { useListLiveMatches, useListTodayMatches, useListUpcomingMatches, useListAllTournaments } from "@workspace/api-client-react";
+import { useListLiveMatches, useListTodayMatches, useListUpcomingMatches, useListAllTournaments, useListTopPlayers } from "@workspace/api-client-react";
 import { SpectatorLayout } from "@/components/layout/SpectatorLayout";
 import { PageLoading, EmptyState } from "@/components/LoadingBar";
 import { MatchClock } from "@/components/MatchClock";
+import { PlayerHeadshot } from "@/components/PlayerHeadshot";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
-import { Trophy, ChevronRight, Calendar, MapPin } from "lucide-react";
+import { Trophy, ChevronRight, Calendar, MapPin, Award } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { getYouTubeEmbedUrl } from "@/lib/youtube";
 
@@ -80,6 +81,7 @@ export function Home() {
   const { data: todayMatches, isLoading: todayLoading } = useListTodayMatches({ tz: userTz }, { query: { refetchInterval: 5000 } });
   const { data: upcomingMatches, isLoading: upcomingLoading } = useListUpcomingMatches({ limit: 5 });
   const { data: tournaments, isLoading: tournamentsLoading } = useListAllTournaments({});
+  const { data: topPlayers } = useListTopPlayers({ limit: 6 });
 
   if (liveLoading || todayLoading || upcomingLoading || tournamentsLoading) return <SpectatorLayout><PageLoading /></SpectatorLayout>;
 
@@ -308,6 +310,31 @@ export function Home() {
             ))}
           </div>
         </section>
+
+        {topPlayers && topPlayers.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-display font-bold text-xl text-ink">Top Players</h2>
+              <Link href="/players" className="text-[13px] font-sans font-medium text-g500 hover:text-g700 transition-colors flex items-center gap-1">
+                View all <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+              {topPlayers.map((p: Record<string, any>) => (
+                <Link key={p.id} href={`/players/${p.id}`} className="block">
+                  <div className="bg-white rounded-[12px] p-4 card-shadow hover:border-g300 border border-transparent transition-colors text-center">
+                    <PlayerHeadshot url={p.headshotUrl} name={p.name} size={64} className="mx-auto" />
+                    <div className="mt-2 font-sans font-semibold text-[13px] text-ink truncate">{p.name}</div>
+                    <div className="mt-1 text-[11px] text-ink3 flex items-center justify-center gap-1">
+                      <Award className="w-3 h-3" />
+                      {p.seasonGoals ?? 0} goals
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
       </div>
     </SpectatorLayout>

@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Home, Trophy, Building2 } from "lucide-react";
+import { Home, Trophy, Building2, Users } from "lucide-react";
 
 export function SpectatorLayout({ children }: { children: ReactNode }) {
   const { user, isAuthenticated, logout } = useAuth();
@@ -12,6 +12,7 @@ export function SpectatorLayout({ children }: { children: ReactNode }) {
     { href: "/", label: "Home", icon: Home },
     { href: "/tournaments", label: "Tournaments", icon: Trophy },
     { href: "/clubs", label: "Clubs", icon: Building2 },
+    { href: "/players", label: "Players", icon: Users },
   ];
 
   const isActive = (href: string) => {

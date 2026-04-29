@@ -189,7 +189,15 @@ async function main() {
     forcePathStyle: true,
   });
 
-  const db = new Client({ connectionString: databaseUrl });
+  // Render Postgres (and most managed PG) requires SSL. Use rejectUnauthorized: false
+  // since this is a short-lived migration script — the cert chain is fine but the
+  // default node-pg cert verification trips on the intermediate.
+  const useSsl =
+    !databaseUrl.includes("localhost") && !databaseUrl.includes("127.0.0.1");
+  const db = new Client({
+    connectionString: databaseUrl,
+    ssl: useSsl ? { rejectUnauthorized: false } : false,
+  });
   await db.connect();
 
   console.log(`Source : ${sourceBase}`);

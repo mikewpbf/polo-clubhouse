@@ -134,9 +134,13 @@ router.get("/players", optionalAuth, async (req, res) => {
           ));
         const managedTeamIds = assignments.map(a => a.teamId).filter((x): x is string => !!x);
         if (managedTeamIds.length === 0) { res.json([]); return; }
+        // Spec: team-manager directory view is restricted to the CURRENT-SEASON roster only.
         const tpRows = await db.select({ playerId: teamPlayersTable.playerId })
           .from(teamPlayersTable)
-          .where(inArray(teamPlayersTable.teamId, managedTeamIds));
+          .where(and(
+            inArray(teamPlayersTable.teamId, managedTeamIds),
+            eq(teamPlayersTable.seasonYear, currentSeasonYear()),
+          ));
         const allowedIds = Array.from(new Set(tpRows.map(t => t.playerId)));
         if (allowedIds.length === 0) { res.json([]); return; }
         conditions.push(inArray(playersTable.id, allowedIds));

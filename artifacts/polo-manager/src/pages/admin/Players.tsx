@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Plus, Search, ArrowUp, ArrowDown } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 type SortKey = "name" | "handicap" | "homeClubName" | "lastMatchDate";
 type SortDir = "asc" | "desc";
@@ -26,6 +27,10 @@ type PlayerRow = {
 
 export function AdminPlayers() {
   const [, navigate] = useLocation();
+  const { user } = useAuth();
+  // Team managers get a read-only directory view (no create, no per-row drilldown
+  // into the manage page). Club admins / super admins retain full management UI.
+  const readOnly = user?.role === "team_manager";
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
@@ -77,11 +82,17 @@ export function AdminPlayers() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="font-display text-2xl font-bold text-ink">Players</h1>
-            <p className="text-[14px] text-ink2 mt-1">Manage player profiles across all clubs.</p>
+            <p className="text-[14px] text-ink2 mt-1">
+              {readOnly
+                ? "Read-only roster view of players currently on your teams."
+                : "Manage player profiles across all clubs."}
+            </p>
           </div>
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="w-4 h-4 mr-1.5" /> New Player
-          </Button>
+          {!readOnly && (
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="w-4 h-4 mr-1.5" /> New Player
+            </Button>
+          )}
         </div>
 
         <div className="relative max-w-md">
@@ -108,22 +119,27 @@ export function AdminPlayers() {
               <SortHeader k="lastMatchDate" label="Last Match" />
             </div>
             <div className="divide-y divide-line2">
-              {rows.map(p => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => navigate(`/admin/players/${p.id}`)}
-                  className="w-full grid grid-cols-1 sm:grid-cols-[1fr_120px_1fr_140px] items-center gap-3 p-3 hover:bg-bg2 transition-colors text-left"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <PlayerHeadshot url={p.headshotUrl} name={p.name} size={40} />
-                    <div className="font-sans font-medium text-[15px] text-ink truncate">{p.name}</div>
-                  </div>
-                  <div className="text-[13px] text-ink2 font-mono">{p.handicap ?? "—"}</div>
-                  <div className="text-[13px] text-ink2 truncate">{p.homeClubName ?? "—"}</div>
-                  <div className="text-[12px] text-ink3">{p.lastMatchDate ?? "—"}</div>
-                </button>
-              ))}
+              {rows.map(p => {
+                const RowEl = readOnly ? "div" : "button";
+                const rowProps = readOnly
+                  ? { className: "w-full grid grid-cols-1 sm:grid-cols-[1fr_120px_1fr_140px] items-center gap-3 p-3 text-left" }
+                  : {
+                      type: "button" as const,
+                      onClick: () => navigate(`/admin/players/${p.id}`),
+                      className: "w-full grid grid-cols-1 sm:grid-cols-[1fr_120px_1fr_140px] items-center gap-3 p-3 hover:bg-bg2 transition-colors text-left",
+                    };
+                return (
+                  <RowEl key={p.id} {...rowProps}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <PlayerHeadshot url={p.headshotUrl} name={p.name} size={40} />
+                      <div className="font-sans font-medium text-[15px] text-ink truncate">{p.name}</div>
+                    </div>
+                    <div className="text-[13px] text-ink2 font-mono">{p.handicap ?? "—"}</div>
+                    <div className="text-[13px] text-ink2 truncate">{p.homeClubName ?? "—"}</div>
+                    <div className="text-[12px] text-ink3">{p.lastMatchDate ?? "—"}</div>
+                  </RowEl>
+                );
+              })}
             </div>
           </div>
         )}

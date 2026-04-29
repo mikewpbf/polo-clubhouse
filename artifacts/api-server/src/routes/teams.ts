@@ -199,42 +199,26 @@ router.get("/teams/:teamId/players", async (req, res) => {
 router.post("/teams/:teamId/players", requireAuth, requireTeamAdminOrManager, async (req, res) => {
   try {
     const teamId = String(req.params.teamId);
-    const { playerId, name, handicap, position } = req.body;
+    const { playerId, position } = req.body;
 
-    // Mode 1: link an existing player (preferred — uses canonical player record by ID)
-    if (playerId) {
-      const [existing] = await db.select().from(playersTable).where(eq(playersTable.id, String(playerId)));
-      if (!existing) { res.status(404).json({ message: "Player not found" }); return; }
-      await db.insert(teamPlayersTable).values({
-        teamId,
-        playerId: existing.id,
-        seasonYear: new Date().getUTCFullYear(),
-        position: position || null,
-      }).onConflictDoNothing();
-      res.status(201).json({ ...existing, position: position || null });
+    // Free-text player creation has been removed from this endpoint.
+    // To add a player to a roster, the caller must first create (or pick) a
+    // canonical player record at /api/players and then link them by playerId.
+    if (!playerId) {
+      res.status(400).json({
+        message: "playerId is required. Create the player profile first (POST /api/players), then link them here.",
+      });
       return;
     }
-
-    // Mode 2 (legacy): create a brand-new player record from free text. Kept for
-    // backward compat with older clients that don't yet use the player picker.
-    if (!name || !name.trim()) {
-      res.status(400).json({ message: "playerId or name is required" });
-      return;
-    }
-    const [player] = await db.insert(playersTable).values({
-      teamId,
-      name: name.trim(),
-      handicap: handicap != null ? String(handicap) : null,
-      position: position || null,
-    }).returning();
-    // Two-way sync: also create the canonical team_players row for current season
+    const [existing] = await db.select().from(playersTable).where(eq(playersTable.id, String(playerId)));
+    if (!existing) { res.status(404).json({ message: "Player not found" }); return; }
     await db.insert(teamPlayersTable).values({
       teamId,
-      playerId: player.id,
+      playerId: existing.id,
       seasonYear: new Date().getUTCFullYear(),
       position: position || null,
     }).onConflictDoNothing();
-    res.status(201).json(player);
+    res.status(201).json({ ...existing, position: position || null });
   } catch (e: any) {
     res.status(400).json({ message: e.message });
   }

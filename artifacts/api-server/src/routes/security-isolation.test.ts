@@ -11,6 +11,7 @@ import {
   teamManagerAssignmentsTable,
   usersTable,
   adminClubMembershipsTable,
+  horsesTable,
 } from "@workspace/db/schema";
 import app from "../app";
 import { generateToken } from "../lib/auth";
@@ -142,6 +143,10 @@ describe("cross-team / cross-profile authorization regressions", () => {
         .where(inArray(teamsTable.id, created.teamIds));
     }
     if (created.playerIds.length) {
+      // Horses cascade on player delete, but clear explicitly so any leaked rows
+      // (e.g. from a regressed authorization check) don't survive across tests.
+      await db.delete(horsesTable)
+        .where(inArray(horsesTable.playerId, created.playerIds));
       await db.delete(playersTable)
         .where(inArray(playersTable.id, created.playerIds));
     }
@@ -272,5 +277,75 @@ describe("cross-team / cross-profile authorization regressions", () => {
     const [row] = await db.select().from(playersTable)
       .where(eq(playersTable.id, linkedPlayerId));
     expect(row.bio).toBe("my own bio");
+  });
+
+  // (5) POST /players/:playerId/horses and DELETE /players/:playerId/horses/:horseId
+  // share the same `requireSelfOrEditor(false)` gate as player DELETE. A club-A
+  // admin or a team manager must not be able to mutate the horse list of a player
+  // whose canonical home club they don't administer.
+  it("club-A admin cannot POST /players/:playerOnClubB/horses (403, no horse created)", async () => {
+    const res = await request(app)
+      .post(`/api/players/${playerOnTeamBId}/horses`)
+      .set("Authorization", `Bearer ${clubAAdminToken}`)
+      .send({ horseName: "Hijacked Horse" });
+    expect(res.status).toBe(403);
+
+    const rows = await db.select().from(horsesTable)
+      .where(eq(horsesTable.playerId, playerOnTeamBId));
+    expect(rows.length).toBe(0);
+  });
+
+  it("team-A manager cannot POST /players/:playerOnTeamA/horses (403, no horse created)", async () => {
+    const res = await request(app)
+      .post(`/api/players/${playerOnTeamAId}/horses`)
+      .set("Authorization", `Bearer ${teamAManagerToken}`)
+      .send({ horseName: "Hijacked Horse" });
+    expect(res.status).toBe(403);
+
+    const rows = await db.select().from(horsesTable)
+      .where(eq(horsesTable.playerId, playerOnTeamAId));
+    expect(rows.length).toBe(0);
+  });
+
+  it("club-A admin cannot DELETE /players/:playerOnClubB/horses/:horseId (403, horse still exists)", async () => {
+    const [seed] = await db.insert(horsesTable).values({
+      playerId: playerOnTeamBId,
+      horseName: "Club B Horse",
+    }).returning();
+
+    const res = await request(app)
+      .delete(`/api/players/${playerOnTeamBId}/horses/${seed.id}`)
+      .set("Authorization", `Bearer ${clubAAdminToken}`);
+    expect(res.status).toBe(403);
+
+    const rows = await db.select().from(horsesTable)
+      .where(eq(horsesTable.id, seed.id));
+    expect(rows.length).toBe(1);
+    expect(rows[0].playerId).toBe(playerOnTeamBId);
+  });
+
+  it("club-A admin CAN POST and DELETE horses on /players/:playerOnClubA (201/200, rows reflect it)", async () => {
+    const postRes = await request(app)
+      .post(`/api/players/${playerOnTeamAId}/horses`)
+      .set("Authorization", `Bearer ${clubAAdminToken}`)
+      .send({ horseName: "Club A Horse" });
+    expect(postRes.status).toBe(201);
+    const horseId: string = postRes.body.id;
+    expect(horseId).toBeTruthy();
+
+    const afterPost = await db.select().from(horsesTable)
+      .where(eq(horsesTable.id, horseId));
+    expect(afterPost.length).toBe(1);
+    expect(afterPost[0].playerId).toBe(playerOnTeamAId);
+    expect(afterPost[0].horseName).toBe("Club A Horse");
+
+    const delRes = await request(app)
+      .delete(`/api/players/${playerOnTeamAId}/horses/${horseId}`)
+      .set("Authorization", `Bearer ${clubAAdminToken}`);
+    expect(delRes.status).toBe(200);
+
+    const afterDel = await db.select().from(horsesTable)
+      .where(eq(horsesTable.id, horseId));
+    expect(afterDel.length).toBe(0);
   });
 });

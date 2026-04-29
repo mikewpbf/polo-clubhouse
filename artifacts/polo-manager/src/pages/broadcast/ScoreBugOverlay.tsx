@@ -103,7 +103,13 @@ function useClockDisplay(data: BroadcastData | null) {
     if (!data.clockIsRunning) return;
     const iv = setInterval(compute, 1000);
     return () => clearInterval(iv);
-  }, [data?.clockStartedAt, data?.clockElapsedSeconds, data?.clockIsRunning, data?.serverNow]);
+  // NOTE: data?.serverNow is intentionally omitted from deps.
+  // It changes on every poll (always a fresh timestamp), which would reset the
+  // 1-second interval every 5 s and cause the clock to visually jump.
+  // serverNow is only needed to correct the initial anchor when clock STATE
+  // changes (start / stop / adjust), which IS covered by the three deps below.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.clockStartedAt, data?.clockElapsedSeconds, data?.clockIsRunning]);
 
   return { display, remaining };
 }

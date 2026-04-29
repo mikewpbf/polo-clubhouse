@@ -181,6 +181,84 @@ export function VariantA() {
         ))}
       </div>
 
+      {/* ── Status bars ──────────────────────────────────────────────────── */}
+      <div style={{ color: '#666', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.5, marginTop: 8 }}>
+        Status bars — current vs larger
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+        {/* GOAL bars */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ color: '#555', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Goal scorer</div>
+          <div style={{ display: 'flex', gap: 32, alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Current */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+              <span style={{ color: '#444', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Current</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 20px', borderRadius: 6, background: homeColor, fontFamily: "'Inter','Helvetica Neue',sans-serif" }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: getOnColorTheme(homeColor).text, textTransform: 'uppercase' }}>
+                  GOAL: Juan M. Harriott
+                </span>
+              </div>
+            </div>
+            {/* Larger */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+              <span style={{ color: '#5dba7d', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Larger ✦</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 28px', borderRadius: 8, background: homeColor, fontFamily: "'Inter','Helvetica Neue',sans-serif" }}>
+                <span style={{ fontSize: 22, fontWeight: 700, color: getOnColorTheme(homeColor).text, textTransform: 'uppercase' }}>
+                  GOAL: Juan M. Harriott
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* PENALTY bars */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ color: '#555', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Penalty / Timeout</div>
+          <div style={{ display: 'flex', gap: 32, alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Current */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+              <span style={{ color: '#444', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Current</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 20px', borderRadius: 6, background: '#b45309', fontFamily: "'Inter','Helvetica Neue',sans-serif" }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1.5 }}>Valiente – Penalty</span>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>Juan M. Harriott</span>
+              </div>
+            </div>
+            {/* Larger */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+              <span style={{ color: '#5dba7d', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Larger ✦</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 28px', borderRadius: 8, background: '#b45309', fontFamily: "'Inter','Helvetica Neue',sans-serif" }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: 1.5 }}>Valiente – Penalty</span>
+                <span style={{ fontSize: 22, fontWeight: 700, color: '#fff' }}>Juan M. Harriott</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* TIMEOUT bars */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ color: '#555', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Timeout</div>
+          <div style={{ display: 'flex', gap: 32, alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Current */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+              <span style={{ color: '#444', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Current</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 20px', borderRadius: 6, background: '#1d4ed8', fontFamily: "'Inter','Helvetica Neue',sans-serif" }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: 1.5 }}>Timeout</span>
+              </div>
+            </div>
+            {/* Larger */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+              <span style={{ color: '#5dba7d', fontSize: 9, textTransform: 'uppercase', letterSpacing: 1 }}>Larger ✦</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 28px', borderRadius: 8, background: '#1d4ed8', fontFamily: "'Inter','Helvetica Neue',sans-serif" }}>
+                <span style={{ fontSize: 18, fontWeight: 700, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 1.5 }}>Timeout</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
       {/* Controls */}
       <div style={{ background: 'rgba(255,255,255,0.07)', borderRadius: 10, padding: '16px 20px', display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'flex-end' }}>
         <label style={{ color: '#aaa', fontSize: 12 }}><div style={{ marginBottom: 4 }}>Home colour</div><input type="color" value={homeColor} onChange={e => setHomeColor(e.target.value)} style={{ height: 32, width: 56, cursor: 'pointer', borderRadius: 4, border: 'none' }} /></label>

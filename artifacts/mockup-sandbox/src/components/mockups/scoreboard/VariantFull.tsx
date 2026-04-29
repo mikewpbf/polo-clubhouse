@@ -73,7 +73,7 @@ function ScoreBug({ data }: { data: MockData }) {
   const awayColor = away?.primaryColor || '#374151';
   const homeTheme = getOnColorTheme(homeColor);
   const awayTheme = getOnColorTheme(awayColor);
-  const BAR_H = 80;
+  const BAR_H = 72;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', borderRadius: 8, overflow: 'hidden', fontFamily: "'Inter','Helvetica Neue',sans-serif", boxShadow: '0 4px 24px rgba(0,0,0,0.5)' }}>
       {data.tournament?.name && <TournamentTitleBar name={data.tournament.name} />}
@@ -89,9 +89,9 @@ function ScoreBug({ data }: { data: MockData }) {
           <span style={{ fontFamily: "'JetBrains Mono','SF Mono',monospace", fontSize: 34, fontWeight: 800, color: homeTheme.text, lineHeight: 1, minWidth: 44, textAlign: 'center', marginLeft: 8, textShadow: themed(homeTheme, '0 1px 3px rgba(255,255,255,0.55)', '0 1px 3px rgba(0,0,0,0.45)'), flexShrink: 0 }}>{data.homeScore}</span>
         </div>
         {/* Center: clock */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '5px 16px 11px', background: NEAR_BLACK, minWidth: 96 }}>
-          <span style={{ fontFamily: "'JetBrains Mono','SF Mono',monospace", fontSize: 30, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{data.currentChukker}</span>
-          <span style={{ fontFamily: "'JetBrains Mono','SF Mono',monospace", fontSize: 28, fontWeight: 700, color: '#fff', lineHeight: 1, letterSpacing: 0.5 }}>{data.status === 'halftime' ? 'HT' : data.clock}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '3px 16px 8px', background: NEAR_BLACK, minWidth: 96 }}>
+          <span style={{ fontFamily: "'JetBrains Mono','SF Mono',monospace", fontSize: 26, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{data.currentChukker}</span>
+          <span style={{ fontFamily: "'JetBrains Mono','SF Mono',monospace", fontSize: 24, fontWeight: 700, color: '#fff', lineHeight: 1, letterSpacing: 0.5 }}>{data.status === 'halftime' ? 'HT' : data.clock}</span>
         </div>
         {/* Away */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', background: `linear-gradient(135deg, ${awayColor}bb, ${awayColor}dd)`, width: 270, height: '100%', boxSizing: 'border-box' }}>
@@ -113,8 +113,8 @@ function GoalBar({ color, playerName, visible }: { color: string; playerName: st
   const theme = getOnColorTheme(color);
   return (
     <div style={{ transition: 'opacity 0.4s ease, transform 0.4s ease', opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(-8px)', pointerEvents: 'none' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 28px', borderRadius: 8, background: color, fontFamily: "'Inter','Helvetica Neue',sans-serif", boxShadow: '0 4px 16px rgba(0,0,0,0.4)', whiteSpace: 'nowrap' }}>
-        <span style={{ fontSize: 22, fontWeight: 700, color: theme.text, textTransform: 'uppercase', textShadow: theme.shadow }}>GOAL: {playerName}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 24px', borderRadius: 8, background: color, fontFamily: "'Inter','Helvetica Neue',sans-serif", boxShadow: '0 4px 16px rgba(0,0,0,0.4)', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: 19, fontWeight: 700, color: theme.text, textTransform: 'uppercase', textShadow: theme.shadow }}>GOAL: {playerName}</span>
       </div>
     </div>
   );
@@ -124,9 +124,9 @@ function GoalBar({ color, playerName, visible }: { color: string; playerName: st
 function StoppageBar({ label, playerName, color, visible }: { label: string; playerName?: string; color: string; visible: boolean }) {
   return (
     <div style={{ transition: 'opacity 0.4s ease, transform 0.4s ease', opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(-8px)', pointerEvents: 'none' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 28px', borderRadius: 8, background: color, fontFamily: "'Inter','Helvetica Neue',sans-serif", boxShadow: '0 4px 16px rgba(0,0,0,0.4)', whiteSpace: 'nowrap' }}>
-        <span style={{ fontSize: 16, fontWeight: 700, color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: 1.5 }}>{label}</span>
-        {playerName && <span style={{ fontSize: 22, fontWeight: 700, color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{playerName}</span>}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 24px', borderRadius: 8, background: color, fontFamily: "'Inter','Helvetica Neue',sans-serif", boxShadow: '0 4px 16px rgba(0,0,0,0.4)', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: 1.5 }}>{label}</span>
+        {playerName && <span style={{ fontSize: 19, fontWeight: 700, color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{playerName}</span>}
       </div>
     </div>
   );
@@ -185,7 +185,7 @@ export function VariantFull() {
         </div>
 
         {/* ── Status bars — appear below the score bug ── */}
-        <div style={{ position: 'absolute', top: 148, left: 28, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ position: 'absolute', top: 136, left: 28, display: 'flex', flexDirection: 'column', gap: 10 }}>
           <GoalBar
             color={homeColor}
             playerName="Juan M. Harriott"

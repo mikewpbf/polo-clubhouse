@@ -85,8 +85,8 @@ function VariantScoreBug({ data }: { data: MockData }) {
   const homeTheme = getOnColorTheme(homeColor);
   const awayTheme = getOnColorTheme(awayColor);
 
-  // ↑ Taller bar height (extra room so chukker + clock don't crowd each other)
-  const BAR_H = 80;
+  // ↑ Bar height — trimmed from 80 down to 72, still taller than original 56
+  const BAR_H = 72;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', borderRadius: 8, overflow: 'hidden', fontFamily: "'Inter','Helvetica Neue',sans-serif" }}>
@@ -109,12 +109,12 @@ function VariantScoreBug({ data }: { data: MockData }) {
           </span>
         </div>
 
-        {/* ↑ Center: bigger clock + chukker; asymmetric padding shifts chukker higher */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '5px 16px 11px', background: NEAR_BLACK, minWidth: 96 }}>
-          <span style={{ fontFamily: "'JetBrains Mono','SF Mono',monospace", fontSize: 30, fontWeight: 800, color: '#fff', lineHeight: 1 }}>
+        {/* ↑ Center: chukker high, clock low, good separation via asymmetric padding */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '3px 16px 8px', background: NEAR_BLACK, minWidth: 96 }}>
+          <span style={{ fontFamily: "'JetBrains Mono','SF Mono',monospace", fontSize: 26, fontWeight: 800, color: '#fff', lineHeight: 1 }}>
             {data.currentChukker}
           </span>
-          <span style={{ fontFamily: "'JetBrains Mono','SF Mono',monospace", fontSize: 28, fontWeight: 700, color: '#fff', lineHeight: 1, letterSpacing: 0.5 }}>
+          <span style={{ fontFamily: "'JetBrains Mono','SF Mono',monospace", fontSize: 24, fontWeight: 700, color: '#fff', lineHeight: 1, letterSpacing: 0.5 }}>
             {data.status === 'halftime' ? 'HT' : data.clock}
           </span>
         </div>

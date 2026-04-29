@@ -1,8 +1,8 @@
 import { Router, type IRouter } from "express";
 import { requireAuth, requireSuperAdmin } from "../lib/auth";
 import { db } from "@workspace/db";
-import { clubsTable, teamsTable, tournamentsTable, fieldsTable, playersTable, tournamentTeamsTable, matchesTable } from "@workspace/db/schema";
-import { eq, and } from "drizzle-orm";
+import { clubsTable, teamsTable, tournamentsTable, fieldsTable, playersTable, teamPlayersTable, tournamentTeamsTable, matchesTable } from "@workspace/db/schema";
+import { eq, and, inArray } from "drizzle-orm";
 import OpenAI from "openai";
 
 const router: IRouter = Router();
@@ -376,18 +376,34 @@ router.post("/admin/ai/execute-setup", requireAuth, requireSuperAdmin, async (re
           }
 
           if (Array.isArray(team.players) && team.players.length > 0 && teamId) {
+            // Players are top-level entities; rosters live in team_players. Skip a
+            // wizard import if the team already has someone with that name on the
+            // current-season roster.
+            const seasonYear = new Date().getUTCFullYear();
+            const existingLinks = await db.select({ playerId: teamPlayersTable.playerId })
+              .from(teamPlayersTable)
+              .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.seasonYear, seasonYear)));
+            const existingNames = new Set<string>();
+            const linkedIds = existingLinks.map(l => l.playerId).filter((x): x is string => !!x);
+            if (linkedIds.length > 0) {
+              const linkedPlayers = await db.select({ name: playersTable.name })
+                .from(playersTable).where(inArray(playersTable.id, linkedIds));
+              for (const p of linkedPlayers) existingNames.add(p.name);
+            }
             for (const player of team.players) {
               try {
                 if (!player.name) continue;
-                const existingPlayer = await db.select({ id: playersTable.id }).from(playersTable)
-                  .where(and(eq(playersTable.teamId, teamId), eq(playersTable.name, player.name)));
-                if (existingPlayer.length > 0) continue;
-                await db.insert(playersTable).values({
-                  teamId,
+                if (existingNames.has(player.name)) continue;
+                const [created] = await db.insert(playersTable).values({
                   name: player.name,
                   handicap: player.handicap != null ? String(player.handicap) : null,
                   isActive: true,
-                });
+                }).returning({ id: playersTable.id });
+                await db.insert(teamPlayersTable).values({
+                  teamId,
+                  playerId: created.id,
+                  seasonYear,
+                }).onConflictDoNothing();
                 results.players.created++;
               } catch (e: any) {
                 results.players.errors.push(`"${player.name}" on "${team.name}": ${e.message}`);

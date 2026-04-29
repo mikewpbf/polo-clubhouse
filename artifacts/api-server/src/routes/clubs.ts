@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { clubsTable, fieldsTable, tournamentsTable, spectatorFollowsTable, adminClubMembershipsTable, teamsTable, tournamentTeamsTable, matchesTable, matchEventsTable, playDatesTable, teamOutDatesTable, teamManagerAssignmentsTable, userInvitesTable, playersTable, usersTable } from "@workspace/db/schema";
+import { clubsTable, fieldsTable, tournamentsTable, spectatorFollowsTable, adminClubMembershipsTable, teamsTable, tournamentTeamsTable, matchesTable, matchEventsTable, playDatesTable, teamOutDatesTable, teamManagerAssignmentsTable, userInvitesTable, usersTable } from "@workspace/db/schema";
 import { eq, ilike, and, count, or, inArray, desc, asc } from "drizzle-orm";
 import { optionalAuth, requireAuth, requireClubAdmin, requireSuperAdmin, isSuperAdmin } from "../lib/auth";
 
@@ -121,7 +121,9 @@ router.delete("/clubs/:clubId", requireAuth, async (req, res) => {
     if (clubTeams.length > 0) {
       const teamIds = clubTeams.map((t) => t.id);
       for (const teamId of teamIds) {
-        await db.delete(playersTable).where(eq(playersTable.teamId, teamId));
+        // team_players rows cascade with the team; player records are top-level
+        // entities and intentionally outlive their teams (they remain in the
+        // canonical players directory after a club is deleted).
         await db.delete(tournamentTeamsTable).where(eq(tournamentTeamsTable.teamId, teamId));
         await db.delete(teamOutDatesTable).where(eq(teamOutDatesTable.teamId, teamId));
         const tmaRows = await db.select({ id: teamManagerAssignmentsTable.id }).from(teamManagerAssignmentsTable).where(eq(teamManagerAssignmentsTable.teamId, teamId));

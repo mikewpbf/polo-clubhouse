@@ -34,19 +34,20 @@ async function enrichMatch(m: MatchRow, includePlayers = false) {
   let homePlayers: any[] = [];
   let awayPlayers: any[] = [];
   if (includePlayers) {
-    // Canonical roster comes from team_players (current season) UNION legacy players.team_id.
-    // We dedupe by player id so newly-linked canonical players appear alongside legacy ones.
+    // Canonical roster comes from team_players. Per-roster position lives on the
+    // join row, so we attach it to each player record for downstream sort/display.
+    const seasonYear = new Date().getUTCFullYear();
     const loadRoster = async (teamId: string) => {
-      const legacy = await db.select().from(playersTable).where(and(eq(playersTable.teamId, teamId), eq(playersTable.isActive, true)));
-      const links = await db.select().from(teamPlayersTable).where(eq(teamPlayersTable.teamId, teamId));
+      const links = await db.select().from(teamPlayersTable).where(and(
+        eq(teamPlayersTable.teamId, teamId),
+        eq(teamPlayersTable.seasonYear, seasonYear),
+      ));
       const linkedIds = links.map(l => l.playerId).filter((x): x is string => !!x);
-      const linkedPlayers = linkedIds.length > 0
-        ? await db.select().from(playersTable).where(and(inArray(playersTable.id, linkedIds), eq(playersTable.isActive, true)))
-        : [];
-      const byId = new Map<string, any>();
-      for (const p of legacy) byId.set(p.id, p);
-      for (const p of linkedPlayers) if (!byId.has(p.id)) byId.set(p.id, p);
-      return Array.from(byId.values());
+      if (linkedIds.length === 0) return [];
+      const linkedPlayers = await db.select().from(playersTable)
+        .where(and(inArray(playersTable.id, linkedIds), eq(playersTable.isActive, true)));
+      const positionByPlayer = new Map(links.map(l => [l.playerId, l.position]));
+      return linkedPlayers.map(p => ({ ...p, position: positionByPlayer.get(p.id) ?? null }));
     };
     if (m.homeTeamId) homePlayers = await loadRoster(m.homeTeamId);
     if (m.awayTeamId) awayPlayers = await loadRoster(m.awayTeamId);
@@ -480,15 +481,10 @@ router.post("/matches/:matchId/goal", requireAuth, requireMatchAdmin, async (req
       const [player] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
       if (!player) { res.status(400).json({ message: "Player not found" }); return; }
       if (!player.isActive) { res.status(400).json({ message: "Player is not active" }); return; }
-      // Canonical eligibility: legacy team_id OR team_players row for this team.
-      const onLegacy = player.teamId === teamId;
-      let onRoster = false;
-      if (!onLegacy) {
-        const [link] = await db.select({ id: teamPlayersTable.id }).from(teamPlayersTable)
-          .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId))).limit(1);
-        onRoster = !!link;
-      }
-      if (!onLegacy && !onRoster) { res.status(400).json({ message: "Player does not belong to this team" }); return; }
+      // Canonical eligibility: player must be on the team's team_players roster.
+      const [link] = await db.select({ id: teamPlayersTable.id }).from(teamPlayersTable)
+        .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId))).limit(1);
+      if (!link) { res.status(400).json({ message: "Player does not belong to this team" }); return; }
       playerName = player.name;
     }
 

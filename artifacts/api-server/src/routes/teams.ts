@@ -147,14 +147,10 @@ router.delete("/teams/:teamId", requireAuth, async (req, res) => {
     await db.delete(matchesTable).where(
       or(eq(matchesTable.homeTeamId, teamId), eq(matchesTable.awayTeamId, teamId))
     );
-    const teamPlayers = await db.select({ id: playersTable.id }).from(playersTable).where(eq(playersTable.teamId, teamId));
-    for (const p of teamPlayers) {
-      await db.delete(horsesTable).where(eq(horsesTable.playerId, p.id));
-    }
-    // Remove team_players rows referencing this team (any season)
+    // Remove team_players rows referencing this team (any season). Player records
+    // are top-level entities and remain in the canonical directory after the team
+    // is deleted; horses follow their owning player and are not removed here.
     await db.delete(teamPlayersTable).where(eq(teamPlayersTable.teamId, teamId));
-    // Legacy: delete players whose only team was this one (team_id=teamId)
-    await db.delete(playersTable).where(eq(playersTable.teamId, teamId));
     await db.delete(teamOutDatesTable).where(eq(teamOutDatesTable.teamId, teamId));
     const assignments = await db.select({ id: teamManagerAssignmentsTable.id }).from(teamManagerAssignmentsTable).where(eq(teamManagerAssignmentsTable.teamId, teamId));
     for (const a of assignments) {
@@ -173,22 +169,18 @@ router.delete("/teams/:teamId", requireAuth, async (req, res) => {
 router.get("/teams/:teamId/players", async (req, res) => {
   try {
     const teamId = String(req.params.teamId);
-    // Prefer canonical team_players table for current season; fall back to legacy team_id column
+    // Canonical roster: current-season team_players rows joined to player records.
+    // Position is roster-scoped (lives on team_players, not on the player).
     const seasonYear = new Date().getUTCFullYear();
     const tps = await db.select().from(teamPlayersTable).where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.seasonYear, seasonYear)));
     const playerIds = tps.map(t => t.playerId);
-    let canonical = playerIds.length > 0
+    const canonical = playerIds.length > 0
       ? await db.select().from(playersTable).where(inArray(playersTable.id, playerIds))
       : [];
-    // Also fall back to any legacy player rows still attached via player.team_id but missing from team_players
-    const legacy = await db.select().from(playersTable).where(eq(playersTable.teamId, teamId));
-    const seen = new Set(canonical.map(p => p.id));
-    for (const p of legacy) if (!seen.has(p.id)) canonical.push(p);
-    // Attach the (legacy) per-team position from team_players if present
     const tpPositionMap = new Map(tps.map(t => [t.playerId, t.position]));
     const players = canonical.map(p => ({
       ...p,
-      position: tpPositionMap.get(p.id) ?? p.position ?? null,
+      position: tpPositionMap.get(p.id) ?? null,
     }));
     res.json(players);
   } catch (e: any) {
@@ -228,13 +220,11 @@ router.put("/teams/:teamId/players/:playerId", requireAuth, requireTeamAdminOrMa
   try {
     const teamId = String(req.params.teamId);
     const playerId = String(req.params.playerId);
-    // Verify the player actually belongs to this team (legacy team_id pointer OR team_players row).
-    // Without this, a team-A admin/manager could mutate any player by guessing IDs (IDOR).
-    const [legacyMatch] = await db.select({ id: playersTable.id }).from(playersTable)
-      .where(and(eq(playersTable.id, playerId), eq(playersTable.teamId, teamId))).limit(1);
+    // Verify the player actually belongs to this team via team_players. Without this
+    // a team-A admin/manager could mutate any player by guessing IDs (IDOR).
     const [rosterMatch] = await db.select({ id: teamPlayersTable.id }).from(teamPlayersTable)
       .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId))).limit(1);
-    if (!legacyMatch && !rosterMatch) {
+    if (!rosterMatch) {
       res.status(404).json({ message: "Player is not on this team" });
       return;
     }
@@ -270,17 +260,12 @@ router.put("/teams/:teamId/players/:playerId", requireAuth, requireTeamAdminOrMa
       if (isActive !== undefined) updates.isActive = isActive;
     }
 
-    // Position is roster-scoped: persist to team_players for canonical (teamId, playerId) link
-    // when present; fall back to legacy players.position only for legacy-only attachments.
+    // Position is roster-scoped: persists to team_players for the (teamId, playerId) link.
     if (position !== undefined) {
       const positionValue = position == null ? null : Number(position);
-      if (rosterMatch) {
-        await db.update(teamPlayersTable)
-          .set({ position: positionValue })
-          .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId)));
-      } else if (legacyMatch) {
-        updates.position = positionValue;
-      }
+      await db.update(teamPlayersTable)
+        .set({ position: positionValue })
+        .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId)));
     }
 
     if (Object.keys(updates).length === 0) {
@@ -303,25 +288,19 @@ router.delete("/teams/:teamId/players/:playerId", requireAuth, requireTeamAdminO
     const teamId = String(req.params.teamId);
     const playerId = String(req.params.playerId);
     // Verify the player actually belongs to this team before any destructive action.
-    const [legacyMatch] = await db.select({ id: playersTable.id }).from(playersTable)
-      .where(and(eq(playersTable.id, playerId), eq(playersTable.teamId, teamId))).limit(1);
     const [rosterMatch] = await db.select({ id: teamPlayersTable.id }).from(teamPlayersTable)
       .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId))).limit(1);
-    if (!legacyMatch && !rosterMatch) {
+    if (!rosterMatch) {
       res.status(404).json({ message: "Player is not on this team" });
       return;
     }
-    // Two-way sync: remove from team_players for this team (all seasons)
+    // Remove from team_players for this team (all seasons)
     await db.delete(teamPlayersTable).where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId)));
     // If this player is still rostered on any other team OR is managed by a user, only unlink (don't hard-delete)
     const otherTeams = await db.select({ id: teamPlayersTable.id }).from(teamPlayersTable).where(eq(teamPlayersTable.playerId, playerId));
     const [stillExists] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
     if (!stillExists) { res.status(404).json({ message: "Player not found" }); return; }
     if (otherTeams.length > 0 || stillExists.managedByUserId) {
-      // unlink legacy team_id if it pointed here
-      if (stillExists.teamId === teamId) {
-        await db.update(playersTable).set({ teamId: null }).where(eq(playersTable.id, playerId));
-      }
       res.json({ message: "Player removed from team" });
       return;
     }
@@ -335,12 +314,11 @@ router.delete("/teams/:teamId/players/:playerId", requireAuth, requireTeamAdminO
   }
 });
 
-// Membership check accepting either legacy players.team_id OR canonical team_players linkage.
-// Returns the player row when membership is valid, otherwise null.
+// Membership check via team_players linkage. Returns the player row when membership
+// is valid, otherwise null.
 async function findPlayerOnTeam(teamId: string, playerId: string) {
   const [player] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
   if (!player) return null;
-  if (player.teamId === teamId) return player;
   const [link] = await db.select({ id: teamPlayersTable.id }).from(teamPlayersTable)
     .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId))).limit(1);
   return link ? player : null;

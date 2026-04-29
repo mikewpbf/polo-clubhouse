@@ -70,7 +70,7 @@ artifacts-monorepo/
 - **spectator_follows** - Club follow relationships
 - **push_subscriptions** - Push notification subscriptions
 - **user_invites** - Invite tokens for admin/team-manager onboarding
-- **players** - Top-level player entity (name, handicap, headshot_url, date_of_birth, home_club_id, bio, managed_by_user_id, is_active). Legacy team_id/position kept nullable for backward compat (drop in follow-up). Real per-season rosters live in team_players.
+- **players** - Top-level player entity (name, handicap, headshot_url, date_of_birth, home_club_id, bio, managed_by_user_id, is_active). Per-season rosters live in team_players (legacy team_id/position columns dropped April 2026).
 - **team_players** - Per-season roster join (team_id, player_id, season_year, position) with unique(team_id, player_id, season_year)
 - **horses** - Horses per player (player_id FK, name, age, color, sex, owner, breeder)
 - **possession_segments** - Possession tracking segments per match (state: home/away/loose, start/end timestamps, duration)

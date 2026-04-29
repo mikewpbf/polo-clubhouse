@@ -1,16 +1,13 @@
-import { pgTable, uuid, varchar, decimal, integer, boolean, text, date, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, decimal, boolean, text, date, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
-import { teamsTable } from "./teams";
 import { clubsTable } from "./clubs";
 import { usersTable } from "./users";
 
 export const playersTable = pgTable("players", {
   id: uuid("id").defaultRandom().primaryKey(),
-  teamId: uuid("team_id").references(() => teamsTable.id),
   name: varchar("name", { length: 255 }).notNull(),
   handicap: decimal("handicap"),
-  position: integer("position"),
   isActive: boolean("is_active").default(true).notNull(),
   headshotUrl: text("headshot_url"),
   dateOfBirth: date("date_of_birth"),

@@ -976,6 +976,7 @@ async function buildBroadcastPayload(matchId: string) {
       broadcast4kOffsetX: match.broadcast4kOffsetX ?? 0,
       broadcast4kOffsetY: match.broadcast4kOffsetY ?? 0,
       broadcastChannel: match.broadcastChannel || null,
+      serverNow: new Date().toISOString(),
       lastGoalScorerName: liveLastGoalScorerName,
       lastGoalTeamSide: bSwap ? (match.lastGoalTeamSide === "home" ? "away" : match.lastGoalTeamSide === "away" ? "home" : match.lastGoalTeamSide) : match.lastGoalTeamSide,
       lastGoalTimestamp: match.lastGoalTimestamp,
@@ -1000,6 +1001,7 @@ router.get("/matches/:matchId/broadcast", async (req, res) => {
     const matchId = String(req.params.matchId);
     const payload = await buildBroadcastPayload(matchId);
     if (!payload) { res.status(404).json({ message: "Match not found" }); return; }
+    res.setHeader("Cache-Control", "no-store");
     res.json(payload);
   } catch (e: any) {
     res.status(500).json({ message: e.message });
@@ -1024,6 +1026,7 @@ router.get("/clubs/:clubId/broadcast/channel/:channel", async (req, res) => {
     if (!assigned) { res.json({ assigned: false }); return; }
     const payload = await buildBroadcastPayload(assigned.id);
     if (!payload) { res.json({ assigned: false }); return; }
+    res.setHeader("Cache-Control", "no-store");
     res.json({ assigned: true, ...payload });
   } catch (e: any) {
     res.status(500).json({ message: e.message });

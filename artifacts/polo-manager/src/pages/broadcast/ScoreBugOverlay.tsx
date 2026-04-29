@@ -29,6 +29,7 @@ interface BroadcastData {
   clockStartedAt: string | null;
   clockElapsedSeconds: number;
   clockIsRunning: boolean;
+  serverNow?: string;
   broadcastVisible: boolean;
   broadcastStyle: string;
   broadcastResolution?: string;
@@ -63,15 +64,36 @@ const TITLE_BAR_HEIGHT = 28;
 function useClockDisplay(data: BroadcastData | null) {
   const [display, setDisplay] = useState("7:30");
   const [remaining, setRemaining] = useState(CHUKKER_DURATION);
+  // Refs track the elapsed-at-poll (server-side) and the client time when the
+  // poll was received. Together they let the 1-second interval add purely
+  // client-side delta, eliminating any clock skew between the OBS machine and
+  // the production server.
+  const elapsedAtPollRef = useRef<number>(0);
+  const clientTimeAtPollRef = useRef<number>(Date.now());
 
   useEffect(() => {
     if (!data) return;
+
+    // Compute elapsed on the SERVER at the moment it generated this response.
+    // serverNow and clockStartedAt are both server timestamps, so their
+    // difference is skew-free.
+    let elapsedAtPoll = data.clockElapsedSeconds || 0;
+    if (data.clockIsRunning && data.clockStartedAt) {
+      const serverNowMs = data.serverNow
+        ? new Date(data.serverNow).getTime()
+        : new Date(data.clockStartedAt).getTime(); // safe fallback
+      elapsedAtPoll += (serverNowMs - new Date(data.clockStartedAt).getTime()) / 1000;
+    }
+    elapsedAtPollRef.current = elapsedAtPoll;
+    clientTimeAtPollRef.current = Date.now();
+
     const compute = () => {
-      let elapsed = data.clockElapsedSeconds || 0;
-      if (data.clockIsRunning && data.clockStartedAt) {
-        elapsed += Math.floor((Date.now() - new Date(data.clockStartedAt).getTime()) / 1000);
+      let elapsed = elapsedAtPollRef.current;
+      if (data.clockIsRunning) {
+        // Add client-side delta since this poll — no cross-machine skew.
+        elapsed += (Date.now() - clientTimeAtPollRef.current) / 1000;
       }
-      const rem = Math.max(0, CHUKKER_DURATION - elapsed);
+      const rem = Math.max(0, CHUKKER_DURATION - Math.floor(elapsed));
       setRemaining(rem);
       const m = Math.floor(rem / 60);
       const s = rem % 60;
@@ -81,7 +103,7 @@ function useClockDisplay(data: BroadcastData | null) {
     if (!data.clockIsRunning) return;
     const iv = setInterval(compute, 1000);
     return () => clearInterval(iv);
-  }, [data?.clockStartedAt, data?.clockElapsedSeconds, data?.clockIsRunning]);
+  }, [data?.clockStartedAt, data?.clockElapsedSeconds, data?.clockIsRunning, data?.serverNow]);
 
   return { display, remaining };
 }

@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { useState, useEffect, useMemo } from "react";
+import { Link, useLocation } from "wouter";
 import { useListPlayers, useCreatePlayer, useListClubs } from "@workspace/api-client-react";
 import { AdminLayout } from "@/pages/admin/AdminLayout";
 import { PageLoading, EmptyState } from "@/components/LoadingBar";
@@ -8,12 +8,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, ChevronRight } from "lucide-react";
+import { Plus, Search, ArrowUp, ArrowDown } from "lucide-react";
+
+type SortKey = "name" | "handicap" | "homeClubName" | "lastMatchDate";
+type SortDir = "asc" | "desc";
+
+type PlayerRow = {
+  id: string;
+  name: string;
+  handicap: string | null;
+  headshotUrl: string | null;
+  homeClubId: string | null;
+  homeClubName: string | null;
+  homeClubSlug: string | null;
+  lastMatchDate: string | null;
+};
 
 export function AdminPlayers() {
+  const [, navigate] = useLocation();
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput.trim()), 300);
@@ -21,6 +38,38 @@ export function AdminPlayers() {
   }, [searchInput]);
 
   const { data, isLoading, refetch } = useListPlayers(search ? { search } : undefined);
+
+  const rows: PlayerRow[] = useMemo(() => {
+    const arr = (data ?? []) as PlayerRow[];
+    const sorted = [...arr].sort((a, b) => {
+      const av = a[sortKey];
+      const bv = b[sortKey];
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      const cmp = sortKey === "handicap"
+        ? (Number(av) - Number(bv))
+        : String(av).localeCompare(String(bv));
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [data, sortKey, sortDir]);
+
+  const toggleSort = (key: SortKey) => {
+    if (key === sortKey) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("asc"); }
+  };
+
+  const SortHeader = ({ k, label, className }: { k: SortKey; label: string; className?: string }) => (
+    <button
+      type="button"
+      onClick={() => toggleSort(k)}
+      className={`text-left font-sans font-semibold text-[12px] uppercase tracking-wide text-ink2 hover:text-ink inline-flex items-center gap-1 ${className ?? ""}`}
+    >
+      {label}
+      {sortKey === k && (sortDir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}
+    </button>
+  );
 
   return (
     <AdminLayout>
@@ -48,24 +97,34 @@ export function AdminPlayers() {
 
         {isLoading ? (
           <PageLoading />
-        ) : !data || data.length === 0 ? (
+        ) : rows.length === 0 ? (
           <EmptyState title={search ? "No players match your search" : "No players yet"} description={search ? "" : "Create the first player profile."} />
         ) : (
-          <div className="bg-white rounded-[12px] card-shadow divide-y divide-line2">
-            {data.map(p => (
-              <Link key={p.id} href={`/admin/players/${p.id}`} className="flex items-center gap-3 p-3 hover:bg-bg2 transition-colors">
-                <PlayerHeadshot url={p.headshotUrl} name={p.name} size={40} />
-                <div className="flex-1 min-w-0">
-                  <div className="font-sans font-medium text-[15px] text-ink truncate">{p.name}</div>
-                  <div className="text-[12px] text-ink3 flex flex-wrap gap-x-3 mt-0.5">
-                    {p.handicap != null && <span>HCP {p.handicap}</span>}
-                    {p.homeClubName && <span>{p.homeClubName}</span>}
-                    {p.lastMatchDate && <span>Last match: {p.lastMatchDate}</span>}
+          <div className="bg-white rounded-[12px] card-shadow overflow-hidden">
+            <div className="hidden sm:grid grid-cols-[1fr_120px_1fr_140px] items-center gap-3 px-3 py-2 border-b border-line2 bg-bg2/50">
+              <SortHeader k="name" label="Player" />
+              <SortHeader k="handicap" label="Handicap" />
+              <SortHeader k="homeClubName" label="Home Club" />
+              <SortHeader k="lastMatchDate" label="Last Match" />
+            </div>
+            <div className="divide-y divide-line2">
+              {rows.map(p => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => navigate(`/admin/players/${p.id}`)}
+                  className="w-full grid grid-cols-1 sm:grid-cols-[1fr_120px_1fr_140px] items-center gap-3 p-3 hover:bg-bg2 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <PlayerHeadshot url={p.headshotUrl} name={p.name} size={40} />
+                    <div className="font-sans font-medium text-[15px] text-ink truncate">{p.name}</div>
                   </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-ink3 shrink-0" />
-              </Link>
-            ))}
+                  <div className="text-[13px] text-ink2 font-mono">{p.handicap ?? "—"}</div>
+                  <div className="text-[13px] text-ink2 truncate">{p.homeClubName ?? "—"}</div>
+                  <div className="text-[12px] text-ink3">{p.lastMatchDate ?? "—"}</div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>

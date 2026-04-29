@@ -81,7 +81,7 @@ export function Home() {
   const { data: todayMatches, isLoading: todayLoading } = useListTodayMatches({ tz: userTz }, { query: { refetchInterval: 5000 } });
   const { data: upcomingMatches, isLoading: upcomingLoading } = useListUpcomingMatches({ limit: 5 });
   const { data: tournaments, isLoading: tournamentsLoading } = useListAllTournaments({});
-  const { data: topPlayers } = useListTopPlayers({ limit: 6 });
+  const { data: topPlayers } = useListTopPlayers({ limit: 8 });
 
   if (liveLoading || todayLoading || upcomingLoading || tournamentsLoading) return <SpectatorLayout><PageLoading /></SpectatorLayout>;
 

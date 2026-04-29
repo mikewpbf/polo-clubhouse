@@ -32,7 +32,7 @@ export function PlayerProfile() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="font-display text-2xl font-bold text-ink">{data.name}</h1>
-                {(data as any).hasLinkedUser && (
+                {data.hasLinkedUser && (
                   <span
                     className="inline-flex items-center gap-1 text-[11px] font-sans font-semibold text-g700 bg-g50 border border-g100 rounded-full px-2 py-0.5"
                     title="This player has claimed their account and can edit their own profile."

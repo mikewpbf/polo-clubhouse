@@ -3,15 +3,15 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Home, Trophy, Building2, Users, UserCircle } from "lucide-react";
-import { useGetMyLinkedPlayer } from "@workspace/api-client-react";
+import { useGetMyLinkedPlayer, getGetMyLinkedPlayerQueryKey } from "@workspace/api-client-react";
 
 export function SpectatorLayout({ children }: { children: ReactNode }) {
   const { user, isAuthenticated, logout } = useAuth();
   const [location] = useLocation();
   const { data: linkedPlayer } = useGetMyLinkedPlayer({
-    query: { enabled: isAuthenticated },
-  } as any);
-  const hasLinkedPlayer = !!(linkedPlayer && (linkedPlayer as any).id);
+    query: { enabled: isAuthenticated, queryKey: getGetMyLinkedPlayerQueryKey() },
+  });
+  const hasLinkedPlayer = !!(linkedPlayer && linkedPlayer.id);
 
   const navLinks = [
     { href: "/", label: "Home", icon: Home },

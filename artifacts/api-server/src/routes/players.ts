@@ -212,7 +212,7 @@ router.get("/players/top", async (req, res) => {
         COUNT(CASE WHEN me.event_type = 'goal' THEN 1 END)::int  AS career_goals,
         COUNT(DISTINCT me.match_id)::int                          AS career_games
       FROM players p
-      JOIN match_events me ON me.player_id = p.id
+      LEFT JOIN match_events me ON me.player_id = p.id
       WHERE p.is_active = true
       GROUP BY p.id
       ORDER BY p.handicap::numeric DESC NULLS LAST, career_goals DESC, p.name ASC

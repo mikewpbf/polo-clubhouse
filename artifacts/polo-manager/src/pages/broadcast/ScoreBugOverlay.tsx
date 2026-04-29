@@ -229,7 +229,7 @@ function CompactPremiumBar({ data, clock, clockColor, titleBarBorderBottom }: { 
       <div style={{
         display: "flex",
         alignItems: "stretch",
-        height: 56,
+        height: 64,
       }}>
       <div style={{
         display: "flex",
@@ -251,7 +251,7 @@ function CompactPremiumBar({ data, clock, clockColor, titleBarBorderBottom }: { 
         <span style={{ color: homeTheme.text, fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", textTransform: "uppercase", textShadow: homeTheme.shadow, overflow: "hidden", textOverflow: "ellipsis", flex: 1 }}>
           {teamDisplayName(home)}
         </span>
-        <span style={{ fontFamily: "'JetBrains Mono', 'SF Mono', monospace", fontSize: 30, fontWeight: 800, color: homeTheme.text, lineHeight: 1, minWidth: 40, textAlign: "center", marginLeft: 10, textShadow: themed(homeTheme, "0 1px 3px rgba(255,255,255,0.55)", "0 1px 3px rgba(0,0,0,0.45)"), flexShrink: 0 }}>
+        <span style={{ fontFamily: "'JetBrains Mono', 'SF Mono', monospace", fontSize: 34, fontWeight: 800, color: homeTheme.text, lineHeight: 1, minWidth: 40, textAlign: "center", marginLeft: 10, textShadow: themed(homeTheme, "0 1px 3px rgba(255,255,255,0.55)", "0 1px 3px rgba(0,0,0,0.45)"), flexShrink: 0 }}>
           {data.homeScore}
         </span>
       </div>
@@ -260,16 +260,15 @@ function CompactPremiumBar({ data, clock, clockColor, titleBarBorderBottom }: { 
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
-        gap: 2,
-        padding: "0 14px",
+        justifyContent: "space-between",
+        padding: "3px 14px 8px",
         background: NEAR_BLACK,
         minWidth: 80,
       }}>
         <span style={{ fontFamily: "'JetBrains Mono', 'SF Mono', monospace", fontSize: 24, fontWeight: 800, color: "#fff", lineHeight: 1 }}>
           {data.currentChukker}
         </span>
-        <span style={{ fontFamily: "'JetBrains Mono', 'SF Mono', monospace", fontSize: 20, fontWeight: 700, color: data.status === "halftime" ? "#fff" : clockColor, lineHeight: 1, letterSpacing: 0.5 }}>
+        <span style={{ fontFamily: "'JetBrains Mono', 'SF Mono', monospace", fontSize: 22, fontWeight: 700, color: data.status === "halftime" ? "#fff" : clockColor, lineHeight: 1, letterSpacing: 0.5 }}>
           {data.status === "halftime" ? "HT" : clock}
         </span>
       </div>
@@ -283,7 +282,7 @@ function CompactPremiumBar({ data, clock, clockColor, titleBarBorderBottom }: { 
         height: "100%",
         boxSizing: "border-box",
       }}>
-        <span style={{ fontFamily: "'JetBrains Mono', 'SF Mono', monospace", fontSize: 30, fontWeight: 800, color: awayTheme.text, lineHeight: 1, minWidth: 40, textAlign: "center", marginRight: 10, textShadow: themed(awayTheme, "0 1px 3px rgba(255,255,255,0.55)", "0 1px 3px rgba(0,0,0,0.45)"), flexShrink: 0 }}>
+        <span style={{ fontFamily: "'JetBrains Mono', 'SF Mono', monospace", fontSize: 34, fontWeight: 800, color: awayTheme.text, lineHeight: 1, minWidth: 40, textAlign: "center", marginRight: 10, textShadow: themed(awayTheme, "0 1px 3px rgba(255,255,255,0.55)", "0 1px 3px rgba(0,0,0,0.45)"), flexShrink: 0 }}>
           {data.awayScore}
         </span>
         <span style={{ color: awayTheme.text, fontSize: 16, fontWeight: 800, whiteSpace: "nowrap", textTransform: "uppercase", textShadow: awayTheme.shadow, overflow: "hidden", textOverflow: "ellipsis", flex: 1, textAlign: "right" }}>
@@ -449,12 +448,12 @@ function GoalScorerBar({ alert, topOffset = 120 }: { alert: GoalAlert | null; to
         display: "flex",
         alignItems: "center",
         gap: 12,
-        padding: "8px 20px",
-        borderRadius: 6,
+        padding: "10px 24px",
+        borderRadius: 8,
         background: bg,
         fontFamily: "'Inter', 'Helvetica Neue', sans-serif",
       }}>
-        <span style={{ fontSize: 16, fontWeight: 700, color: theme.text, textShadow: theme.shadow, textTransform: "uppercase" }}>
+        <span style={{ fontSize: 19, fontWeight: 700, color: theme.text, textShadow: theme.shadow, textTransform: "uppercase" }}>
           GOAL: {current.playerName}
         </span>
       </div>
@@ -493,12 +492,12 @@ function GoalScorerBarCenter({ alert, topOffset = 110 }: { alert: GoalAlert | nu
         display: "flex",
         alignItems: "center",
         gap: 12,
-        padding: "8px 24px",
-        borderRadius: 6,
+        padding: "10px 24px",
+        borderRadius: 8,
         background: bg,
         fontFamily: "'Inter', 'Helvetica Neue', sans-serif",
       }}>
-        <span style={{ fontSize: 16, fontWeight: 700, color: theme.text, textShadow: theme.shadow, textTransform: "uppercase" }}>
+        <span style={{ fontSize: 19, fontWeight: 700, color: theme.text, textShadow: theme.shadow, textTransform: "uppercase" }}>
           GOAL: {current.playerName}
         </span>
       </div>
@@ -551,16 +550,16 @@ function StoppageBar({ event, clockIsRunning, position, topOffsetOverride, homeT
       <div style={{
         display: "flex",
         alignItems: "center",
-        gap: 12,
-        padding: "8px 20px",
-        borderRadius: 6,
+        gap: 14,
+        padding: "10px 24px",
+        borderRadius: 8,
         background: bgColor,
       }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: 1.5 }}>
+        <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.8)", textTransform: "uppercase", letterSpacing: 1.5 }}>
           {label}
         </span>
         {current.playerName && (
-          <span style={{ fontSize: 16, fontWeight: 700, color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.3)" }}>
+          <span style={{ fontSize: 19, fontWeight: 700, color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.3)" }}>
             {current.playerName}
           </span>
         )}

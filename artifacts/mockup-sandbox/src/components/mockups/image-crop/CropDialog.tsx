@@ -103,6 +103,29 @@ export function CropDialog() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <style>{`
+        .crop-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: white;
+          border: 2px solid #16a34a;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+          cursor: pointer;
+          position: relative;
+          z-index: 1;
+        }
+        .crop-slider::-moz-range-thumb {
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: white;
+          border: 2px solid #16a34a;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+          cursor: pointer;
+        }
+      `}</style>
       <input
         ref={fileInputRef}
         type="file"
@@ -237,18 +260,39 @@ export function CropDialog() {
             </div>
 
             {/* Zoom controls */}
-            <div className="flex items-center gap-3 px-5 py-3 bg-gray-50 border-b border-gray-100">
-              <ZoomOut className="w-4 h-4 text-gray-400" />
-              <input
-                type="range"
-                min={30}
-                max={300}
-                value={Math.round(scale * 100)}
-                onChange={(e) => setScale(Number(e.target.value) / 100)}
-                className="flex-1 h-1.5 appearance-none rounded-full bg-gray-200 accent-green-700"
-              />
-              <ZoomIn className="w-4 h-4 text-gray-400" />
-              <span className="text-xs text-gray-500 w-10 text-right">{Math.round(scale * 100)}%</span>
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+              <button
+                onClick={() => setScale((s) => Math.max(0.3, s - 0.1))}
+                className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors flex-shrink-0"
+              >
+                <ZoomOut className="w-4 h-4 text-gray-700" />
+              </button>
+              <div className="flex-1 relative flex items-center">
+                <div className="absolute inset-0 flex items-center pointer-events-none">
+                  <div className="w-full h-2 rounded-full bg-gray-200">
+                    <div
+                      className="h-full rounded-full bg-green-600"
+                      style={{ width: `${((scale - 0.3) / (3 - 0.3)) * 100}%` }}
+                    />
+                  </div>
+                </div>
+                <input
+                  type="range"
+                  min={30}
+                  max={300}
+                  value={Math.round(scale * 100)}
+                  onChange={(e) => setScale(Number(e.target.value) / 100)}
+                  className="crop-slider relative w-full h-2 appearance-none bg-transparent cursor-pointer"
+                  style={{ WebkitAppearance: "none" }}
+                />
+              </div>
+              <button
+                onClick={() => setScale((s) => Math.min(3, s + 0.1))}
+                className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors flex-shrink-0"
+              >
+                <ZoomIn className="w-4 h-4 text-gray-700" />
+              </button>
+              <span className="text-xs font-medium text-gray-600 w-10 text-right tabular-nums">{Math.round(scale * 100)}%</span>
             </div>
 
             {/* Actions */}

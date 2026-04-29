@@ -637,7 +637,9 @@ export function ScoreBugOverlay() {
 
       if (json.lastGoalTimestamp && json.lastGoalTimestamp !== lastGoalRef.current) {
         const elapsed = Date.now() - new Date(json.lastGoalTimestamp).getTime();
-        if (elapsed < 10000) {
+        // Use a 45-second window to tolerate server/browser clock skew and
+        // the occasional missed poll cycle in the SSE fallback path.
+        if (elapsed < 45000) {
           const teamColor = json.lastGoalTeamSide === "home"
             ? json.homeTeam?.primaryColor || "#374151"
             : json.awayTeam?.primaryColor || "#374151";

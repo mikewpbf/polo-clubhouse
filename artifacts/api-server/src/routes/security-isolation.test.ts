@@ -280,9 +280,10 @@ describe("cross-team / cross-profile authorization regressions", () => {
   });
 
   // (5) POST /players/:playerId/horses and DELETE /players/:playerId/horses/:horseId
-  // share the same `requireSelfOrEditor(false)` gate as player DELETE. A club-A
-  // admin or a team manager must not be able to mutate the horse list of a player
-  // whose canonical home club they don't administer.
+  // run through `requireSelfOrEditor(true)`: a club-A admin or a team manager must
+  // not be able to mutate the horse list of a player whose canonical home club they
+  // don't administer, AND the linked managed user is allowed to manage the horses
+  // on their own player record (but not anyone else's).
   it("club-A admin cannot POST /players/:playerOnClubB/horses (403, no horse created)", async () => {
     const res = await request(app)
       .post(`/api/players/${playerOnTeamBId}/horses`)
@@ -347,5 +348,66 @@ describe("cross-team / cross-profile authorization regressions", () => {
     const afterDel = await db.select().from(horsesTable)
       .where(eq(horsesTable.id, horseId));
     expect(afterDel.length).toBe(0);
+  });
+
+  // (6) Self-edit happy path: the linked managed user CAN POST and DELETE horses
+  // on their own player record. The horse endpoints went through
+  // `requireSelfOrEditor(false)` historically, which excluded the managed user;
+  // they now use `requireSelfOrEditor(true)` so a player who has claimed their
+  // profile can manage their own string of horses without bothering an admin.
+  it("linked managed user CAN POST and DELETE horses on their own player (201/200, rows reflect it)", async () => {
+    const postRes = await request(app)
+      .post(`/api/players/${linkedPlayerId}/horses`)
+      .set("Authorization", `Bearer ${linkedUserToken}`)
+      .send({ horseName: "My Own Horse" });
+    expect(postRes.status).toBe(201);
+    const horseId: string = postRes.body.id;
+    expect(horseId).toBeTruthy();
+
+    const afterPost = await db.select().from(horsesTable)
+      .where(eq(horsesTable.id, horseId));
+    expect(afterPost.length).toBe(1);
+    expect(afterPost[0].playerId).toBe(linkedPlayerId);
+    expect(afterPost[0].horseName).toBe("My Own Horse");
+
+    const delRes = await request(app)
+      .delete(`/api/players/${linkedPlayerId}/horses/${horseId}`)
+      .set("Authorization", `Bearer ${linkedUserToken}`);
+    expect(delRes.status).toBe(200);
+
+    const afterDel = await db.select().from(horsesTable)
+      .where(eq(horsesTable.id, horseId));
+    expect(afterDel.length).toBe(0);
+  });
+
+  // Cross-player negative: a linked user attempting to add or delete horses on
+  // a player they do not manage must still be rejected 403.
+  it("linked managed user cannot POST horses on a player they don't manage (403, no horse created)", async () => {
+    const res = await request(app)
+      .post(`/api/players/${playerOnTeamBId}/horses`)
+      .set("Authorization", `Bearer ${linkedUserToken}`)
+      .send({ horseName: "Hijacked Horse" });
+    expect(res.status).toBe(403);
+
+    const rows = await db.select().from(horsesTable)
+      .where(eq(horsesTable.playerId, playerOnTeamBId));
+    expect(rows.length).toBe(0);
+  });
+
+  it("linked managed user cannot DELETE horses on a player they don't manage (403, horse still exists)", async () => {
+    const [seed] = await db.insert(horsesTable).values({
+      playerId: playerOnTeamBId,
+      horseName: "Club B Horse",
+    }).returning();
+
+    const res = await request(app)
+      .delete(`/api/players/${playerOnTeamBId}/horses/${seed.id}`)
+      .set("Authorization", `Bearer ${linkedUserToken}`);
+    expect(res.status).toBe(403);
+
+    const rows = await db.select().from(horsesTable)
+      .where(eq(horsesTable.id, seed.id));
+    expect(rows.length).toBe(1);
+    expect(rows[0].playerId).toBe(playerOnTeamBId);
   });
 });

@@ -431,7 +431,7 @@ router.delete("/players/:playerId", requireAuth, requireSelfOrEditor(false), asy
   }
 });
 
-router.post("/players/:playerId/horses", requireAuth, requireSelfOrEditor(false), async (req, res) => {
+router.post("/players/:playerId/horses", requireAuth, requireSelfOrEditor(true), async (req, res) => {
   try {
     const playerId = String(req.params.playerId);
     const [player] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
@@ -469,7 +469,7 @@ router.post("/players/:playerId/horses", requireAuth, requireSelfOrEditor(false)
   }
 });
 
-router.delete("/players/:playerId/horses/:horseId", requireAuth, requireSelfOrEditor(false), async (req, res) => {
+router.delete("/players/:playerId/horses/:horseId", requireAuth, requireSelfOrEditor(true), async (req, res) => {
   try {
     const playerId = String(req.params.playerId);
     const horseId = String(req.params.horseId);

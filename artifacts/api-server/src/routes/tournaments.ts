@@ -818,9 +818,10 @@ router.put("/tournaments/:tournamentId/bpp", requireAuth, requireAdminForTournam
 
 // NOTE: legacy player-horse routes (`GET /players/:playerId/horses`,
 // `POST /players/:playerId/horses`, `DELETE /horses/:horseId`) used to live
-// here. They were removed because they shadowed the canonical, stricter
-// authorization in `routes/players.ts` (where mutations are restricted to
-// admins via requireSelfOrEditor(false)). Roster-scoped horse mutations are
-// served by `/teams/:teamId/players/:playerId/horses[/:horseId]` in teams.ts.
+// here. They were removed because they shadowed the canonical authorization
+// in `routes/players.ts`, where mutations go through `requireSelfOrEditor(true)`
+// — restricted to home-club admins, super admins, or the linked managed user
+// editing their own player. Roster-scoped horse mutations are served by
+// `/teams/:teamId/players/:playerId/horses[/:horseId]` in teams.ts.
 
 export default router;

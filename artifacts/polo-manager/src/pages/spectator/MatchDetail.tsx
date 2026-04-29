@@ -7,7 +7,7 @@ import { MatchClock } from "@/components/MatchClock";
 import { formatDate } from "@/lib/utils";
 import { MapPin, Calendar, BarChart3, Clock } from "lucide-react";
 import { getYouTubeEmbedUrl } from "@/lib/youtube";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { getStoredToken, useAuth } from "@/hooks/use-auth";
 import { X } from "lucide-react";
 
@@ -28,21 +28,28 @@ interface MatchEvent {
 
 const VISIBLE_EVENT_TYPES = new Set(["goal", "chukker_start", "chukker_end", "match_start", "match_end", "penalty", "horse_change", "bowl_in", "knock_in", "foul", "penalty_goal", "shot_on_goal"]);
 
-function formatEventLabel(evt: MatchEvent): string {
+function renderEventLabel(evt: MatchEvent, style?: React.CSSProperties, className?: string): React.ReactNode {
   if (evt.eventType === "goal") {
-    const parts = ["Goal"];
-    if (evt.teamName) parts.push(evt.teamName);
-    if (evt.playerName) parts.push(evt.playerName);
-    return parts.join(" \u2014 ");
+    const playerPart = evt.playerName
+      ? (evt.playerId
+          ? <Link href={`/players/${evt.playerId}`} className="hover:underline">{evt.playerName}</Link>
+          : <span>{evt.playerName}</span>)
+      : null;
+    return (
+      <span className={className} style={style}>
+        Goal{evt.teamName ? ` \u2014 ${evt.teamName}` : ""}{playerPart ? <span> \u2014 </span> : null}{playerPart}
+      </span>
+    );
   }
-  if (evt.eventType === "penalty") return evt.description || "Penalty";
-  if (evt.eventType === "horse_change") return "Horse Change";
-  if (evt.eventType === "bowl_in") return `Bowl In${evt.teamName ? ` — ${evt.teamName}` : ""}`;
-  if (evt.eventType === "knock_in") return `Knock In${evt.teamName ? ` — ${evt.teamName}` : ""}`;
-  if (evt.eventType === "foul") return `Foul${evt.teamName ? ` — ${evt.teamName}` : ""}`;
-  if (evt.eventType === "penalty_goal") return `Penalty Goal${evt.teamName ? ` — ${evt.teamName}` : ""}`;
-  if (evt.eventType === "shot_on_goal") return `Shot on Goal${evt.teamName ? ` — ${evt.teamName}` : ""}`;
-  return evt.eventType.replace(/_/g, " ");
+  let label = evt.eventType.replace(/_/g, " ");
+  if (evt.eventType === "penalty") label = evt.description || "Penalty";
+  else if (evt.eventType === "horse_change") label = "Horse Change";
+  else if (evt.eventType === "bowl_in") label = `Bowl In${evt.teamName ? ` \u2014 ${evt.teamName}` : ""}`;
+  else if (evt.eventType === "knock_in") label = `Knock In${evt.teamName ? ` \u2014 ${evt.teamName}` : ""}`;
+  else if (evt.eventType === "foul") label = `Foul${evt.teamName ? ` \u2014 ${evt.teamName}` : ""}`;
+  else if (evt.eventType === "penalty_goal") label = `Penalty Goal${evt.teamName ? ` \u2014 ${evt.teamName}` : ""}`;
+  else if (evt.eventType === "shot_on_goal") label = `Shot on Goal${evt.teamName ? ` \u2014 ${evt.teamName}` : ""}`;
+  return <span className={className} style={style}>{label}</span>;
 }
 
 function eventDotColor(evt: MatchEvent): string {
@@ -455,12 +462,11 @@ export function MatchDetail() {
                                   <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${eventDotColor(evt)}`} />
                                 )}
                                 <div className="flex-1 min-w-0">
-                                  <span
-                                    className={`text-[13px] font-sans capitalize ${isGoal ? "font-bold" : "font-medium"} ${positiveTeamEvent ? "" : "text-ink"}`}
-                                    style={positiveTeamEvent && teamColor ? { color: teamColor } : undefined}
-                                  >
-                                    {formatEventLabel(evt)}
-                                  </span>
+                                  {renderEventLabel(
+                                    evt,
+                                    positiveTeamEvent && teamColor ? { color: teamColor } : undefined,
+                                    `text-[13px] font-sans capitalize ${isGoal ? "font-bold" : "font-medium"} ${positiveTeamEvent ? "" : "text-ink"}`,
+                                  )}
                                   {evt.clockSeconds != null && (
                                     <span className="text-[12px] text-ink3 ml-2">
                                       {(() => { const remaining = Math.max(0, 450 - (evt.clockSeconds || 0)); return `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`; })()}

@@ -279,6 +279,28 @@ describe("cross-team / cross-profile authorization regressions", () => {
     expect(row.bio).toBe("my own bio");
   });
 
+  // (4b) PATCH /players/:id/profile with a forbidden field must be rejected (403)
+  // and must not mutate the record.
+  it("linked managed user PATCH /players/:id/profile with forbidden field is rejected (403, no mutation)", async () => {
+    const before = await db.select({ handicap: playersTable.handicap })
+      .from(playersTable)
+      .where(eq(playersTable.id, linkedPlayerId));
+
+    const res = await request(app)
+      .patch(`/api/players/${linkedPlayerId}/profile`)
+      .set("Authorization", `Bearer ${linkedUserToken}`)
+      .send({ handicap: "10" });
+
+    expect(res.status).toBe(403);
+    expect(res.body).toHaveProperty("forbiddenFields");
+    expect(res.body.forbiddenFields).toContain("handicap");
+
+    const after = await db.select({ handicap: playersTable.handicap })
+      .from(playersTable)
+      .where(eq(playersTable.id, linkedPlayerId));
+    expect(after[0].handicap).toBe(before[0].handicap);
+  });
+
   // (5) POST /players/:playerId/horses and DELETE /players/:playerId/horses/:horseId
   // run through `requireSelfOrEditor(true)`: a club-A admin or a team manager must
   // not be able to mutate the horse list of a player whose canonical home club they

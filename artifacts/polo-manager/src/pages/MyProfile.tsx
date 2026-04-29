@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
-import { useGetMyLinkedPlayer, useUpdateMyProfile, useListClubs, getGetMyLinkedPlayerQueryKey, type Player, type Club } from "@workspace/api-client-react";
+import {
+  useGetMyLinkedPlayer, useUpdateMyProfile, useListClubs,
+  useGetPlayerProfile,
+  getGetMyLinkedPlayerQueryKey, getGetPlayerProfileQueryKey,
+  type Player, type Club, type PlayerStats, type PlayerTeamHistory, type Horse, type PlayerRecentMatch,
+} from "@workspace/api-client-react";
 import { SpectatorLayout } from "@/components/layout/SpectatorLayout";
 import { PageLoading, EmptyState } from "@/components/LoadingBar";
 import { ImageCropUpload } from "@/components/ImageCropUpload";
@@ -10,6 +15,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
 
+function StatCard({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="bg-bg2/60 rounded-[10px] p-3 text-center">
+      <div className="font-display text-2xl font-bold text-ink">{value}</div>
+      <div className="text-[11px] text-ink3 uppercase tracking-wide mt-0.5">{label}</div>
+    </div>
+  );
+}
+
 export function MyProfile() {
   const { isAuthenticated } = useAuth();
   const { data: linkedRaw, isLoading, refetch } = useGetMyLinkedPlayer({ query: { enabled: isAuthenticated, queryKey: getGetMyLinkedPlayerQueryKey() } });
@@ -17,6 +31,17 @@ export function MyProfile() {
   const { data: clubsRaw } = useListClubs();
   const clubs = clubsRaw as Club[] | undefined;
   const update = useUpdateMyProfile();
+
+  const { data: profileRaw } = useGetPlayerProfile(linked?.id ?? "", {
+    query: {
+      enabled: !!linked?.id,
+      queryKey: getGetPlayerProfileQueryKey(linked?.id ?? ""),
+    },
+  });
+  const stats = profileRaw?.stats as PlayerStats | undefined;
+  const teams = profileRaw?.teams as PlayerTeamHistory[] | undefined;
+  const horses = profileRaw?.horses as Horse[] | undefined;
+  const recentMatches = profileRaw?.recentMatches as PlayerRecentMatch[] | undefined;
 
   const [name, setName] = useState("");
   const [homeClubId, setHomeClubId] = useState("");
@@ -126,6 +151,70 @@ export function MyProfile() {
             <Link href={`/players/${linked.id}`} className="ml-auto text-g700 hover:underline text-[13px]">View public profile →</Link>
           </div>
         </div>
+
+        {stats && (
+          <div className="bg-white rounded-[12px] p-5 card-shadow">
+            <h2 className="font-display font-semibold text-[16px] text-ink mb-3">Career Stats</h2>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              <StatCard label="Career Goals" value={stats.careerGoals} />
+              <StatCard label="Career Wins" value={stats.careerWins} />
+              <StatCard label="Season Goals" value={stats.seasonGoals} />
+              <StatCard label="Season Wins" value={stats.seasonWins} />
+              <StatCard label="MVP Awards" value={stats.mvpAwards} />
+              <StatCard label="BPP Awards" value={stats.bppAwards} />
+            </div>
+          </div>
+        )}
+
+        {teams && teams.length > 0 && (
+          <div className="bg-white rounded-[12px] p-5 card-shadow">
+            <h2 className="font-display font-semibold text-[16px] text-ink mb-3">Teams</h2>
+            <div className="divide-y divide-line2">
+              {teams.map(t => (
+                <div key={`${t.teamId}-${t.seasonYear}`} className="py-2.5 flex items-center justify-between">
+                  <span className="text-[14px] text-ink font-medium">{t.teamName}</span>
+                  <span className="text-[13px] text-ink3">{t.seasonYear}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {horses && horses.length > 0 && (
+          <div className="bg-white rounded-[12px] p-5 card-shadow">
+            <h2 className="font-display font-semibold text-[16px] text-ink mb-3">Horses</h2>
+            <div className="divide-y divide-line2">
+              {horses.map(h => (
+                <div key={h.id} className="py-2.5 flex items-center justify-between">
+                  <span className="text-[14px] text-ink font-medium">{h.horseName}</span>
+                  {h.color && <span className="text-[12px] text-ink3">{h.color}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {recentMatches && recentMatches.length > 0 && (
+          <div className="bg-white rounded-[12px] p-5 card-shadow">
+            <h2 className="font-display font-semibold text-[16px] text-ink mb-3">Recent Matches</h2>
+            <div className="divide-y divide-line2">
+              {recentMatches.map(m => (
+                <div key={m.matchId} className="py-2.5 flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <Link href={`/matches/${m.matchId}`} className="text-[14px] text-ink font-medium hover:text-g700 hover:underline truncate block">
+                      {m.playerTeamName ?? "My Team"} vs {m.opponentTeamName ?? "Opponent"}
+                    </Link>
+                    <div className="text-[12px] text-ink3">{m.tournamentName}{m.scheduledAt ? ` · ${m.scheduledAt.slice(0, 10)}` : ""}</div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-[14px] font-mono font-semibold text-ink">{m.playerScore} – {m.opponentScore}</div>
+                    <div className={`text-[11px] uppercase tracking-wide font-semibold ${m.result === "win" ? "text-g700" : m.result === "loss" ? "text-red-600" : "text-ink3"}`}>{m.result}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </SpectatorLayout>
   );

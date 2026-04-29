@@ -1,0 +1,165 @@
+Build a first-class Player Profile and Management system for the Polo Clubhouse app.
+
+GOALS
+1. Players become a top-level entity shared across teams, tournaments, and matches — 
+   not a per-team roster row.
+2. Public spectator profile page for every player.
+3. Two-way sync: editing a player updates everywhere they appear; match data flows 
+   into player stats automatically.
+4. Role-based admin: super_admin manages everything, club admins manage their club's 
+   players, individual users can manage their own profile when linked.
+5. Discoverability: searchable player directory, top players on the homepage, every 
+   player name in the app links to their profile.
+
+CONTEXT FROM CODEBASE (read these before planning)
+- Existing `players` table is currently a per-team roster (team_id, name, position, 
+  handicap). It needs to become a first-class entity. Refactor in place; do not add 
+  a parallel table.
+- `horses` table is currently per-team. Re-scope it to be per-player.
+- MVP and Best Playing Pony (BPP) are already tracked on the tournament page. Find 
+  that existing mechanism and reuse it. Do NOT add a new awards table or duplicate 
+  data. Note: BPP is a horse award, not a player award.
+- Auth and roles already exist on the `users` table: spectator, team_manager, admin, 
+  super_admin. The `admin_club_memberships` table scopes admins to specific clubs — 
+  this is the "club manager" role.
+- API uses an OpenAPI 3.1 spec at lib/api-spec → Orval → generated React Query hooks 
+  and Zod schemas. Update the spec and regenerate. Do not hand-write hooks.
+- Frontend is split into spectator/, admin/, and my-team/ page surfaces.
+
+DATA MODEL CHANGES
+1. Refactor `players` to first-class:
+   - id, name, headshot_url (nullable), date_of_birth, home_club_id (FK → clubs, 
+     nullable), handicap, bio, managed_by_user_id (nullable FK → users), 
+     created_at, updated_at.
+   - Migrate existing roster rows into this shape; preserve names and handicaps.
+2. Add `team_players` join table:
+   - team_id, player_id, season_year, position.
+   - Move all existing roster relationships here.
+3. Refactor `horses`:
+   - Replace team_id with player_id (FK → players).
+   - Migrate existing horses by associating each with the most-recent player on its 
+     team, or leave unassigned with a needs_review flag for manual cleanup.
+4. Update `match_events` and every other reference to old player rows to use the new 
+   player_id.
+5. Do NOT add stat columns to the players table. All stats are computed live.
+
+API ROUTES (under /api, following existing route conventions)
+- GET /players — list with `search` query param. Results filtered by viewer role.
+- GET /players/top?limit=8 — top players by handicap descending. Public.
+- GET /players/:id — public profile data including computed stats. No auth required.
+- POST /players — create. Permission-checked.
+- PUT /players/:id — full edit. super_admin, or admin with admin_club_membership 
+  matching the player's home_club_id.
+- PATCH /players/:id/profile — limited self-edit for user matching managed_by_user_id. 
+  Server-side whitelist: headshot_url, name, date_of_birth, home_club_id, bio. 
+  Reject any other field with 403.
+- POST /players/:id/horses — add horse to player's string.
+- DELETE /players/:id/horses/:horseId — remove horse.
+
+STATS (computed live on every profile read; never stored)
+- Season goals: sum of `match_events` of type 'goal' where player_id matches, in 
+  current season's matches.
+- Season wins: count of matches in current season where this player was rostered on 
+  the winning team (via team_players for that season + match result).
+- Career goals, career wins: same queries without season filter.
+- MVP awards: count from existing tournament MVP records where the player_id matches. 
+  Read from wherever MVP is currently stored — do not duplicate.
+- BPP awards (player-level): count of BPP awards where the winning horse's current 
+  player_id matches this player.
+- Teams played on: distinct teams from team_players, ordered by season descending, 
+  showing year next to each.
+- Horses in string: list from horses table where player_id matches.
+
+FRONTEND PAGES
+1. /players/:id — public spectator profile (no auth). Layout:
+   - Header card: headshot or gray circular placeholder, name, handicap pill, age, 
+     home club.
+   - Stat grid (4 cards): Season goals, Season wins, MVP awards, BPP awards.
+   - Teams played on: list with team name + year, each linking to the team page.
+   - Horses in string: chip list of horse names.
+   - Career totals row below season stats.
+2. /admin/players — admin directory.
+   - Search input (filters by name).
+   - Sortable columns: name, handicap, home club, last match date.
+   - super_admin: sees all players, "Add player" button visible.
+   - admin (club-scoped): sees only players where home_club_id matches their 
+     admin_club_membership; "Add player" creates with that home_club_id pre-set.
+   - team_manager: read-only list of players on their assigned team's current 
+     roster only.
+3. /admin/players/:id — admin manage page.
+   - Full edit form for all fields.
+   - Assign managed_by_user_id (search users by email).
+   - Assign home_club_id.
+   - Horse roster management (add/remove).
+   - Live computed stats panel (read-only, mirrors public profile).
+4. /my-profile — limited self-management.
+   - Visible to any logged-in user whose user_id is set as managed_by_user_id on 
+     some player record.
+   - Editable: headshot, name, date_of_birth, home_club_id, bio.
+   - Read-only display: stats, teams, horses, awards.
+   - Does not appear in nav for users without a linked player.
+5. Homepage (/) — add "Top players" section:
+   - 8 cards sorted by handicap descending.
+   - Each card: headshot or placeholder, name, handicap, home club.
+   - Click → /players/:id.
+
+INTEGRATION (two-way sync — required)
+- Replace every free-text player name field in team rosters and match lineups with 
+  a player picker (searches the players table, returns player_id).
+- On match pages, tournament pages, team pages, and anywhere else a player name is 
+  shown: render name + headshot + handicap by reading the player record. Editing 
+  the player profile must update these views automatically (no caching of player 
+  data outside the player record).
+- Every player name displayed anywhere in the app is a link to /players/:id.
+- Wherever a headshot is shown and headshot_url is null, render a neutral gray 
+  circular placeholder of the same dimensions. Do not show broken-image icons or 
+  blank space.
+- Search behavior: /players list page and the player picker both use a single 
+  search endpoint that matches on name (case-insensitive, partial match). Debounce 
+  on the frontend.
+
+PERMISSIONS (server-side enforced on every endpoint, not just hidden in UI)
+- super_admin: full access. Can create, edit, delete any player. Can assign any 
+  managed_by_user_id and home_club_id.
+- admin with admin_club_memberships row for club X:
+  - Can create players with home_club_id = X.
+  - Can edit any player where home_club_id = X.
+  - Can add their club's players to tournaments their club is participating in.
+  - Cannot view edit endpoints for, or modify, other clubs' players.
+- team_manager: read-only access to players currently on their assigned team's 
+  roster (via team_manager_assignments). No create, edit, or delete.
+- any logged-in user where users.id matches a player's managed_by_user_id: can call 
+  PATCH /players/:id/profile for that player only, with the field whitelist above. 
+  No other player endpoints.
+- public (no auth): GET /players/:id and GET /players/top only.
+
+CONSTRAINTS
+- Match the existing app's components, layout, and visual conventions exactly. Use 
+  the same form patterns, table styling, image upload mechanism (same as club/team 
+  logos), and admin dashboard structure. Do not introduce new design patterns or 
+  styles.
+- Keep existing match, tournament, scoring, standings, MVP, and BPP logic working 
+  through the refactor. Existing pages must not break.
+- Update the OpenAPI spec in lib/api-spec, then run 
+  `pnpm --filter @workspace/api-spec run codegen` so the generated React Query 
+  hooks and Zod schemas exist before any frontend code imports them.
+- Run `pnpm run typecheck` and any existing tests after the migration. Resolve all 
+  errors before considering the task done.
+- Add tests for:
+  - PATCH /players/:id/profile field whitelist (rejects non-whitelisted fields).
+  - Role-based access on list, create, edit, and delete endpoints.
+  - Live stat computation against seeded match data (verify each stat value).
+  - Two-way sync: editing a player profile changes what shows on a match page.
+  - Headshot fallback renders the gray placeholder when headshot_url is null.
+
+EXECUTION ORDER
+1. Read lib/db/src/schema/ and the tournaments page code. Locate where MVP and BPP 
+   are stored today.
+2. Produce a written migration plan covering: SQL changes, data migration steps for 
+   existing players and horses, where MVP/BPP currently live and how the stats query 
+   will read them, and the order of operations.
+3. Wait for approval before running any migrations.
+4. After approval: run migrations, refactor code, add new endpoints, regenerate API 
+   client, build frontend pages, run typecheck and tests.
+5. Report back with a summary of what changed and any data that landed in the 
+   "needs_review" bucket from the horse migration.

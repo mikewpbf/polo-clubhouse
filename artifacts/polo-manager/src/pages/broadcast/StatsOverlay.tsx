@@ -204,9 +204,11 @@ export function StatsOverlay({ homeTeam, awayTeam, homeScore, awayScore, stats, 
           {(() => {
             const allRows: { key: string; label: string; hVal: number | string; aVal: number | string; hBar: number; aBar: number }[] = [];
             for (const row of STAT_ROWS) {
-              const hVal = stats?.home?.[row.key] ?? 0;
-              const aVal = stats?.away?.[row.key] ?? 0;
-              allRows.push({ key: row.key, label: row.label, hVal, aVal, hBar: hVal, aBar: aVal });
+              // Use the actual stored score for Goals — it includes handicap
+              // adjustments that are never recorded as individual match events.
+              const hVal = row.key === "goal" ? homeScore : (stats?.home?.[row.key] ?? 0);
+              const aVal = row.key === "goal" ? awayScore : (stats?.away?.[row.key] ?? 0);
+              allRows.push({ key: row.key, label: row.label, hVal, aVal, hBar: Number(hVal), aBar: Number(aVal) });
               if (row.key === "shot_on_goal") {
                 const hAcc = shotAccuracyPct(stats?.home);
                 const aAcc = shotAccuracyPct(stats?.away);

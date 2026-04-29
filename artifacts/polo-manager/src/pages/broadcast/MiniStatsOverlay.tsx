@@ -23,6 +23,8 @@ interface PossessionData {
 interface MiniStatsOverlayProps {
   homeTeam: BroadcastTeam | null;
   awayTeam: BroadcastTeam | null;
+  homeScore: number;
+  awayScore: number;
   stats: StatData | null;
   possession?: PossessionData | null;
   tournament?: { name: string; chukkersPerMatch: number } | null;
@@ -89,7 +91,7 @@ function shotAccuracyDisplay(side: Record<string, number> | undefined): string {
   return `${Math.round((goals / shots) * 100)}%`;
 }
 
-export function MiniStatsOverlay({ homeTeam, awayTeam, stats, possession, tournament }: MiniStatsOverlayProps) {
+export function MiniStatsOverlay({ homeTeam, awayTeam, homeScore, awayScore, stats, possession, tournament }: MiniStatsOverlayProps) {
   const hColor = teamColor(homeTeam, "#1B5E20");
   const aColor = teamColor(awayTeam, "#6A1B1A");
 
@@ -153,7 +155,11 @@ export function MiniStatsOverlay({ homeTeam, awayTeam, stats, possession, tourna
         const val: string | number =
           col.key === "shot_accuracy"
             ? shotAccuracyDisplay(sideStats)
-            : (sideStats?.[col.key] ?? 0);
+            // Use the actual stored score for Goals — includes handicap adjustments
+            // that are never recorded as match events.
+            : col.key === "goal"
+              ? (side === "home" ? homeScore : awayScore)
+              : (sideStats?.[col.key] ?? 0);
         return (
           <div
             key={col.key}

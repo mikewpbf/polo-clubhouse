@@ -780,6 +780,8 @@ export function ScoreBugOverlay() {
         <MiniStatsOverlay
           homeTeam={data.homeTeam}
           awayTeam={data.awayTeam}
+          homeScore={data.homeScore}
+          awayScore={data.awayScore}
           stats={data.stats ?? null}
           possession={data.possession}
           tournament={data.tournament}

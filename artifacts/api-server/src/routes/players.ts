@@ -245,8 +245,9 @@ router.get("/players/top", async (req, res) => {
         careerGames: Number(p.career_games),
       };
     }));
-  } catch (e: any) {
-    res.status(500).json({ message: e.message });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Internal server error";
+    res.status(500).json({ message });
   }
 });
 

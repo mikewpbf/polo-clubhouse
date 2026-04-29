@@ -6,10 +6,40 @@ import { PageLoading, EmptyState } from "@/components/LoadingBar";
 import { PlayerHeadshot } from "@/components/PlayerHeadshot";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, ArrowUp, ArrowDown } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { Plus, Search, ArrowUp, ArrowDown, Wrench } from "lucide-react";
+import { useAuth, getStoredToken } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+
+type CleanupGroup = { name: string; canonicalId: string; mergedDuplicateIds: string[] };
+type CleanupSummary = {
+  dryRun: boolean;
+  executed: boolean;
+  mergedGroups: CleanupGroup[];
+  duplicatesRemoved: number;
+  eventsReassigned: number;
+  teamLinksReassigned: number;
+  teamLinksDroppedAsConflict: number;
+  horsesReassigned: number;
+  noEventPlayersRemoved: number;
+  noEventPlayerNames: string[];
+};
+
+async function callCleanup(dryRun: boolean): Promise<CleanupSummary> {
+  const token = getStoredToken();
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  const res = await fetch(`${base}/api/admin/players/cleanup?dryRun=${dryRun}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Cleanup failed");
+  return data as CleanupSummary;
+}
 
 type SortKey = "name" | "handicap" | "homeClubName" | "lastMatchDate";
 type SortDir = "asc" | "desc";
@@ -28,12 +58,15 @@ type PlayerRow = {
 export function AdminPlayers() {
   const [, navigate] = useLocation();
   const { user } = useAuth();
+  const { toast } = useToast();
   // Team managers get a read-only directory view (no create, no per-row drilldown
   // into the manage page). Club admins / super admins retain full management UI.
   const readOnly = user?.role === "team_manager";
+  const isSuperAdmin = user?.role === "super_admin";
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
+  const [cleanupOpen, setCleanupOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
@@ -89,9 +122,16 @@ export function AdminPlayers() {
             </p>
           </div>
           {!readOnly && (
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="w-4 h-4 mr-1.5" /> New Player
-            </Button>
+            <div className="flex items-center gap-2">
+              {isSuperAdmin && (
+                <Button variant="outline" onClick={() => setCleanupOpen(true)}>
+                  <Wrench className="w-4 h-4 mr-1.5" /> Cleanup
+                </Button>
+              )}
+              <Button onClick={() => setCreateOpen(true)}>
+                <Plus className="w-4 h-4 mr-1.5" /> New Player
+              </Button>
+            </div>
           )}
         </div>
 
@@ -151,7 +191,141 @@ export function AdminPlayers() {
           onCreated={() => { setCreateOpen(false); refetch(); }}
         />
       )}
+
+      {cleanupOpen && (
+        <CleanupDialog
+          onClose={() => setCleanupOpen(false)}
+          onDone={() => { setCleanupOpen(false); refetch(); }}
+          toast={toast}
+        />
+      )}
     </AdminLayout>
+  );
+}
+
+function CleanupDialog({
+  onClose,
+  onDone,
+  toast,
+}: {
+  onClose: () => void;
+  onDone: () => void;
+  toast: ReturnType<typeof useToast>["toast"];
+}) {
+  const [preview, setPreview] = useState<CleanupSummary | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(true);
+  const [executing, setExecuting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    callCleanup(true)
+      .then(s => { if (!cancelled) setPreview(s); })
+      .catch(e => { if (!cancelled) setError(e.message); })
+      .finally(() => { if (!cancelled) setLoadingPreview(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const execute = async () => {
+    setExecuting(true);
+    setError(null);
+    try {
+      const result = await callCleanup(false);
+      toast({
+        title: "Cleanup complete",
+        description: `Merged ${result.duplicatesRemoved} duplicate(s); removed ${result.noEventPlayersRemoved} no-match player(s).`,
+      });
+      onDone();
+    } catch (e: any) {
+      setError(e.message || "Cleanup failed");
+      setExecuting(false);
+    }
+  };
+
+  const nothingToDo = preview && preview.duplicatesRemoved === 0 && preview.noEventPlayersRemoved === 0;
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && !executing && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Cleanup players</DialogTitle>
+          <DialogDescription>
+            Merges player records with duplicate names and removes players who have never appeared in a match.
+          </DialogDescription>
+        </DialogHeader>
+
+        {loadingPreview ? (
+          <div className="text-[14px] text-ink2 py-4">Calculating preview…</div>
+        ) : error ? (
+          <div className="text-[13px] text-red-600 py-4">{error}</div>
+        ) : preview ? (
+          <div className="space-y-4 text-[14px] max-h-[60vh] overflow-y-auto">
+            <div className="grid grid-cols-2 gap-3">
+              <Stat label="Duplicate records to merge" value={preview.duplicatesRemoved} />
+              <Stat label="No-match players to remove" value={preview.noEventPlayersRemoved} />
+              <Stat label="Goal events reassigned" value={preview.eventsReassigned} />
+              <Stat label="Roster links reassigned" value={preview.teamLinksReassigned} />
+              <Stat label="Roster links dropped (duplicate on same team/season)" value={preview.teamLinksDroppedAsConflict} />
+              <Stat label="Horses reassigned" value={preview.horsesReassigned} />
+            </div>
+
+            {preview.mergedGroups.length > 0 && (
+              <div>
+                <div className="font-semibold text-ink mb-1.5">Names being merged</div>
+                <ul className="text-[13px] text-ink2 space-y-1 max-h-40 overflow-y-auto border border-line2 rounded-[8px] p-2">
+                  {preview.mergedGroups.map(g => (
+                    <li key={g.canonicalId}>
+                      <span className="font-medium text-ink">{g.name}</span>{" "}
+                      — keeping 1, removing {g.mergedDuplicateIds.length} duplicate{g.mergedDuplicateIds.length === 1 ? "" : "s"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {preview.noEventPlayerNames.length > 0 && (
+              <div>
+                <div className="font-semibold text-ink mb-1.5">Players being removed (no match history)</div>
+                <ul className="text-[13px] text-ink2 columns-2 max-h-40 overflow-y-auto border border-line2 rounded-[8px] p-2">
+                  {preview.noEventPlayerNames.map((n, i) => (
+                    <li key={i} className="break-inside-avoid">{n}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {nothingToDo && (
+              <div className="text-[13px] text-ink2 italic">Nothing to clean up — your player directory is already tidy.</div>
+            )}
+
+            {!nothingToDo && (
+              <div className="text-[13px] text-amber-700 bg-amber-50 border border-amber-200 rounded-[8px] p-2.5">
+                This operation cannot be undone from the UI. Make sure you have a recent database backup before continuing.
+              </div>
+            )}
+          </div>
+        ) : null}
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose} disabled={executing}>Cancel</Button>
+          <Button
+            onClick={execute}
+            disabled={loadingPreview || executing || !!error || !!nothingToDo}
+          >
+            {executing ? "Cleaning up…" : "Run cleanup"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="bg-bg2/50 rounded-[8px] p-2.5">
+      <div className="text-[11px] uppercase tracking-wide text-ink3">{label}</div>
+      <div className="text-[20px] font-semibold text-ink">{value}</div>
+    </div>
   );
 }
 

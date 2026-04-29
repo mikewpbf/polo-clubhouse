@@ -99,7 +99,7 @@ artifacts-monorepo/
 - `POST /matches/:matchId/possession/token` — generate shareable possession tracker token (admin only)
 - `GET /matches/:matchId/possession/verify-token` — verify token for helper access
 - `POST /invites/team-manager|admin`, `GET /invites`, `GET /invites/:token`, `POST /invites/accept`, `POST /invites/:token/accept`
-- `GET /players` (search), `POST /players` (super_admin), `GET /players/top?limit=N`
+- `GET /players` (search), `POST /players` (super_admin), `GET /players/top?limit=N`, `POST /admin/players/cleanup?dryRun=true|false` (super_admin — merges duplicate-name records and deletes players with zero match events; transactional with dry-run preview)
 - `GET /players/:playerId` (full profile: stats, teams, horses), `PUT /players/:playerId` (full edit), `PATCH /players/:playerId/profile` (self-edit only — managed user or super_admin), `DELETE /players/:playerId`
 - `POST /players/:playerId/horses`, `DELETE /players/:playerId/horses/:horseId`
 - `GET /me/linked-player`

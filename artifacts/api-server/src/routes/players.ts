@@ -527,4 +527,184 @@ router.get("/me/linked-player", requireAuth, async (req, res) => {
   }
 });
 
+// Super-admin only: cleanup duplicate-name player records and remove players
+// who have never appeared in a match.
+//
+// Behaviour:
+//   1. Group players by LOWER(TRIM(name)). For each group with >1 records, pick
+//      a "canonical" record using: most match_events DESC, then most team_players
+//      DESC, then oldest created_at ASC, then id ASC (deterministic).
+//   2. Reassign FKs from the non-canonical records onto the canonical one
+//      (match_events.player_id, team_players.player_id, horses.player_id).
+//      For team_players, drop conflicting links first to respect the
+//      (team_id, player_id, season_year) unique constraint.
+//   3. Delete the non-canonical player rows.
+//   4. Delete any player with zero match_events (the "no last match date"
+//      criterion). Run AFTER merge so consolidated dups are preserved.
+//
+// All work runs in a single transaction. Pass ?dryRun=true (default) to preview
+// without committing; pass ?dryRun=false to execute.
+router.post("/admin/players/cleanup", requireAuth, async (req, res) => {
+  if (!isSuperAdmin(req.user!)) {
+    res.status(403).json({ message: "Super admin only" });
+    return;
+  }
+  const dryRun = String(req.query.dryRun ?? "true") !== "false";
+
+  type GroupSummary = { name: string; canonicalId: string; mergedDuplicateIds: string[] };
+  type Summary = {
+    dryRun: boolean;
+    executed: boolean;
+    mergedGroups: GroupSummary[];
+    duplicatesRemoved: number;
+    eventsReassigned: number;
+    teamLinksReassigned: number;
+    teamLinksDroppedAsConflict: number;
+    horsesReassigned: number;
+    noEventPlayersRemoved: number;
+    noEventPlayerNames: string[];
+  };
+
+  // Sentinel used to roll back the transaction in dry-run mode while still
+  // returning the computed summary.
+  class DryRunRollback extends Error {
+    constructor(public summary: Summary) { super("dry-run"); }
+  }
+
+  try {
+    const summary = await db.transaction(async (tx) => {
+      // --- Step 1: identify duplicate-name groups and pick canonicals.
+      const dupRows = await tx.execute(sql`
+        WITH player_stats AS (
+          SELECT
+            p.id,
+            p.name,
+            p.created_at,
+            LOWER(TRIM(p.name)) AS norm,
+            (SELECT COUNT(*) FROM match_events e
+              WHERE e.player_id = p.id AND e.event_type = 'goal')::int AS goals_cnt,
+            (SELECT COUNT(*) FROM team_players t WHERE t.player_id = p.id)::int AS team_cnt
+          FROM players p
+          WHERE LOWER(TRIM(p.name)) IN (
+            SELECT LOWER(TRIM(name)) FROM players
+            GROUP BY LOWER(TRIM(name)) HAVING COUNT(*) > 1
+          )
+        )
+        SELECT id, name, norm,
+          ROW_NUMBER() OVER (
+            PARTITION BY norm
+            ORDER BY goals_cnt DESC, team_cnt DESC, created_at ASC NULLS LAST, id ASC
+          )::int AS rk
+        FROM player_stats
+        ORDER BY norm, rk
+      `);
+
+      type DupRow = { id: string; name: string; norm: string; rk: number };
+      const rows = (dupRows.rows as unknown as DupRow[]).map(r => ({ ...r, rk: Number(r.rk) }));
+      const groupsByNorm = new Map<string, { canonicalId: string; canonicalName: string; dupIds: string[] }>();
+      for (const r of rows) {
+        if (r.rk === 1) {
+          groupsByNorm.set(r.norm, { canonicalId: r.id, canonicalName: r.name, dupIds: [] });
+        } else {
+          const g = groupsByNorm.get(r.norm);
+          if (g) g.dupIds.push(r.id);
+        }
+      }
+
+      const mergedGroups: GroupSummary[] = [];
+      let eventsReassigned = 0;
+      let teamLinksReassigned = 0;
+      let teamLinksDroppedAsConflict = 0;
+      let horsesReassigned = 0;
+
+      for (const [, g] of groupsByNorm) {
+        if (g.dupIds.length === 0) continue;
+        mergedGroups.push({ name: g.canonicalName, canonicalId: g.canonicalId, mergedDuplicateIds: [...g.dupIds] });
+
+        // Reassign match_events: simple bulk update (no unique constraints to worry about).
+        const er = await tx.update(matchEventsTable)
+          .set({ playerId: g.canonicalId })
+          .where(inArray(matchEventsTable.playerId, g.dupIds))
+          .returning({ id: matchEventsTable.id });
+        eventsReassigned += er.length;
+
+        // Reassign team_players carefully — there's a unique constraint on
+        // (team_id, player_id, season_year). Drop any dup link that would
+        // collide with an existing canonical link for the same (team, season).
+        const dupLinks = await tx.select().from(teamPlayersTable)
+          .where(inArray(teamPlayersTable.playerId, g.dupIds));
+        if (dupLinks.length > 0) {
+          const canonicalLinks = await tx.select().from(teamPlayersTable)
+            .where(eq(teamPlayersTable.playerId, g.canonicalId));
+          const canonicalKeys = new Set(canonicalLinks.map(l => `${l.teamId}::${l.seasonYear}`));
+          const toDrop: string[] = [];
+          const toReassign: string[] = [];
+          for (const l of dupLinks) {
+            const key = `${l.teamId}::${l.seasonYear}`;
+            if (canonicalKeys.has(key)) toDrop.push(l.id);
+            else { toReassign.push(l.id); canonicalKeys.add(key); }
+          }
+          if (toDrop.length > 0) {
+            await tx.delete(teamPlayersTable).where(inArray(teamPlayersTable.id, toDrop));
+            teamLinksDroppedAsConflict += toDrop.length;
+          }
+          if (toReassign.length > 0) {
+            const tr = await tx.update(teamPlayersTable)
+              .set({ playerId: g.canonicalId })
+              .where(inArray(teamPlayersTable.id, toReassign))
+              .returning({ id: teamPlayersTable.id });
+            teamLinksReassigned += tr.length;
+          }
+        }
+
+        // Reassign horses: no problematic unique constraint here.
+        const hr = await tx.update(horsesTable)
+          .set({ playerId: g.canonicalId })
+          .where(inArray(horsesTable.playerId, g.dupIds))
+          .returning({ id: horsesTable.id });
+        horsesReassigned += hr.length;
+      }
+
+      const allDupIds = mergedGroups.flatMap(g => g.mergedDuplicateIds);
+      if (allDupIds.length > 0) {
+        await tx.delete(playersTable).where(inArray(playersTable.id, allDupIds));
+      }
+
+      // --- Step 2: delete remaining players with zero match_events.
+      const noEventRows = await tx.execute(sql`
+        SELECT p.id, p.name FROM players p
+        WHERE NOT EXISTS (SELECT 1 FROM match_events e WHERE e.player_id = p.id)
+        ORDER BY p.name
+      `);
+      const noEvent = noEventRows.rows as unknown as Array<{ id: string; name: string }>;
+      if (noEvent.length > 0) {
+        await tx.delete(playersTable).where(inArray(playersTable.id, noEvent.map(r => r.id)));
+      }
+
+      const result: Summary = {
+        dryRun,
+        executed: !dryRun,
+        mergedGroups,
+        duplicatesRemoved: allDupIds.length,
+        eventsReassigned,
+        teamLinksReassigned,
+        teamLinksDroppedAsConflict,
+        horsesReassigned,
+        noEventPlayersRemoved: noEvent.length,
+        noEventPlayerNames: noEvent.map(r => r.name),
+      };
+
+      if (dryRun) throw new DryRunRollback(result);
+      return result;
+    });
+    res.json(summary);
+  } catch (e: any) {
+    if (e instanceof DryRunRollback) {
+      res.json(e.summary);
+      return;
+    }
+    res.status(500).json({ message: e.message });
+  }
+});
+
 export default router;

@@ -11,6 +11,7 @@ import {
   tournamentsTable,
   adminClubMembershipsTable,
   teamManagerAssignmentsTable,
+  usersTable,
   HORSE_SEX_OPTIONS,
   HORSE_COLOR_OPTIONS,
 } from "@workspace/db/schema";
@@ -48,17 +49,9 @@ async function userCanEditPlayerFull(userId: string, userRole: string, playerId:
       if (team?.clubId && memberships.some(m => m.clubId === team.clubId)) return true;
     }
   }
-  // Team managers can edit players currently rostered on their team(s)
-  const assignments = await db.select().from(teamManagerAssignmentsTable).where(
-    and(eq(teamManagerAssignmentsTable.userId, userId), eq(teamManagerAssignmentsTable.status, "active"))
-  );
-  if (assignments.length > 0) {
-    const teamIds = assignments.map(a => a.teamId);
-    const tps = await db.select().from(teamPlayersTable).where(
-      and(eq(teamPlayersTable.playerId, playerId), inArray(teamPlayersTable.teamId, teamIds))
-    );
-    if (tps.length > 0) return true;
-  }
+  // Team managers are intentionally read-only for player records: they may view rosters
+  // but must not mutate identity-level fields (name, handicap, headshot, bio, ...).
+  // Roster membership changes go through team-player join routes, not the player record.
   return false;
 }
 
@@ -93,7 +86,16 @@ router.get("/players", optionalAuth, async (req, res) => {
     const clubId = req.query.clubId as string | undefined;
     const teamIdFilter = req.query.teamId as string | undefined;
 
+    const includeInactiveParam = String(req.query.includeInactive ?? "").toLowerCase() === "true";
+    // Only super_admins or club admins are permitted to list inactive/archived players;
+    // anonymous and ordinary users always get the active-only directory.
+    const viewerIsAdmin = !!req.user && (
+      req.user.role === "super_admin" || req.user.role === "admin"
+    );
+    const includeInactive = includeInactiveParam && viewerIsAdmin;
+
     const conditions: any[] = [];
+    if (!includeInactive) conditions.push(eq(playersTable.isActive, true));
     if (search) conditions.push(ilike(playersTable.name, `%${search}%`));
     if (clubId) conditions.push(eq(playersTable.homeClubId, clubId));
 
@@ -298,6 +300,13 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
       bppAwards = bppRows.length;
     }
 
+    // Linked user (only included when caller is super_admin or self)
+    let managedByUser: any = null;
+    if (player.managedByUserId && req.user && (isSuperAdmin(req.user) || req.user.id === player.managedByUserId)) {
+      const [u] = await db.select().from(usersTable).where(eq(usersTable.id, player.managedByUserId));
+      if (u) managedByUser = { id: u.id, email: u.email, displayName: u.displayName };
+    }
+
     res.json({
       id: player.id,
       name: player.name,
@@ -309,6 +318,7 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
       homeClubName: club?.name ?? null,
       homeClubSlug: club?.slug ?? null,
       managedByUserId: player.managedByUserId,
+      managedByUser,
       age: calcAge(player.dateOfBirth as any),
       stats: { seasonGoals, seasonWins, careerGoals, careerWins, mvpAwards, bppAwards },
       teams,
@@ -340,10 +350,23 @@ router.put("/players/:playerId", requireAuth, requireSelfOrEditor(false), async 
   }
 });
 
+const SELF_PROFILE_ALLOWED_FIELDS = new Set(["name", "headshotUrl", "dateOfBirth", "homeClubId", "bio"]);
+
 router.patch("/players/:playerId/profile", requireAuth, requireSelfOnly, async (req, res) => {
   try {
     const playerId = String(req.params.playerId);
-    const { name, headshotUrl, dateOfBirth, homeClubId, bio } = req.body;
+    const body = (req.body && typeof req.body === "object") ? req.body as Record<string, unknown> : {};
+    const incoming = Object.keys(body);
+    const forbidden = incoming.filter(k => !SELF_PROFILE_ALLOWED_FIELDS.has(k));
+    if (forbidden.length > 0) {
+      res.status(403).json({
+        message: `These fields are not editable from your own profile: ${forbidden.join(", ")}`,
+        forbiddenFields: forbidden,
+        allowedFields: Array.from(SELF_PROFILE_ALLOWED_FIELDS),
+      });
+      return;
+    }
+    const { name, headshotUrl, dateOfBirth, homeClubId, bio } = body as Record<string, any>;
     const updates: Record<string, any> = { updatedAt: new Date() };
     if (name !== undefined) updates.name = String(name).trim();
     if (headshotUrl !== undefined) updates.headshotUrl = headshotUrl || null;

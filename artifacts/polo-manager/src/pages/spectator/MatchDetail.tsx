@@ -177,7 +177,11 @@ export function MatchDetail() {
                     .slice(0, 4)
                     .map((p: any) => (
                     <div key={p.id} className="flex items-center justify-between py-1">
-                      <span className="text-[13px] font-sans text-ink">{p.name}</span>
+                      {p.id ? (
+                        <Link href={`/players/${p.id}`} className="text-[13px] font-sans text-ink hover:text-g700 hover:underline">{p.name}</Link>
+                      ) : (
+                        <span className="text-[13px] font-sans text-ink">{p.name}</span>
+                      )}
                       {p.handicap != null && (
                         <span className="text-[11px] font-mono text-ink3 bg-g50 px-1.5 py-0.5 rounded-[4px]">{Number(p.handicap) > 0 ? `+${p.handicap}` : p.handicap}</span>
                       )}
@@ -238,7 +242,11 @@ export function MatchDetail() {
                     .slice(0, 4)
                     .map((p: any) => (
                     <div key={p.id} className="flex items-center justify-between py-1">
-                      <span className="text-[13px] font-sans text-ink">{p.name}</span>
+                      {p.id ? (
+                        <Link href={`/players/${p.id}`} className="text-[13px] font-sans text-ink hover:text-g700 hover:underline">{p.name}</Link>
+                      ) : (
+                        <span className="text-[13px] font-sans text-ink">{p.name}</span>
+                      )}
                       {p.handicap != null && (
                         <span className="text-[11px] font-mono text-ink3 bg-g50 px-1.5 py-0.5 rounded-[4px]">{Number(p.handicap) > 0 ? `+${p.handicap}` : p.handicap}</span>
                       )}
@@ -345,12 +353,13 @@ export function MatchDetail() {
 
         {eventList.length > 0 && (() => {
           const goalEvents = rawEvents.filter(e => e.eventType === "goal" || e.eventType === "penalty_goal");
-          const scorerMap = new Map<string, { name: string; teamName: string | null; teamColor: string | null; goals: number }>();
+          const scorerMap = new Map<string, { playerId: string | null; name: string; teamName: string | null; teamColor: string | null; goals: number }>();
           for (const evt of goalEvents) {
             if (!evt.playerName) continue;
-            const key = evt.playerName;
+            const pid = (evt as any).playerId ?? null;
+            const key = pid ? `id:${pid}` : `name:${evt.playerName}`;
             if (!scorerMap.has(key)) {
-              scorerMap.set(key, { name: evt.playerName, teamName: evt.teamName, teamColor: evt.teamColor, goals: 0 });
+              scorerMap.set(key, { playerId: pid, name: evt.playerName, teamName: evt.teamName, teamColor: evt.teamColor, goals: 0 });
             }
             scorerMap.get(key)!.goals++;
           }
@@ -391,7 +400,13 @@ export function MatchDetail() {
                           {topScorers.map((scorer, i) => (
                             <tr key={i} className="border-b border-line2 last:border-0">
                               <td className="py-2.5 font-mono text-ink3">{i + 1}</td>
-                              <td className="py-2.5 font-medium text-ink">{scorer.name}</td>
+                              <td className="py-2.5 font-medium text-ink">
+                                {scorer.playerId ? (
+                                  <Link href={`/players/${scorer.playerId}`} className="hover:text-g700 hover:underline">{scorer.name}</Link>
+                                ) : (
+                                  scorer.name
+                                )}
+                              </td>
                               <td className="py-2.5 text-ink2">{scorer.teamName || ""}</td>
                               <td className="py-2.5 text-center font-medium">{scorer.goals}</td>
                             </tr>

@@ -320,18 +320,28 @@ export function Home() {
               </Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {topPlayers.map((p: Record<string, any>) => (
-                <Link key={p.id} href={`/players/${p.id}`} className="block">
-                  <div className="bg-white rounded-[12px] p-4 card-shadow hover:border-g300 border border-transparent transition-colors text-center">
-                    <PlayerHeadshot url={p.headshotUrl} name={p.name} size={64} className="mx-auto" />
-                    <div className="mt-2 font-sans font-semibold text-[13px] text-ink truncate">{p.name}</div>
-                    <div className="mt-1 text-[11px] text-ink3 flex items-center justify-center gap-1">
-                      <Award className="w-3 h-3" />
-                      {p.seasonGoals ?? 0} goals
+              {topPlayers.map((p: Record<string, any>) => {
+                const hcRaw = p.handicap;
+                const hcNum = hcRaw == null ? null : Number(hcRaw);
+                const hcLabel = hcNum == null || Number.isNaN(hcNum) ? null : (hcNum > 0 ? `+${hcNum}` : `${hcNum}`);
+                return (
+                  <Link key={p.id} href={`/players/${p.id}`} className="block">
+                    <div className="bg-white rounded-[12px] p-4 card-shadow hover:border-g300 border border-transparent transition-colors text-center">
+                      <PlayerHeadshot url={p.headshotUrl} name={p.name} size={64} className="mx-auto" />
+                      <div className="mt-2 font-sans font-semibold text-[13px] text-ink truncate">{p.name}</div>
+                      {hcLabel && (
+                        <div className="mt-1 inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-g700 bg-g50 px-1.5 py-0.5 rounded-[4px]">
+                          <Award className="w-3 h-3" />
+                          {hcLabel}
+                        </div>
+                      )}
+                      {p.homeClubName && (
+                        <div className="mt-1 text-[11px] font-sans text-ink3 truncate">{p.homeClubName}</div>
+                      )}
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}

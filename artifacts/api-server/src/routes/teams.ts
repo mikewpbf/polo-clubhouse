@@ -199,9 +199,26 @@ router.get("/teams/:teamId/players", async (req, res) => {
 router.post("/teams/:teamId/players", requireAuth, requireTeamAdminOrManager, async (req, res) => {
   try {
     const teamId = String(req.params.teamId);
-    const { name, handicap, position } = req.body;
+    const { playerId, name, handicap, position } = req.body;
+
+    // Mode 1: link an existing player (preferred — uses canonical player record by ID)
+    if (playerId) {
+      const [existing] = await db.select().from(playersTable).where(eq(playersTable.id, String(playerId)));
+      if (!existing) { res.status(404).json({ message: "Player not found" }); return; }
+      await db.insert(teamPlayersTable).values({
+        teamId,
+        playerId: existing.id,
+        seasonYear: new Date().getUTCFullYear(),
+        position: position || null,
+      }).onConflictDoNothing();
+      res.status(201).json({ ...existing, position: position || null });
+      return;
+    }
+
+    // Mode 2 (legacy): create a brand-new player record from free text. Kept for
+    // backward compat with older clients that don't yet use the player picker.
     if (!name || !name.trim()) {
-      res.status(400).json({ message: "Player name is required" });
+      res.status(400).json({ message: "playerId or name is required" });
       return;
     }
     const [player] = await db.insert(playersTable).values({
@@ -237,12 +254,58 @@ router.put("/teams/:teamId/players/:playerId", requireAuth, requireTeamAdminOrMa
       res.status(404).json({ message: "Player is not on this team" });
       return;
     }
+
+    // Determine caller's privilege level for this team. Team managers (only) are restricted to
+    // roster-scoped fields and may NOT mutate canonical player identity (name/handicap/isActive).
+    const callerIsSuper = isSuperAdmin(req.user!);
+    const [team] = await db.select().from(teamsTable).where(eq(teamsTable.id, teamId));
+    const memberships = await db.select().from(adminClubMembershipsTable).where(eq(adminClubMembershipsTable.userId, req.user!.id));
+    const callerIsClubAdmin = !!team && memberships.some(m => m.clubId === team.clubId);
+    const callerIsClubAdminOrSuper = callerIsSuper || callerIsClubAdmin;
+
     const { name, handicap, position, isActive } = req.body;
     const updates: Record<string, any> = {};
-    if (name !== undefined) updates.name = name.trim();
-    if (handicap !== undefined) updates.handicap = handicap != null ? String(handicap) : null;
-    if (position !== undefined) updates.position = position;
-    if (isActive !== undefined) updates.isActive = isActive;
+
+    if (!callerIsClubAdminOrSuper) {
+      // Team-manager-only path: reject identity mutations to prevent privilege escalation
+      // through the team roster API.
+      const forbidden: string[] = [];
+      if (name !== undefined) forbidden.push("name");
+      if (handicap !== undefined) forbidden.push("handicap");
+      if (isActive !== undefined) forbidden.push("isActive");
+      if (forbidden.length > 0) {
+        res.status(403).json({
+          message: "Team managers cannot edit player identity. Ask a club admin to update name/handicap/active state.",
+          forbiddenFields: forbidden,
+        });
+        return;
+      }
+    } else {
+      if (name !== undefined) updates.name = name.trim();
+      if (handicap !== undefined) updates.handicap = handicap != null ? String(handicap) : null;
+      if (isActive !== undefined) updates.isActive = isActive;
+    }
+
+    // Position is roster-scoped: persist to team_players for canonical (teamId, playerId) link
+    // when present; fall back to legacy players.position only for legacy-only attachments.
+    if (position !== undefined) {
+      const positionValue = position == null ? null : Number(position);
+      if (rosterMatch) {
+        await db.update(teamPlayersTable)
+          .set({ position: positionValue })
+          .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId)));
+      } else if (legacyMatch) {
+        updates.position = positionValue;
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      const [player] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
+      if (!player) { res.status(404).json({ message: "Player not found" }); return; }
+      res.json(player);
+      return;
+    }
+
     const [player] = await db.update(playersTable).set(updates).where(eq(playersTable.id, playerId)).returning();
     if (!player) { res.status(404).json({ message: "Player not found" }); return; }
     res.json(player);
@@ -288,11 +351,22 @@ router.delete("/teams/:teamId/players/:playerId", requireAuth, requireTeamAdminO
   }
 });
 
+// Membership check accepting either legacy players.team_id OR canonical team_players linkage.
+// Returns the player row when membership is valid, otherwise null.
+async function findPlayerOnTeam(teamId: string, playerId: string) {
+  const [player] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
+  if (!player) return null;
+  if (player.teamId === teamId) return player;
+  const [link] = await db.select({ id: teamPlayersTable.id }).from(teamPlayersTable)
+    .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId))).limit(1);
+  return link ? player : null;
+}
+
 router.get("/teams/:teamId/players/:playerId/horses", requireAuth, requireTeamAdminOrManager, async (req, res) => {
   try {
     const teamId = String(req.params.teamId);
     const playerId = String(req.params.playerId);
-    const [player] = await db.select().from(playersTable).where(and(eq(playersTable.id, playerId), eq(playersTable.teamId, teamId)));
+    const player = await findPlayerOnTeam(teamId, playerId);
     if (!player) { res.status(404).json({ message: "Player not found" }); return; }
     const horses = await db.select().from(horsesTable).where(eq(horsesTable.playerId, playerId));
     res.json(horses);
@@ -305,7 +379,7 @@ router.post("/teams/:teamId/players/:playerId/horses", requireAuth, requireTeamA
   try {
     const teamId = String(req.params.teamId);
     const playerId = String(req.params.playerId);
-    const [player] = await db.select().from(playersTable).where(and(eq(playersTable.id, playerId), eq(playersTable.teamId, teamId)));
+    const player = await findPlayerOnTeam(teamId, playerId);
     if (!player) { res.status(404).json({ message: "Player not found" }); return; }
 
     const { horseName, owner, breeder, ownedAndBredBy, sire, dam, age, color, sex, typeOrBreed, notes } = req.body;
@@ -348,7 +422,7 @@ router.put("/teams/:teamId/players/:playerId/horses/:horseId", requireAuth, requ
     const playerId = String(req.params.playerId);
     const horseId = String(req.params.horseId);
 
-    const [player] = await db.select().from(playersTable).where(and(eq(playersTable.id, playerId), eq(playersTable.teamId, teamId)));
+    const player = await findPlayerOnTeam(teamId, playerId);
     if (!player) { res.status(404).json({ message: "Player not found" }); return; }
 
     const { horseName, owner, breeder, ownedAndBredBy, sire, dam, age, color, sex, typeOrBreed, notes } = req.body;
@@ -393,7 +467,7 @@ router.delete("/teams/:teamId/players/:playerId/horses/:horseId", requireAuth, r
     const playerId = String(req.params.playerId);
     const horseId = String(req.params.horseId);
 
-    const [player] = await db.select().from(playersTable).where(and(eq(playersTable.id, playerId), eq(playersTable.teamId, teamId)));
+    const player = await findPlayerOnTeam(teamId, playerId);
     if (!player) { res.status(404).json({ message: "Player not found" }); return; }
 
     const [horse] = await db.delete(horsesTable).where(and(eq(horsesTable.id, horseId), eq(horsesTable.playerId, playerId))).returning();

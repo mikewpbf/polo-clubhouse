@@ -658,6 +658,12 @@ function RosterTab({ teamId }: { teamId: string }) {
   const [newName, setNewName] = useState("");
   const [newHandicap, setNewHandicap] = useState("");
   const [adding, setAdding] = useState(false);
+  const [showCreateNew, setShowCreateNew] = useState(false);
+
+  const [pickerQuery, setPickerQuery] = useState("");
+  const [pickerResults, setPickerResults] = useState<Array<{ id: string; name: string; handicap: string | null; homeClubName: string | null }>>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchPlayers = useCallback(async () => {
     try {
@@ -672,6 +678,42 @@ function RosterTab({ teamId }: { teamId: string }) {
 
   useEffect(() => { fetchPlayers(); }, [fetchPlayers]);
 
+  // Debounced search of canonical players for the picker (300ms)
+  useEffect(() => {
+    if (pickerTimer.current) clearTimeout(pickerTimer.current);
+    const q = pickerQuery.trim();
+    if (!q) { setPickerResults([]); return; }
+    pickerTimer.current = setTimeout(async () => {
+      try {
+        const rows = await apiFetch(`/players?search=${encodeURIComponent(q)}`);
+        const onTeam = new Set(players.map(p => p.id));
+        setPickerResults((rows || []).filter((r: any) => !onTeam.has(r.id)).slice(0, 8));
+      } catch {
+        setPickerResults([]);
+      }
+    }, 300);
+    return () => { if (pickerTimer.current) clearTimeout(pickerTimer.current); };
+  }, [pickerQuery, players]);
+
+  const handlePickExisting = async (playerId: string) => {
+    setAdding(true);
+    try {
+      await apiFetch(`/teams/${teamId}/players`, {
+        method: "POST",
+        body: JSON.stringify({ playerId }),
+      });
+      setPickerQuery("");
+      setPickerResults([]);
+      setPickerOpen(false);
+      fetchPlayers();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to add player";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setAdding(false);
+    }
+  };
+
   const handleAdd = async () => {
     if (!newName.trim()) return;
     setAdding(true);
@@ -685,6 +727,7 @@ function RosterTab({ teamId }: { teamId: string }) {
       });
       setNewName("");
       setNewHandicap("");
+      setShowCreateNew(false);
       fetchPlayers();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to add player";
@@ -730,34 +773,88 @@ function RosterTab({ teamId }: { teamId: string }) {
         </div>
       )}
 
-      <div className="flex items-center gap-2 pt-2 border-t border-line2">
-        <Input
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          className="flex-1 h-8 text-[13px]"
-          placeholder="Player name"
-          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAdd())}
-        />
-        <Input
-          value={newHandicap}
-          onChange={(e) => setNewHandicap(e.target.value)}
-          className="w-16 h-8 text-[13px] text-center"
-          placeholder="HC"
-          type="number"
-          step="0.5"
-          onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAdd())}
-        />
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={handleAdd}
-          disabled={adding || !newName.trim()}
-          className="h-8 gap-1"
-        >
-          <UserPlus className="w-3.5 h-3.5" />
-          Add
-        </Button>
+      <div className="pt-2 border-t border-line2 space-y-2">
+        <div className="relative">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink3 pointer-events-none" />
+              <Input
+                value={pickerQuery}
+                onChange={(e) => { setPickerQuery(e.target.value); setPickerOpen(true); }}
+                onFocus={() => setPickerOpen(true)}
+                onBlur={() => setTimeout(() => setPickerOpen(false), 150)}
+                className="h-8 text-[13px] pl-7"
+                placeholder="Search existing players..."
+              />
+            </div>
+          </div>
+          {pickerOpen && pickerQuery.trim() && (
+            <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-line2 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
+              {pickerResults.length === 0 ? (
+                <div className="px-3 py-2 text-[12px] text-ink3">No matches.</div>
+              ) : (
+                pickerResults.map(r => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handlePickExisting(r.id)}
+                    className="w-full text-left px-3 py-2 hover:bg-bg2 flex items-center justify-between text-[13px]"
+                  >
+                    <span className="text-ink">{r.name}</span>
+                    <span className="text-[11px] text-ink3 flex items-center gap-2">
+                      {r.homeClubName && <span>{r.homeClubName}</span>}
+                      {r.handicap != null && <span className="font-mono">{Number(r.handicap) > 0 ? `+${r.handicap}` : r.handicap}</span>}
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
+        {!showCreateNew ? (
+          <button
+            type="button"
+            onClick={() => setShowCreateNew(true)}
+            className="text-[12px] text-g500 hover:text-g700 hover:underline"
+          >
+            + Create a new player record instead
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className="flex-1 h-8 text-[13px]"
+              placeholder="New player name"
+              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAdd())}
+            />
+            <Input
+              value={newHandicap}
+              onChange={(e) => setNewHandicap(e.target.value)}
+              className="w-16 h-8 text-[13px] text-center"
+              placeholder="HC"
+              type="number"
+              step="0.5"
+              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAdd())}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={handleAdd}
+              disabled={adding || !newName.trim()}
+              className="h-8 gap-1"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              Create
+            </Button>
+            <Button type="button" variant="ghost" size="sm" className="h-8" onClick={() => { setShowCreateNew(false); setNewName(""); setNewHandicap(""); }}>
+              Cancel
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

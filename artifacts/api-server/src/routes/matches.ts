@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { db } from "@workspace/db";
-import { matchesTable, matchEventsTable, teamsTable, fieldsTable, tournamentsTable, clubsTable, adminClubMembershipsTable, playersTable, possessionSegmentsTable } from "@workspace/db/schema";
+import { matchesTable, matchEventsTable, teamsTable, fieldsTable, tournamentsTable, clubsTable, adminClubMembershipsTable, playersTable, teamPlayersTable, possessionSegmentsTable } from "@workspace/db/schema";
 import crypto from "crypto";
 import { eq, and, gte, lte, gt, desc, asc, isNull, inArray, sql } from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
@@ -34,8 +34,22 @@ async function enrichMatch(m: MatchRow, includePlayers = false) {
   let homePlayers: any[] = [];
   let awayPlayers: any[] = [];
   if (includePlayers) {
-    if (m.homeTeamId) homePlayers = await db.select().from(playersTable).where(and(eq(playersTable.teamId, m.homeTeamId), eq(playersTable.isActive, true)));
-    if (m.awayTeamId) awayPlayers = await db.select().from(playersTable).where(and(eq(playersTable.teamId, m.awayTeamId), eq(playersTable.isActive, true)));
+    // Canonical roster comes from team_players (current season) UNION legacy players.team_id.
+    // We dedupe by player id so newly-linked canonical players appear alongside legacy ones.
+    const loadRoster = async (teamId: string) => {
+      const legacy = await db.select().from(playersTable).where(and(eq(playersTable.teamId, teamId), eq(playersTable.isActive, true)));
+      const links = await db.select().from(teamPlayersTable).where(eq(teamPlayersTable.teamId, teamId));
+      const linkedIds = links.map(l => l.playerId).filter((x): x is string => !!x);
+      const linkedPlayers = linkedIds.length > 0
+        ? await db.select().from(playersTable).where(and(inArray(playersTable.id, linkedIds), eq(playersTable.isActive, true)))
+        : [];
+      const byId = new Map<string, any>();
+      for (const p of legacy) byId.set(p.id, p);
+      for (const p of linkedPlayers) if (!byId.has(p.id)) byId.set(p.id, p);
+      return Array.from(byId.values());
+    };
+    if (m.homeTeamId) homePlayers = await loadRoster(m.homeTeamId);
+    if (m.awayTeamId) awayPlayers = await loadRoster(m.awayTeamId);
   }
 
   const stoppageTypes = ["penalty", "horse_change", "safety", "injury_timeout"] as const;
@@ -465,8 +479,16 @@ router.post("/matches/:matchId/goal", requireAuth, requireMatchAdmin, async (req
     if (playerId) {
       const [player] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
       if (!player) { res.status(400).json({ message: "Player not found" }); return; }
-      if (player.teamId !== teamId) { res.status(400).json({ message: "Player does not belong to this team" }); return; }
       if (!player.isActive) { res.status(400).json({ message: "Player is not active" }); return; }
+      // Canonical eligibility: legacy team_id OR team_players row for this team.
+      const onLegacy = player.teamId === teamId;
+      let onRoster = false;
+      if (!onLegacy) {
+        const [link] = await db.select({ id: teamPlayersTable.id }).from(teamPlayersTable)
+          .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId))).limit(1);
+        onRoster = !!link;
+      }
+      if (!onLegacy && !onRoster) { res.status(400).json({ message: "Player does not belong to this team" }); return; }
       playerName = player.name;
     }
 
@@ -894,12 +916,12 @@ async function buildBroadcastPayload(matchId: string) {
     rawHomeStats["shot_on_goal"] += rawHomeStats["goal"] + rawHomeStats["penalty_goal"];
     rawAwayStats["shot_on_goal"] += rawAwayStats["goal"] + rawAwayStats["penalty_goal"];
 
-    const scorerMap: Record<string, { name: string; goals: number; teamSide: "home" | "away" }> = {};
+    const scorerMap: Record<string, { playerId: string | null; name: string; goals: number; teamSide: "home" | "away" }> = {};
     for (const evt of allEvents) {
       if (evt.eventType !== "goal" || !evt.playerName) continue;
       const side = evt.teamId === match.homeTeamId ? "home" as const : "away" as const;
-      const key = `${evt.playerName}__${side}`;
-      if (!scorerMap[key]) scorerMap[key] = { name: evt.playerName, goals: 0, teamSide: side };
+      const key = evt.playerId ? `id:${evt.playerId}__${side}` : `name:${evt.playerName}__${side}`;
+      if (!scorerMap[key]) scorerMap[key] = { playerId: evt.playerId ?? null, name: evt.playerName, goals: 0, teamSide: side };
       scorerMap[key].goals++;
     }
     const topScorers = Object.values(scorerMap).sort((a, b) => b.goals - a.goals).slice(0, 2);
@@ -940,7 +962,7 @@ async function buildBroadcastPayload(matchId: string) {
       club: club ? { name: club.name, logoUrl: club.logoUrl || null } : null,
       field: field ? { id: field.id, name: field.name, number: field.number, imageUrl: field.imageUrl || null, hasLocation: !!(field.lat && field.lng) || !!field.zipcode } : null,
       stats: { home: bSwap ? rawAwayStats : rawHomeStats, away: bSwap ? rawHomeStats : rawAwayStats },
-      topScorers: topScorers.map(s => ({ name: s.name, goals: s.goals, teamSide: bSwap ? (s.teamSide === "home" ? "away" : "home") : s.teamSide })),
+      topScorers: topScorers.map(s => ({ playerId: s.playerId, name: s.name, goals: s.goals, teamSide: bSwap ? (s.teamSide === "home" ? "away" : "home") : s.teamSide })),
       possession: await (async () => {
         const p = await getPossessionStats(matchId);
         if (!p) return null;

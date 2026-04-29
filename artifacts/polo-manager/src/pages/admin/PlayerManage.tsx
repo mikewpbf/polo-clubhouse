@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRoute, useLocation, Link } from "wouter";
 import {
   useGetPlayerProfile,
@@ -16,8 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, Trash2, Upload, Plus } from "lucide-react";
+import { ArrowLeft, Trash2, Upload, Plus, Search, Link2, X } from "lucide-react";
 import { uploadImageFile } from "@/lib/upload";
+import { useAuth, getStoredToken } from "@/hooks/use-auth";
 
 export function PlayerManage() {
   const [, params] = useRoute("/admin/players/:id");
@@ -30,12 +31,17 @@ export function PlayerManage() {
   const addHorse = useAddPlayerHorse();
   const removeHorse = useRemovePlayerHorse();
 
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
+
   const [name, setName] = useState("");
   const [handicap, setHandicap] = useState("");
   const [homeClubId, setHomeClubId] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [bio, setBio] = useState("");
   const [headshotUrl, setHeadshotUrl] = useState<string | null>(null);
+  const [managedByUserId, setManagedByUserId] = useState<string | null>(null);
+  const [linkedUserLabel, setLinkedUserLabel] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [showHorseDialog, setShowHorseDialog] = useState(false);
@@ -49,6 +55,14 @@ export function PlayerManage() {
       setDateOfBirth(data.dateOfBirth ?? "");
       setBio(data.bio ?? "");
       setHeadshotUrl(data.headshotUrl ?? null);
+      const muid = (data as any).managedByUserId ?? null;
+      setManagedByUserId(muid);
+      const linkedUser = (data as any).managedByUser;
+      if (linkedUser) {
+        setLinkedUserLabel(`${linkedUser.displayName ?? linkedUser.email ?? "User"} (${linkedUser.email ?? ""})`);
+      } else {
+        setLinkedUserLabel(null);
+      }
     }
   }, [data]);
 
@@ -70,17 +84,17 @@ export function PlayerManage() {
   const handleSave = async () => {
     setSaveMsg(null);
     try {
-      await update.mutateAsync({
-        playerId,
-        data: {
-          name: name.trim(),
-          handicap: handicap.trim() || null,
-          homeClubId: homeClubId || null,
-          dateOfBirth: dateOfBirth || null,
-          bio: bio || null,
-          headshotUrl,
-        },
-      });
+      const payload: Record<string, any> = {
+        name: name.trim(),
+        handicap: handicap.trim() || null,
+        homeClubId: homeClubId || null,
+        dateOfBirth: dateOfBirth || null,
+        bio: bio || null,
+        headshotUrl,
+      };
+      // Only super_admins are permitted to mutate the user-link assignment.
+      if (isSuperAdmin) payload.managedByUserId = managedByUserId || null;
+      await update.mutateAsync({ playerId, data: payload });
       setSaveMsg("Saved");
       refetch();
       setTimeout(() => setSaveMsg(null), 2000);
@@ -192,6 +206,29 @@ export function PlayerManage() {
           )}
         </div>
 
+        {isSuperAdmin && (
+          <div className="bg-white rounded-[12px] p-5 card-shadow">
+            <h2 className="font-display text-lg font-bold text-ink mb-3 flex items-center gap-2">
+              <Link2 className="w-4 h-4" /> Linked User Account
+            </h2>
+            <p className="text-[12px] text-ink3 mb-3">
+              When a user account is linked, that user can edit this player's public profile from
+              {" "}<span className="font-mono">/my-profile</span>. Only super admins can change this link.
+            </p>
+            {managedByUserId ? (
+              <div className="flex items-center justify-between bg-bg2 rounded-[8px] px-3 py-2.5">
+                <div className="text-[13px] text-ink">{linkedUserLabel ?? `User: ${managedByUserId}`}</div>
+                <Button variant="ghost" size="sm" className="h-7 text-red-600" onClick={() => { setManagedByUserId(null); setLinkedUserLabel(null); }}>
+                  <X className="w-3.5 h-3.5 mr-1" /> Unlink
+                </Button>
+              </div>
+            ) : (
+              <UserLinkPicker onPick={(u) => { setManagedByUserId(u.id); setLinkedUserLabel(`${u.displayName ?? u.email ?? "User"} (${u.email ?? ""})`); }} />
+            )}
+            <p className="text-[11px] text-ink3 mt-2">Don't forget to click <strong>Save</strong> above to apply the change.</p>
+          </div>
+        )}
+
         <div className="bg-white rounded-[12px] p-5 card-shadow">
           <h2 className="font-display text-lg font-bold text-ink mb-3">Public Profile</h2>
           <Link href={`/players/${playerId}`} className="text-g700 hover:underline text-[13px]">View public profile →</Link>
@@ -222,6 +259,76 @@ export function PlayerManage() {
         </Dialog>
       )}
     </AdminLayout>
+  );
+}
+
+function UserLinkPicker({ onPick }: { onPick: (u: { id: string; email: string | null; displayName: string | null }) => void }) {
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState<Array<{ id: string; email: string | null; displayName: string | null; role: string }>>([]);
+  const [open, setOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (timer.current) clearTimeout(timer.current);
+    const term = q.trim();
+    if (!term) { setResults([]); return; }
+    timer.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const token = getStoredToken();
+        const r = await fetch(`/api/admin/users?search=${encodeURIComponent(term)}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (r.ok) {
+          const rows = await r.json();
+          setResults((rows || []).slice(0, 8));
+        } else {
+          setResults([]);
+        }
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+    return () => { if (timer.current) clearTimeout(timer.current); };
+  }, [q]);
+
+  return (
+    <div className="relative">
+      <div className="relative">
+        <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink3 pointer-events-none" />
+        <Input
+          value={q}
+          onChange={(e) => { setQ(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          placeholder="Search users by name or email..."
+          className="h-9 pl-7"
+        />
+      </div>
+      {open && q.trim() && (
+        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-line2 rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
+          {searching ? (
+            <div className="px-3 py-2 text-[12px] text-ink3">Searching…</div>
+          ) : results.length === 0 ? (
+            <div className="px-3 py-2 text-[12px] text-ink3">No users match.</div>
+          ) : (
+            results.map(u => (
+              <button
+                key={u.id}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => { onPick(u); setQ(""); setOpen(false); }}
+                className="w-full text-left px-3 py-2 hover:bg-bg2 text-[13px]"
+              >
+                <div className="text-ink">{u.displayName ?? u.email ?? "Unnamed"}</div>
+                <div className="text-[11px] text-ink3">{u.email} · {u.role}</div>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 

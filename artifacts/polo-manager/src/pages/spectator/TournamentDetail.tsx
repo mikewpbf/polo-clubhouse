@@ -93,6 +93,7 @@ interface MvpData {
 interface BppData {
   horseId: string;
   horseName?: string;
+  playerId?: string | null;
   playerName?: string;
   teamName?: string;
   owner?: string;
@@ -133,7 +134,13 @@ function MVPDisplay({ tournamentId }: { tournamentId: string }) {
             <Star className="w-6 h-6 text-yellow-500" />
           </div>
           <div className="flex-1">
-            <div className="font-display font-bold text-xl text-ink">{data.playerName}</div>
+            <div className="font-display font-bold text-xl text-ink">
+              {data.playerId ? (
+                <Link href={`/players/${data.playerId}`} className="hover:text-g700 hover:underline">{data.playerName}</Link>
+              ) : (
+                data.playerName
+              )}
+            </div>
             {data.teamName && <div className="text-[14px] text-ink2">{data.teamName}</div>}
           </div>
           <div className="flex gap-6 text-center">
@@ -192,7 +199,13 @@ function BPPDisplay({ tournamentId }: { tournamentId: string }) {
               <div className="font-display font-bold text-xl text-ink">{data.horseName}</div>
             )}
             <div className="flex gap-3 text-[14px] text-ink2">
-              {data.playerName && <span>{data.playerName}</span>}
+              {data.playerName && (
+                data.playerId ? (
+                  <Link href={`/players/${data.playerId}`} className="hover:text-g700 hover:underline">{data.playerName}</Link>
+                ) : (
+                  <span>{data.playerName}</span>
+                )
+              )}
               {data.playerName && data.teamName && <span className="text-ink3">·</span>}
               {data.teamName && <span>{data.teamName}</span>}
             </div>
@@ -313,7 +326,13 @@ export function TournamentDetail() {
                     {scorerRows.map((s: TopScorer, i: number) => (
                       <tr key={s.playerId || `scorer-${i}`} className="border-b border-line2 last:border-0">
                         <td className="py-2.5 font-mono text-ink3">{i + 1}</td>
-                        <td className="py-2.5 font-medium text-ink">{s.playerName}</td>
+                        <td className="py-2.5 font-medium text-ink">
+                          {s.playerId ? (
+                            <Link href={`/players/${s.playerId}`} className="hover:text-g700 hover:underline">{s.playerName}</Link>
+                          ) : (
+                            s.playerName
+                          )}
+                        </td>
                         <td className="py-2.5 text-ink2">{s.teamName}</td>
                         <td className="py-2.5 text-center font-medium">{s.goals}</td>
                       </tr>

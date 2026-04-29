@@ -155,8 +155,8 @@ export function MiniStatsOverlay({ homeTeam, awayTeam, homeScore, awayScore, sta
         const val: string | number =
           col.key === "shot_accuracy"
             ? shotAccuracyDisplay(sideStats)
-            // Use the actual stored score for Goals — includes handicap adjustments
-            // that are never recorded as match events.
+            // Use the actual stored score for Goals — authoritative value from
+            // the match record, same source as the scorebug.
             : col.key === "goal"
               ? (side === "home" ? homeScore : awayScore)
               : (sideStats?.[col.key] ?? 0);

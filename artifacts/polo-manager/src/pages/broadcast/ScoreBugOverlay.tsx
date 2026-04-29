@@ -756,9 +756,6 @@ export function ScoreBugOverlay() {
           awayTeam={data.awayTeam}
           homeScore={data.homeScore}
           awayScore={data.awayScore}
-          currentChukker={data.currentChukker}
-          clock={clock}
-          clockIsRunning={data.clockIsRunning}
           stats={data.stats ?? null}
           topScorers={data.topScorers}
           possession={data.possession}

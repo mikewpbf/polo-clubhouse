@@ -31,9 +31,6 @@ interface StatsOverlayProps {
   awayTeam: BroadcastTeam | null;
   homeScore: number;
   awayScore: number;
-  currentChukker: number;
-  clock: string;
-  clockIsRunning: boolean;
   stats: StatData | null;
   topScorers?: TopScorer[];
   possession?: PossessionData | null;
@@ -204,8 +201,8 @@ export function StatsOverlay({ homeTeam, awayTeam, homeScore, awayScore, stats, 
           {(() => {
             const allRows: { key: string; label: string; hVal: number | string; aVal: number | string; hBar: number; aBar: number }[] = [];
             for (const row of STAT_ROWS) {
-              // Use the actual stored score for Goals — it includes handicap
-              // adjustments that are never recorded as individual match events.
+              // Use the actual stored score for Goals — it is the authoritative
+              // value from the match record, identical to what the scorebug shows.
               const hVal = row.key === "goal" ? homeScore : (stats?.home?.[row.key] ?? 0);
               const aVal = row.key === "goal" ? awayScore : (stats?.away?.[row.key] ?? 0);
               allRows.push({ key: row.key, label: row.label, hVal, aVal, hBar: Number(hVal), aBar: Number(aVal) });

@@ -905,9 +905,18 @@ async function buildBroadcastPayload(matchId: string) {
     for (const t of statTypes) { rawHomeStats[t] = 0; rawAwayStats[t] = 0; }
     for (const evt of allEvents) {
       if (!(statTypes as readonly string[]).includes(evt.eventType)) continue;
+      // Skip goal — we use the authoritative stored score below, not the event count.
+      if (evt.eventType === "goal") continue;
       if (evt.teamId === match.homeTeamId) rawHomeStats[evt.eventType]++;
       else if (evt.teamId === match.awayTeamId) rawAwayStats[evt.eventType]++;
     }
+
+    // Use the stored match score as the authoritative goal count.
+    // Score corrections made via the match controller update homeScore/awayScore
+    // directly on the match record without always creating corresponding goal events,
+    // so event-counting goals can diverge from the real score.
+    rawHomeStats["goal"] = match.homeScore || 0;
+    rawAwayStats["goal"] = match.awayScore || 0;
 
     rawHomeStats["shot_on_goal"] += rawHomeStats["goal"] + rawHomeStats["penalty_goal"];
     rawAwayStats["shot_on_goal"] += rawAwayStats["goal"] + rawAwayStats["penalty_goal"];

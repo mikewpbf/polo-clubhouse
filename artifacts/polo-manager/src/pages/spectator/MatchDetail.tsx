@@ -37,7 +37,7 @@ function renderEventLabel(evt: MatchEvent, style?: React.CSSProperties, classNam
       : null;
     return (
       <span className={className} style={style}>
-        Goal{evt.teamName ? ` \u2014 ${evt.teamName}` : ""}{playerPart ? <span> \u2014 </span> : null}{playerPart}
+        Goal{evt.teamName ? ` \u2014 ${evt.teamName}` : ""}{playerPart ? <span>{" \u2014 "}</span> : null}{playerPart}
       </span>
     );
   }

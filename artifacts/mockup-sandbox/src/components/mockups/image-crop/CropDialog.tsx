@@ -104,25 +104,33 @@ export function CropDialog() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
       <style>{`
+        .crop-slider::-webkit-slider-runnable-track {
+          background: transparent;
+          height: 0;
+        }
+        .crop-slider::-moz-range-track {
+          background: transparent;
+          height: 0;
+          border: none;
+        }
         .crop-slider::-webkit-slider-thumb {
           -webkit-appearance: none;
-          width: 18px;
-          height: 18px;
+          width: 20px;
+          height: 20px;
           border-radius: 50%;
           background: white;
-          border: 2px solid #16a34a;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+          border: 2.5px solid #16a34a;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.25);
           cursor: pointer;
-          position: relative;
-          z-index: 1;
+          margin-top: -10px;
         }
         .crop-slider::-moz-range-thumb {
-          width: 18px;
-          height: 18px;
+          width: 20px;
+          height: 20px;
           border-radius: 50%;
           background: white;
-          border: 2px solid #16a34a;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+          border: 2.5px solid #16a34a;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.25);
           cursor: pointer;
         }
       `}</style>
@@ -192,7 +200,7 @@ export function CropDialog() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-96 overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div className="flex items-center justify-between px-5 py-4">
               <div>
                 <h3 className="text-sm font-semibold text-gray-900">Crop photo</h3>
                 <p className="text-xs text-gray-500 mt-0.5">Drag to reposition · scroll to zoom</p>
@@ -260,7 +268,7 @@ export function CropDialog() {
             </div>
 
             {/* Zoom controls */}
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+            <div className="flex items-center gap-3 px-5 py-4">
               <button
                 onClick={() => setScale((s) => Math.max(0.3, s - 0.1))}
                 className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors flex-shrink-0"

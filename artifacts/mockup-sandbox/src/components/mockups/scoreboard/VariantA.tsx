@@ -85,8 +85,8 @@ function VariantScoreBug({ data }: { data: MockData }) {
   const homeTheme = getOnColorTheme(homeColor);
   const awayTheme = getOnColorTheme(awayColor);
 
-  // ↑ Taller bar height
-  const BAR_H = 68;
+  // ↑ Taller bar height (extra room so chukker + clock don't crowd each other)
+  const BAR_H = 80;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', borderRadius: 8, overflow: 'hidden', fontFamily: "'Inter','Helvetica Neue',sans-serif" }}>
@@ -109,8 +109,8 @@ function VariantScoreBug({ data }: { data: MockData }) {
           </span>
         </div>
 
-        {/* ↑ Center: bigger clock + chukker, spread toward top/bottom edges */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px', background: NEAR_BLACK, minWidth: 96 }}>
+        {/* ↑ Center: bigger clock + chukker; asymmetric padding shifts chukker higher */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '5px 16px 11px', background: NEAR_BLACK, minWidth: 96 }}>
           <span style={{ fontFamily: "'JetBrains Mono','SF Mono',monospace", fontSize: 30, fontWeight: 800, color: '#fff', lineHeight: 1 }}>
             {data.currentChukker}
           </span>
@@ -176,7 +176,7 @@ export function VariantA() {
 
       {/* Diff callouts */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        {['Clock: 20 → 28px', 'Chukker: 24 → 30px', 'Score: 30 → 34px', 'Bar height: 56 → 68px', 'Clock spread to top/bottom'].map(label => (
+        {['Clock: 20 → 28px', 'Chukker: 24 → 30px', 'Score: 30 → 34px', 'Bar height: 56 → 80px', 'Chukker shifted up'].map(label => (
           <span key={label} style={{ background: 'rgba(99,213,128,0.12)', border: '1px solid rgba(99,213,128,0.3)', color: '#5dba7d', fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20 }}>{label}</span>
         ))}
       </div>

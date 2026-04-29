@@ -1,0 +1,13 @@
+packages:
+  "date-fns": "Human-readable date formatting and manipulation"
+  "lucide-react": "Clean, minimal SVG icons matching the UI aesthetic"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility for merging tailwind classes safely"
+  "@dnd-kit/core": "Drag and drop functionality for schedule grid"
+  "@dnd-kit/sortable": "Sortable functionality for schedule grid"
+  "@dnd-kit/utilities": "Utilities for dnd-kit"
+
+notes:
+  - Uses @workspace/api-client-react for all data fetching
+  - Relies on cookies for auth session state
+  - The design system strictly prohibits emojis and uses a specific earthy green color palette

@@ -1,0 +1,130 @@
+Add a new feature called Possession Tracker for the Match Controller.
+
+Goal:
+Create a very simple separate possession-tracking interface for polo that can be used by helpers during a live match without giving them full Match Controller access.
+
+Core concept:
+The Possession Tracker should live on its own dedicated page and only have 3 large, simple buttons for live tracking:
+
+1. Team A Possession
+2. Team B Possession
+3. Loose / 50-50 Ball
+
+UI / layout:
+- The Possession Tracker page should be extremely simple and easy to operate.
+- From top to bottom:
+  - Show Team A lockup at the top
+  - Then the Team A Possession button
+  - Then the Loose / 50-50 Ball button
+  - Then the Team B Possession button
+  - Show Team B lockup below
+- Each team lockup should include:
+  - team logo
+  - team name
+- Make the logos visually clear so the stat tracker can quickly identify the correct team.
+- Buttons should be large, clean, mobile-friendly, and easy to tap fast.
+- The current active possession state should be visually obvious.
+- The page should feel lightweight and distraction-free.
+
+Definition of possession:
+- Team A button means Team A currently has controlled possession
+- Team B button means Team B currently has controlled possession
+- Loose / 50-50 means neither team clearly controls the ball
+- Only one state can be active at a time
+
+Behavior:
+- When a button is tapped, the system should switch the current possession state immediately
+- The app should track time spent in each state
+- The system should log possession segments as events with:
+  - match_id
+  - current chukker if available
+  - possession_state (team_a, team_b, loose)
+  - start timestamp
+  - end timestamp
+  - duration_seconds
+- A new possession segment should begin whenever the operator changes state
+- If the same active button is tapped again, either ignore it or do nothing to avoid accidental duplicate events
+- The tracker should work in real time during a live match
+
+Access and sharing:
+- Add a small low-profile button somewhere in Match Controller called something like:
+  - Possession
+  - or Possession Tracker
+- This button should not take up much space
+- Only Admins and Super Admins who already have access to Match Controller should see this button
+- Clicking that button should open the Possession Tracker area
+- Inside the Match Controller possession area, Admins and Super Admins should have the ability to copy/share a dedicated Possession Tracker URL
+- That shared URL should open the simplified possession-only page
+- The possession-only page should not expose the full Match Controller
+- The idea is that helpers can be sent this direct link and use it only for possession tracking
+- Do not show the share-link controls to normal users
+- The page should be available only if someone has been sent the direct link
+- This should behave like a limited-access helper tool, not a public navigation item
+
+Permissions:
+- Admins and Super Admins:
+  - can access Possession Tracker from Match Controller
+  - can generate/copy/share the dedicated possession link
+  - can clear/reset possession data if needed
+- Helper users with the direct possession URL:
+  - can only view and use the simplified possession page
+  - cannot access broader Match Controller controls
+  - cannot access admin settings
+- Possession Tracker should have scoped permissions separate from full Match Controller access
+
+Stats calculations:
+Track:
+- Team A possession time
+- Team B possession time
+- Loose / 50-50 time
+
+Calculate:
+- Team A possession percentage
+- Team B possession percentage
+
+Possession % formula:
+- possession percentage should be based only on Team A + Team B controlled possession time
+- Loose / 50-50 time should not count toward possession percentage by default
+
+Display rules:
+- If no possession data has been logged for the match, do not show possession stats anywhere
+- If possession data exists, show possession stats in all relevant places where team stats are displayed, including:
+  - Match stats
+  - Broadcast stats / graphics data
+  - Tournament page if that match’s team stats are displayed there
+  - Match page or anywhere else team-vs-team stats are shown
+- Possession should feel like a normal team stat once data exists
+- If there is no data, it should stay hidden completely rather than showing 0% / 0%
+
+Broadcast / stats integration:
+- Possession data should be available to the same team stats system used elsewhere in the app
+- Make possession available as a stat for:
+  - on-page match stats
+  - center-screen broadcast stats
+  - any team comparison modules
+- Only show possession if the match has logged possession data
+
+Reset / editing:
+- Admins and Super Admins should be able to:
+  - reset all possession data for a match
+  - optionally edit or remove incorrect possession segments later if needed
+- At minimum, include a reset option for possession tracking
+
+Technical intent:
+- This should be built as a simple event-based possession tracker, not a complex analytics system
+- Prioritize speed, simplicity, and reliability for live operation
+- Mobile usability is very important because helpers may track from a phone
+
+Acceptance criteria:
+1. Admin or Super Admin sees a small Possession button in Match Controller
+2. Clicking it opens possession controls and a shareable limited-access URL
+3. Helper with the direct URL sees only the possession page
+4. Possession page shows team logos, team names, and 3 large buttons:
+   - Team A Possession
+   - Loose / 50-50 Ball
+   - Team B Possession
+5. Tracker logs possession time by state in real time
+6. Possession stats remain hidden if no possession has been tracked
+7. Once possession exists, it appears anywhere team stats are shown
+8. Helper access does not expose full Match Controller
+9. Admins can reset possession data if needed

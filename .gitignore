@@ -1,0 +1,8 @@
+node_modules/
+.env
+*.zip
+photofield.*
+*.db
+*.db-shm
+*.db-wal
+.cache/

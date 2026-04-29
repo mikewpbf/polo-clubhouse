@@ -1,0 +1,2882 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Polo Manager API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication
+  - name: clubs
+    description: Club management
+  - name: fields
+    description: Field management
+  - name: teams
+    description: Team management
+  - name: tournaments
+    description: Tournament management
+  - name: matches
+    description: Match management
+  - name: matchEvents
+    description: Match event tracking
+  - name: teamOutDates
+    description: Team out dates
+  - name: playDates
+    description: Play dates
+  - name: tournamentTeams
+    description: Tournament team entries
+  - name: admin
+    description: Admin operations
+  - name: teamManager
+    description: Team manager portal
+  - name: spectator
+    description: Spectator operations
+  - name: ai
+    description: AI advisor
+  - name: widget
+    description: Embeddable widget
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/signup:
+    post:
+      operationId: signup
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Log in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Log out
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserWithRoles"
+
+  /clubs:
+    get:
+      operationId: listClubs
+      tags: [clubs]
+      summary: List all clubs
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: country
+          in: query
+          schema:
+            type: string
+        - name: region
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of clubs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Club"
+    post:
+      operationId: createClub
+      tags: [clubs]
+      summary: Create a club
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateClubRequest"
+      responses:
+        "201":
+          description: Club created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Club"
+
+  /clubs/{slug}:
+    get:
+      operationId: getClubBySlug
+      tags: [clubs]
+      summary: Get club by slug
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Club details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClubDetail"
+
+  /clubs/{clubId}/update:
+    put:
+      operationId: updateClub
+      tags: [clubs]
+      summary: Update club
+      parameters:
+        - name: clubId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateClubRequest"
+      responses:
+        "200":
+          description: Club updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Club"
+
+  /clubs/{clubId}/follow:
+    post:
+      operationId: followClub
+      tags: [spectator]
+      summary: Follow a club
+      parameters:
+        - name: clubId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Followed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /clubs/{clubId}/unfollow:
+    post:
+      operationId: unfollowClub
+      tags: [spectator]
+      summary: Unfollow a club
+      parameters:
+        - name: clubId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Unfollowed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /clubs/{clubId}/fields:
+    get:
+      operationId: listFields
+      tags: [fields]
+      summary: List club fields
+      parameters:
+        - name: clubId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Fields list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Field"
+    post:
+      operationId: createField
+      tags: [fields]
+      summary: Create a field
+      parameters:
+        - name: clubId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFieldRequest"
+      responses:
+        "201":
+          description: Field created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Field"
+
+  /fields/{fieldId}:
+    put:
+      operationId: updateField
+      tags: [fields]
+      summary: Update a field
+      parameters:
+        - name: fieldId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFieldRequest"
+      responses:
+        "200":
+          description: Field updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Field"
+    delete:
+      operationId: deleteField
+      tags: [fields]
+      summary: Delete a field
+      parameters:
+        - name: fieldId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Field deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /clubs/{clubId}/teams:
+    get:
+      operationId: listTeams
+      tags: [teams]
+      summary: List club teams
+      parameters:
+        - name: clubId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Teams list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Team"
+    post:
+      operationId: createTeam
+      tags: [teams]
+      summary: Create a team
+      parameters:
+        - name: clubId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTeamRequest"
+      responses:
+        "201":
+          description: Team created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+
+  /teams/{teamId}:
+    get:
+      operationId: getTeam
+      tags: [teams]
+      summary: Get team details
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Team details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamDetail"
+    put:
+      operationId: updateTeam
+      tags: [teams]
+      summary: Update a team
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTeamRequest"
+      responses:
+        "200":
+          description: Team updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Team"
+
+  /clubs/{clubId}/tournaments:
+    get:
+      operationId: listTournaments
+      tags: [tournaments]
+      summary: List tournaments
+      parameters:
+        - name: clubId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tournaments list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tournament"
+    post:
+      operationId: createTournament
+      tags: [tournaments]
+      summary: Create a tournament
+      parameters:
+        - name: clubId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTournamentRequest"
+      responses:
+        "201":
+          description: Tournament created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tournament"
+
+  /tournaments:
+    get:
+      operationId: listAllTournaments
+      tags: [tournaments]
+      summary: List all public tournaments
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: clubSlug
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: All tournaments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TournamentWithClub"
+
+  /tournaments/{tournamentId}:
+    get:
+      operationId: getTournament
+      tags: [tournaments]
+      summary: Get tournament details
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Tournament details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TournamentDetail"
+    put:
+      operationId: updateTournament
+      tags: [tournaments]
+      summary: Update a tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTournamentRequest"
+      responses:
+        "200":
+          description: Tournament updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tournament"
+
+  /tournaments/{tournamentId}/teams:
+    get:
+      operationId: listTournamentTeams
+      tags: [tournamentTeams]
+      summary: List tournament teams
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Tournament teams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TournamentTeamWithDetails"
+    post:
+      operationId: addTournamentTeam
+      tags: [tournamentTeams]
+      summary: Add team to tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddTournamentTeamRequest"
+      responses:
+        "201":
+          description: Team added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TournamentTeamWithDetails"
+
+  /tournaments/{tournamentId}/teams/{teamId}:
+    put:
+      operationId: updateTournamentTeam
+      tags: [tournamentTeams]
+      summary: Update tournament team entry
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTournamentTeamRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TournamentTeamWithDetails"
+    delete:
+      operationId: removeTournamentTeam
+      tags: [tournamentTeams]
+      summary: Remove team from tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Team removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /tournaments/{tournamentId}/out-dates:
+    get:
+      operationId: listTournamentOutDates
+      tags: [teamOutDates]
+      summary: List all out dates for tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Out dates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamOutDate"
+
+  /tournaments/{tournamentId}/teams/{teamId}/out-dates:
+    get:
+      operationId: listTeamOutDates
+      tags: [teamOutDates]
+      summary: List out dates for team in tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Team out dates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamOutDate"
+    post:
+      operationId: createTeamOutDate
+      tags: [teamOutDates]
+      summary: Create team out date
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTeamOutDateRequest"
+      responses:
+        "201":
+          description: Out date created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamOutDate"
+
+  /out-dates/{outDateId}:
+    delete:
+      operationId: deleteTeamOutDate
+      tags: [teamOutDates]
+      summary: Delete out date
+      parameters:
+        - name: outDateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /tournaments/{tournamentId}/play-dates:
+    get:
+      operationId: listPlayDates
+      tags: [playDates]
+      summary: List play dates
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Play dates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PlayDate"
+    post:
+      operationId: createPlayDate
+      tags: [playDates]
+      summary: Create play date
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePlayDateRequest"
+      responses:
+        "201":
+          description: Play date created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayDate"
+
+  /play-dates/{playDateId}:
+    put:
+      operationId: updatePlayDate
+      tags: [playDates]
+      summary: Update play date
+      parameters:
+        - name: playDateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePlayDateRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayDate"
+    delete:
+      operationId: deletePlayDate
+      tags: [playDates]
+      summary: Delete play date
+      parameters:
+        - name: playDateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /tournaments/{tournamentId}/matches:
+    get:
+      operationId: listMatches
+      tags: [matches]
+      summary: List tournament matches
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: date
+          in: query
+          schema:
+            type: string
+        - name: fieldId
+          in: query
+          schema:
+            type: string
+        - name: teamId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matches list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MatchWithTeams"
+
+  /tournaments/{tournamentId}/generate-schedule:
+    post:
+      operationId: generateSchedule
+      tags: [tournaments]
+      summary: Generate tournament schedule
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Schedule generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateScheduleResponse"
+
+  /matches/{matchId}:
+    get:
+      operationId: getMatch
+      tags: [matches]
+      summary: Get match details
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Match details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchDetail"
+    put:
+      operationId: updateMatch
+      tags: [matches]
+      summary: Update match
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMatchRequest"
+      responses:
+        "200":
+          description: Match updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchWithTeams"
+
+  /matches/{matchId}/score:
+    post:
+      operationId: updateMatchScore
+      tags: [matches]
+      summary: Update match score
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateScoreRequest"
+      responses:
+        "200":
+          description: Score updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchWithTeams"
+
+  /matches/{matchId}/clock:
+    post:
+      operationId: updateMatchClock
+      tags: [matches]
+      summary: Control match clock
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateClockRequest"
+      responses:
+        "200":
+          description: Clock updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchWithTeams"
+
+  /matches/{matchId}/status:
+    post:
+      operationId: updateMatchStatus
+      tags: [matches]
+      summary: Update match status
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMatchStatusRequest"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchWithTeams"
+
+  /matches/{matchId}/chukker:
+    post:
+      operationId: advanceChukker
+      tags: [matches]
+      summary: Advance to next chukker
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Chukker advanced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchWithTeams"
+
+  /matches/{matchId}/events:
+    get:
+      operationId: listMatchEvents
+      tags: [matchEvents]
+      summary: List match events
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Match events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MatchEvent"
+
+  /matches/live:
+    get:
+      operationId: listLiveMatches
+      tags: [matches]
+      summary: List all live matches
+      responses:
+        "200":
+          description: Live matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MatchWithTeams"
+
+  /matches/today:
+    get:
+      operationId: listTodayMatches
+      tags: [matches]
+      summary: List today matches
+      parameters:
+        - name: clubId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Today matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MatchWithTeams"
+
+  /admin/dashboard:
+    get:
+      operationId: getAdminDashboard
+      tags: [admin]
+      summary: Get admin dashboard data
+      parameters:
+        - name: clubId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDashboard"
+
+  /admin/club-memberships:
+    get:
+      operationId: listClubMemberships
+      tags: [admin]
+      summary: List club memberships
+      parameters:
+        - name: clubId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Memberships
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClubMembership"
+    post:
+      operationId: createClubMembership
+      tags: [admin]
+      summary: Appoint club manager
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateClubMembershipRequest"
+      responses:
+        "201":
+          description: Membership created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClubMembership"
+
+  /admin/club-memberships/{userId}/{clubId}:
+    delete:
+      operationId: removeClubMembership
+      tags: [admin]
+      summary: Remove club membership
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: clubId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /admin/team-assignments:
+    post:
+      operationId: assignTeamManager
+      tags: [admin]
+      summary: Assign team manager
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignTeamManagerRequest"
+      responses:
+        "201":
+          description: Assignment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamManagerAssignment"
+
+  /admin/team-assignments/{assignmentId}:
+    delete:
+      operationId: revokeTeamAssignment
+      tags: [admin]
+      summary: Revoke team assignment
+      parameters:
+        - name: assignmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Revoked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /my-team/assignments:
+    get:
+      operationId: getMyTeamAssignments
+      tags: [teamManager]
+      summary: Get my team assignments
+      responses:
+        "200":
+          description: Team assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MyTeamAssignment"
+
+  /my-team/{teamId}/dashboard:
+    get:
+      operationId: getMyTeamDashboard
+      tags: [teamManager]
+      summary: Get team manager dashboard
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Team dashboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TeamManagerDashboard"
+
+  /my-team/{teamId}/schedule:
+    get:
+      operationId: getMyTeamSchedule
+      tags: [teamManager]
+      summary: Get my team schedule
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: tournamentId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Team schedule
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MatchWithTeams"
+
+  /tournaments/{tournamentId}/standings:
+    get:
+      operationId: getTournamentStandings
+      tags: [tournaments]
+      summary: Get tournament standings
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Standings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StandingsEntry"
+
+  /ai/recommend-format:
+    post:
+      operationId: recommendFormat
+      tags: [ai]
+      summary: AI format recommendation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecommendFormatRequest"
+      responses:
+        "200":
+          description: Format recommendations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendFormatResponse"
+
+  /invites/accept:
+    post:
+      operationId: acceptInvite
+      tags: [auth]
+      summary: Accept an invite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptInviteRequest"
+      responses:
+        "200":
+          description: Invite accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /invites/{token}:
+    get:
+      operationId: getInviteByToken
+      tags: [auth]
+      summary: Get invite details by token
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Invite details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteDetail"
+
+  /widget/{clubSlug}/fixtures:
+    get:
+      operationId: getWidgetFixtures
+      tags: [widget]
+      summary: Get widget fixtures
+      parameters:
+        - name: clubSlug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Widget fixtures
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WidgetFixtures"
+
+  /tournaments/{tournamentId}/publish:
+    post:
+      operationId: publishTournament
+      tags: [tournaments]
+      summary: Publish a tournament
+      parameters:
+        - name: tournamentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tournament"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    SignupRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        displayName:
+          type: string
+      required:
+        - email
+        - password
+        - displayName
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/UserWithRoles"
+        token:
+          type: string
+      required:
+        - user
+        - token
+
+    UserWithRoles:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        displayName:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum: [spectator, team_manager, admin]
+        clubMemberships:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClubMembershipBrief"
+        teamAssignments:
+          type: array
+          items:
+            $ref: "#/components/schemas/TeamAssignmentBrief"
+      required:
+        - id
+        - email
+        - displayName
+        - role
+        - clubMemberships
+        - teamAssignments
+
+    ClubMembershipBrief:
+      type: object
+      properties:
+        clubId:
+          type: string
+          format: uuid
+        clubName:
+          type: string
+        clubSlug:
+          type: string
+        role:
+          type: string
+          enum: [owner, manager]
+      required:
+        - clubId
+        - clubName
+        - clubSlug
+        - role
+
+    TeamAssignmentBrief:
+      type: object
+      properties:
+        assignmentId:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+        teamName:
+          type: string
+        tournamentId:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          type: string
+      required:
+        - assignmentId
+        - teamId
+        - teamName
+        - status
+
+    Club:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        logoUrl:
+          type: string
+          nullable: true
+        logo96Url:
+          type: string
+          nullable: true
+        logo40Url:
+          type: string
+          nullable: true
+        logoInitials:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        country:
+          type: string
+          nullable: true
+        region:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - slug
+
+    ClubDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        logoUrl:
+          type: string
+          nullable: true
+        logo96Url:
+          type: string
+          nullable: true
+        logo40Url:
+          type: string
+          nullable: true
+        logoInitials:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        country:
+          type: string
+          nullable: true
+        region:
+          type: string
+          nullable: true
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/Field"
+        tournaments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tournament"
+        followerCount:
+          type: integer
+        isFollowing:
+          type: boolean
+      required:
+        - id
+        - name
+        - slug
+        - fields
+        - tournaments
+        - followerCount
+        - isFollowing
+
+    CreateClubRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        website:
+          type: string
+        country:
+          type: string
+        region:
+          type: string
+      required:
+        - name
+        - slug
+
+    UpdateClubRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        website:
+          type: string
+        country:
+          type: string
+        region:
+          type: string
+        logoUrl:
+          type: string
+        logo96Url:
+          type: string
+        logo40Url:
+          type: string
+
+    Field:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        clubId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          nullable: true
+        number:
+          type: integer
+          nullable: true
+        lat:
+          type: string
+          nullable: true
+        lng:
+          type: string
+          nullable: true
+        surfaceType:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+      required:
+        - id
+        - clubId
+
+    CreateFieldRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        number:
+          type: integer
+        lat:
+          type: string
+        lng:
+          type: string
+        surfaceType:
+          type: string
+        isActive:
+          type: boolean
+
+    UpdateFieldRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        number:
+          type: integer
+        lat:
+          type: string
+        lng:
+          type: string
+        surfaceType:
+          type: string
+        isActive:
+          type: boolean
+
+    Team:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        clubId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        shortName:
+          type: string
+          nullable: true
+        logoUrl:
+          type: string
+          nullable: true
+        logoThumbUrl:
+          type: string
+          nullable: true
+        primaryColor:
+          type: string
+          nullable: true
+        handicap:
+          type: string
+          nullable: true
+        contactName:
+          type: string
+          nullable: true
+        contactPhone:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required:
+        - id
+        - clubId
+        - name
+
+    TeamDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        clubId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        shortName:
+          type: string
+          nullable: true
+        logoUrl:
+          type: string
+          nullable: true
+        logoThumbUrl:
+          type: string
+          nullable: true
+        primaryColor:
+          type: string
+          nullable: true
+        handicap:
+          type: string
+          nullable: true
+        contactName:
+          type: string
+          nullable: true
+        contactPhone:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        managerAssignment:
+          $ref: "#/components/schemas/TeamManagerAssignment"
+      required:
+        - id
+        - clubId
+        - name
+
+    CreateTeamRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        shortName:
+          type: string
+        primaryColor:
+          type: string
+        handicap:
+          type: string
+        contactName:
+          type: string
+        contactPhone:
+          type: string
+        notes:
+          type: string
+        logoUrl:
+          type: string
+      required:
+        - name
+
+    UpdateTeamRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        shortName:
+          type: string
+        primaryColor:
+          type: string
+        handicap:
+          type: string
+        contactName:
+          type: string
+        contactPhone:
+          type: string
+        notes:
+          type: string
+        logoUrl:
+          type: string
+
+    Tournament:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        clubId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        format:
+          type: string
+          nullable: true
+          enum: [round_robin, single_elim, double_elim, group_knockout, swiss]
+        handicapLevel:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          nullable: true
+        endDate:
+          type: string
+          nullable: true
+        finalsDate:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [draft, published, in_progress, completed, archived]
+        matchDurationMin:
+          type: integer
+        gapBetweenMin:
+          type: integer
+        chukkersPerMatch:
+          type: integer
+        chukkerDurationMinutes:
+          type: integer
+        hasThirdPlace:
+          type: boolean
+        isVisitingLeague:
+          type: boolean
+        scheduleConfig:
+          type: object
+          nullable: true
+        aiRecommendation:
+          type: object
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - clubId
+        - name
+        - status
+
+    TournamentWithClub:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        clubId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        format:
+          type: string
+          nullable: true
+        handicapLevel:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          nullable: true
+        endDate:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [draft, published, in_progress, completed, archived]
+        club:
+          $ref: "#/components/schemas/Club"
+        teamCount:
+          type: integer
+      required:
+        - id
+        - clubId
+        - name
+        - status
+        - club
+        - teamCount
+
+    TournamentDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        clubId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        format:
+          type: string
+          nullable: true
+          enum: [round_robin, single_elim, double_elim, group_knockout, swiss]
+        handicapLevel:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          nullable: true
+        endDate:
+          type: string
+          nullable: true
+        finalsDate:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [draft, published, in_progress, completed, archived]
+        matchDurationMin:
+          type: integer
+        gapBetweenMin:
+          type: integer
+        chukkersPerMatch:
+          type: integer
+        chukkerDurationMinutes:
+          type: integer
+        hasThirdPlace:
+          type: boolean
+        isVisitingLeague:
+          type: boolean
+        scheduleConfig:
+          type: object
+          nullable: true
+        aiRecommendation:
+          type: object
+          nullable: true
+        club:
+          $ref: "#/components/schemas/Club"
+        teams:
+          type: array
+          items:
+            $ref: "#/components/schemas/TournamentTeamWithDetails"
+        matches:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchWithTeams"
+        playDates:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlayDate"
+      required:
+        - id
+        - clubId
+        - name
+        - status
+        - club
+        - teams
+        - matches
+        - playDates
+
+    CreateTournamentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        format:
+          type: string
+          enum: [round_robin, single_elim, double_elim, group_knockout, swiss]
+        handicapLevel:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        finalsDate:
+          type: string
+        matchDurationMin:
+          type: integer
+        gapBetweenMin:
+          type: integer
+        chukkersPerMatch:
+          type: integer
+        chukkerDurationMinutes:
+          type: integer
+        hasThirdPlace:
+          type: boolean
+        isVisitingLeague:
+          type: boolean
+      required:
+        - name
+
+    UpdateTournamentRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        format:
+          type: string
+          enum: [round_robin, single_elim, double_elim, group_knockout, swiss]
+        handicapLevel:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        finalsDate:
+          type: string
+        matchDurationMin:
+          type: integer
+        gapBetweenMin:
+          type: integer
+        chukkersPerMatch:
+          type: integer
+        chukkerDurationMinutes:
+          type: integer
+        hasThirdPlace:
+          type: boolean
+        isVisitingLeague:
+          type: boolean
+        status:
+          type: string
+          enum: [draft, published, in_progress, completed, archived]
+        aiRecommendation:
+          type: object
+
+    TournamentTeamWithDetails:
+      type: object
+      properties:
+        tournamentId:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+        seed:
+          type: integer
+          nullable: true
+        groupLabel:
+          type: string
+          nullable: true
+        maxGamesPerDay:
+          type: integer
+        team:
+          $ref: "#/components/schemas/Team"
+      required:
+        - tournamentId
+        - teamId
+        - maxGamesPerDay
+        - team
+
+    AddTournamentTeamRequest:
+      type: object
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        seed:
+          type: integer
+        groupLabel:
+          type: string
+        maxGamesPerDay:
+          type: integer
+      required:
+        - teamId
+
+    UpdateTournamentTeamRequest:
+      type: object
+      properties:
+        seed:
+          type: integer
+        groupLabel:
+          type: string
+        maxGamesPerDay:
+          type: integer
+
+    TeamOutDate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+        tournamentId:
+          type: string
+          format: uuid
+        outDate:
+          type: string
+        reason:
+          type: string
+          nullable: true
+        createdByUserId:
+          type: string
+          format: uuid
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - teamId
+        - tournamentId
+        - outDate
+
+    CreateTeamOutDateRequest:
+      type: object
+      properties:
+        outDate:
+          type: string
+        reason:
+          type: string
+      required:
+        - outDate
+
+    PlayDate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tournamentId:
+          type: string
+          format: uuid
+        date:
+          type: string
+        startTime:
+          type: string
+          nullable: true
+        endTime:
+          type: string
+          nullable: true
+        fieldIds:
+          type: array
+          items:
+            type: string
+          nullable: true
+        lunchStart:
+          type: string
+          nullable: true
+        lunchEnd:
+          type: string
+          nullable: true
+      required:
+        - id
+        - tournamentId
+        - date
+
+    CreatePlayDateRequest:
+      type: object
+      properties:
+        date:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+        fieldIds:
+          type: array
+          items:
+            type: string
+        lunchStart:
+          type: string
+        lunchEnd:
+          type: string
+      required:
+        - date
+
+    UpdatePlayDateRequest:
+      type: object
+      properties:
+        startTime:
+          type: string
+        endTime:
+          type: string
+        fieldIds:
+          type: array
+          items:
+            type: string
+        lunchStart:
+          type: string
+        lunchEnd:
+          type: string
+
+    MatchWithTeams:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tournamentId:
+          type: string
+          format: uuid
+        homeTeamId:
+          type: string
+          format: uuid
+          nullable: true
+        awayTeamId:
+          type: string
+          format: uuid
+          nullable: true
+        fieldId:
+          type: string
+          format: uuid
+          nullable: true
+        scheduledAt:
+          type: string
+          format: date-time
+          nullable: true
+        homeScore:
+          type: integer
+        awayScore:
+          type: integer
+        currentChukker:
+          type: integer
+        clockStartedAt:
+          type: string
+          format: date-time
+          nullable: true
+        clockElapsedSeconds:
+          type: integer
+        clockIsRunning:
+          type: boolean
+        status:
+          type: string
+          enum: [scheduled, live, halftime, final, postponed, cancelled]
+        round:
+          type: string
+          nullable: true
+        bracketPosition:
+          type: integer
+          nullable: true
+        isLocked:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+        homeTeam:
+          $ref: "#/components/schemas/Team"
+        awayTeam:
+          $ref: "#/components/schemas/Team"
+        field:
+          $ref: "#/components/schemas/Field"
+        tournament:
+          $ref: "#/components/schemas/TournamentBrief"
+      required:
+        - id
+        - tournamentId
+        - homeScore
+        - awayScore
+        - currentChukker
+        - clockElapsedSeconds
+        - clockIsRunning
+        - status
+        - isLocked
+
+    TournamentBrief:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        chukkersPerMatch:
+          type: integer
+        clubId:
+          type: string
+          format: uuid
+        clubName:
+          type: string
+      required:
+        - id
+        - name
+        - chukkersPerMatch
+        - clubId
+        - clubName
+
+    MatchDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tournamentId:
+          type: string
+          format: uuid
+        homeTeamId:
+          type: string
+          format: uuid
+          nullable: true
+        awayTeamId:
+          type: string
+          format: uuid
+          nullable: true
+        fieldId:
+          type: string
+          format: uuid
+          nullable: true
+        scheduledAt:
+          type: string
+          format: date-time
+          nullable: true
+        homeScore:
+          type: integer
+        awayScore:
+          type: integer
+        currentChukker:
+          type: integer
+        clockStartedAt:
+          type: string
+          format: date-time
+          nullable: true
+        clockElapsedSeconds:
+          type: integer
+        clockIsRunning:
+          type: boolean
+        status:
+          type: string
+          enum: [scheduled, live, halftime, final, postponed, cancelled]
+        round:
+          type: string
+          nullable: true
+        bracketPosition:
+          type: integer
+          nullable: true
+        isLocked:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+        homeTeam:
+          $ref: "#/components/schemas/Team"
+        awayTeam:
+          $ref: "#/components/schemas/Team"
+        field:
+          $ref: "#/components/schemas/Field"
+        tournament:
+          $ref: "#/components/schemas/TournamentBrief"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchEvent"
+      required:
+        - id
+        - tournamentId
+        - homeScore
+        - awayScore
+        - currentChukker
+        - clockElapsedSeconds
+        - clockIsRunning
+        - status
+        - isLocked
+        - events
+
+    UpdateMatchRequest:
+      type: object
+      properties:
+        homeTeamId:
+          type: string
+          format: uuid
+        awayTeamId:
+          type: string
+          format: uuid
+        fieldId:
+          type: string
+          format: uuid
+        scheduledAt:
+          type: string
+          format: date-time
+        round:
+          type: string
+        isLocked:
+          type: boolean
+        notes:
+          type: string
+
+    UpdateScoreRequest:
+      type: object
+      properties:
+        homeScore:
+          type: integer
+        awayScore:
+          type: integer
+      required:
+        - homeScore
+        - awayScore
+
+    UpdateClockRequest:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [start, pause, reset]
+      required:
+        - action
+
+    UpdateMatchStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [scheduled, live, halftime, final, postponed, cancelled]
+      required:
+        - status
+
+    MatchEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        matchId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          enum: [goal, score_correction, chukker_start, chukker_end, match_start, match_end, clock_start, clock_pause]
+        teamId:
+          type: string
+          format: uuid
+          nullable: true
+        chukker:
+          type: integer
+          nullable: true
+        clockSeconds:
+          type: integer
+          nullable: true
+        scoreSnapshot:
+          type: object
+          nullable: true
+        createdBy:
+          type: string
+          format: uuid
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - matchId
+        - eventType
+
+    GenerateScheduleResponse:
+      type: object
+      properties:
+        matches:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchWithTeams"
+        warnings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScheduleWarning"
+      required:
+        - matches
+        - warnings
+
+    ScheduleWarning:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [error, warning]
+        message:
+          type: string
+      required:
+        - type
+        - message
+
+    AdminDashboard:
+      type: object
+      properties:
+        activeTournaments:
+          type: integer
+        todayMatches:
+          type: integer
+        totalFollowers:
+          type: integer
+        recentMatches:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchWithTeams"
+      required:
+        - activeTournaments
+        - todayMatches
+        - totalFollowers
+        - recentMatches
+
+    ClubMembership:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        clubId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [owner, manager]
+        userName:
+          type: string
+        userEmail:
+          type: string
+        assignedBy:
+          type: string
+          format: uuid
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - userId
+        - clubId
+        - role
+        - userName
+        - userEmail
+
+    CreateClubMembershipRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        clubId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [owner, manager]
+      required:
+        - email
+        - clubId
+        - role
+
+    AssignTeamManagerRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        teamId:
+          type: string
+          format: uuid
+        tournamentId:
+          type: string
+          format: uuid
+      required:
+        - email
+        - teamId
+
+    TeamManagerAssignment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+          nullable: true
+        teamId:
+          type: string
+          format: uuid
+        tournamentId:
+          type: string
+          format: uuid
+          nullable: true
+        assignedBy:
+          type: string
+          format: uuid
+          nullable: true
+        inviteEmail:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending_invite, active, revoked]
+        createdAt:
+          type: string
+          format: date-time
+        acceptedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - teamId
+        - status
+
+    MyTeamAssignment:
+      type: object
+      properties:
+        assignmentId:
+          type: string
+          format: uuid
+        teamId:
+          type: string
+          format: uuid
+        teamName:
+          type: string
+        teamLogoUrl:
+          type: string
+          nullable: true
+        teamPrimaryColor:
+          type: string
+          nullable: true
+        clubName:
+          type: string
+        clubSlug:
+          type: string
+        tournamentId:
+          type: string
+          format: uuid
+          nullable: true
+        tournamentName:
+          type: string
+          nullable: true
+      required:
+        - assignmentId
+        - teamId
+        - teamName
+        - clubName
+        - clubSlug
+
+    TeamManagerDashboard:
+      type: object
+      properties:
+        team:
+          $ref: "#/components/schemas/Team"
+        gamesScheduled:
+          type: integer
+        outDatesSet:
+          type: integer
+        nextGame:
+          $ref: "#/components/schemas/MatchWithTeams"
+        upcomingMatches:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchWithTeams"
+        tournaments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tournament"
+        drawPublished:
+          type: boolean
+      required:
+        - team
+        - gamesScheduled
+        - outDatesSet
+        - upcomingMatches
+        - tournaments
+        - drawPublished
+
+    StandingsEntry:
+      type: object
+      properties:
+        teamId:
+          type: string
+          format: uuid
+        team:
+          $ref: "#/components/schemas/Team"
+        played:
+          type: integer
+        won:
+          type: integer
+        drawn:
+          type: integer
+        lost:
+          type: integer
+        goalsFor:
+          type: integer
+        goalsAgainst:
+          type: integer
+        goalDifference:
+          type: integer
+        points:
+          type: integer
+        groupLabel:
+          type: string
+          nullable: true
+      required:
+        - teamId
+        - team
+        - played
+        - won
+        - drawn
+        - lost
+        - goalsFor
+        - goalsAgainst
+        - goalDifference
+        - points
+
+    RecommendFormatRequest:
+      type: object
+      properties:
+        teamCount:
+          type: integer
+        playDateCount:
+          type: integer
+        fieldsPerDay:
+          type: integer
+        matchDurationMin:
+          type: integer
+        finalsDate:
+          type: string
+          nullable: true
+        teamConstraints:
+          type: object
+          nullable: true
+      required:
+        - teamCount
+        - playDateCount
+        - fieldsPerDay
+        - matchDurationMin
+
+    RecommendFormatResponse:
+      type: object
+      properties:
+        formats:
+          type: array
+          items:
+            $ref: "#/components/schemas/FormatRecommendation"
+      required:
+        - formats
+
+    FormatRecommendation:
+      type: object
+      properties:
+        format:
+          type: string
+        label:
+          type: string
+        totalMatches:
+          type: integer
+        daysNeeded:
+          type: integer
+        feasibility:
+          type: string
+          enum: [ideal, viable, tight, not_feasible]
+        aiRank:
+          type: integer
+        matchCounts:
+          type: object
+        fieldUtilization:
+          type: number
+      required:
+        - format
+        - label
+        - totalMatches
+        - daysNeeded
+        - feasibility
+        - aiRank
+
+    AcceptInviteRequest:
+      type: object
+      properties:
+        token:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        displayName:
+          type: string
+      required:
+        - token
+
+    InviteDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        type:
+          type: string
+          enum: [team_manager, club_manager]
+        teamName:
+          type: string
+          nullable: true
+        clubName:
+          type: string
+          nullable: true
+        expired:
+          type: boolean
+        used:
+          type: boolean
+      required:
+        - id
+        - email
+        - type
+        - expired
+        - used
+
+    WidgetFixtures:
+      type: object
+      properties:
+        club:
+          $ref: "#/components/schemas/Club"
+        fixtures:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchWithTeams"
+      required:
+        - club
+        - fixtures

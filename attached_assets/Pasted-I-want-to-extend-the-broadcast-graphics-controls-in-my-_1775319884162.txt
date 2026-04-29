@@ -1,0 +1,163 @@
+I want to extend the broadcast graphics controls in my polo manager app.
+
+Current context:
+I already have broadcast scoreboard options 1 and 2. These are the live scorebug overlay layouts used for broadcast.
+
+New feature request:
+Add a new button in the same broadcast controller area called:
+
+Stats
+
+This Stats button should show a large broadcast stats board in the middle of the screen.
+
+Important UI behavior:
+In the broadcast controller, I want these options:
+- Scoreboard Option 1
+- Scoreboard Option 2
+- Stats
+
+Behavior:
+- If I select Scoreboard Option 1, show the live scorebug using layout 1
+- If I select Scoreboard Option 2, show the live scorebug using layout 2
+- If I select Stats, hide the normal scorebug and show the centered stats board instead
+
+The Stats board should be treated like another live broadcast overlay mode.
+
+Very important:
+The stats board must use the same live match data source already powering:
+- the match control page
+- the spectator live page
+- the broadcast scorebug
+
+Do not create a separate stats data system.
+Everything should come from the same live match state.
+
+Stats board design requirements:
+Build a broadcast-quality centered stats graphic that appears in the middle of the screen.
+
+Style:
+- premium sports broadcast look
+- centered on screen
+- transparent background outside the graphic
+- dark glass / premium panel style
+- team logos on left and right
+- team colors integrated into the design
+- clean high-end typography
+- designed for 1920x1080 broadcast output
+- safe margins and crisp rendering
+
+Layout:
+- centered stats board
+- home team on left
+- away team on right
+- comparison stats in the middle layout
+- large title area like “Match Stats” or “Live Comparison”
+- optional clock and large chukker number in the center if it fits the design well
+
+Stats to support:
+- Goals
+- Fouls
+- Bowl-Ins
+- Knock-Ins
+
+Optional bonus stats if easy:
+- Possession %
+- Shots on Goal
+- Penalty Count
+
+Functional requirements:
+1. Add a Stats button in the broadcast controller where the scoreboard options already exist
+2. Clicking Stats should switch the overlay output to the centered stats board
+3. Clicking Scoreboard Option 1 or 2 should switch back from stats to the normal scorebug
+4. This switch should happen live on the broadcast overlay without refreshing manually
+5. The stats board should use the same matchId and same unique video URL system already used for the broadcast overlay
+6. The overlay page should render different modes depending on the selected broadcast mode:
+   - option1
+   - option2
+   - stats
+
+Implementation idea:
+Use one overlay page per match and change what it renders based on the selected broadcast mode.
+
+Example:
+- /broadcast/scorebug/:matchId
+
+The page should read a live state field such as:
+broadcastMode = "option1" | "option2" | "stats"
+
+Rendering rules:
+- if broadcastMode = option1, render scorebug layout 1
+- if broadcastMode = option2, render scorebug layout 2
+- if broadcastMode = stats, render the centered stats board
+- if broadcast is hidden, render nothing visible
+
+Suggested live state fields:
+{
+  "matchId": "abc123",
+  "scoreboardVisible": true,
+  "broadcastMode": "stats",
+  "homeTeam": {
+    "name": "DUS Polo",
+    "shortName": "DUS",
+    "score": 6,
+    "primaryColor": "#0E5A4A",
+    "accentColor": "#19A974",
+    "logoUrl": "https://..."
+  },
+  "awayTeam": {
+    "name": "ERP Polo",
+    "shortName": "ERP",
+    "score": 5,
+    "primaryColor": "#6A1B1A",
+    "accentColor": "#E85D4F",
+    "logoUrl": "https://..."
+  },
+  "chukkerNumber": 4,
+  "gameClock": "2:31",
+  "stats": {
+    "home": {
+      "goals": 6,
+      "fouls": 3,
+      "bowlIns": 7,
+      "knockIns": 5,
+      "possession": 62
+    },
+    "away": {
+      "goals": 5,
+      "fouls": 4,
+      "bowlIns": 6,
+      "knockIns": 8,
+      "possession": 38
+    }
+  }
+}
+
+Broadcast controller requirements:
+In the broadcast controller area, add:
+- Scoreboard Option 1 button
+- Scoreboard Option 2 button
+- Stats button
+- Show / Hide toggle
+
+Behavior:
+- Show/Hide controls whether anything is visible on broadcast
+- Option 1 and Option 2 show the normal scorebug
+- Stats shows the middle-of-screen stats board
+- All changes update live
+
+Overlay requirements:
+- transparent HTML page
+- no app UI
+- no menus
+- no page background
+- no scrollbars
+- graphics only
+- stable for long-running playout in Singular Recast
+
+Acceptance criteria:
+- I can select Option 1, Option 2, or Stats from the broadcast controller
+- Stats displays a centered broadcast stats board
+- The stats board uses the same live match data as the rest of the app
+- The overlay changes live without needing a page refresh
+- The stats board looks polished and broadcast-ready
+- The page remains fully transparent outside the graphic

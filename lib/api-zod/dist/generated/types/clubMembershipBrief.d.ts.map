@@ -1,0 +1,1 @@
+{"version":3,"file":"clubMembershipBrief.d.ts","sourceRoot":"","sources":["../../../src/generated/types/clubMembershipBrief.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AACH,OAAO,KAAK,EAAE,uBAAuB,EAAE,MAAM,2BAA2B,CAAC;AAEzE,MAAM,WAAW,mBAAmB;IAClC,MAAM,EAAE,MAAM,CAAC;IACf,QAAQ,EAAE,MAAM,CAAC;IACjB,QAAQ,EAAE,MAAM,CAAC;IACjB,IAAI,EAAE,uBAAuB,CAAC;CAC/B"}

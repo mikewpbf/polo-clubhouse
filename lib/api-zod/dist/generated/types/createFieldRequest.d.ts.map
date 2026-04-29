@@ -1,0 +1,1 @@
+{"version":3,"file":"createFieldRequest.d.ts","sourceRoot":"","sources":["../../../src/generated/types/createFieldRequest.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AAEH,MAAM,WAAW,kBAAkB;IACjC,IAAI,CAAC,EAAE,MAAM,CAAC;IACd,MAAM,CAAC,EAAE,MAAM,CAAC;IAChB,GAAG,CAAC,EAAE,MAAM,CAAC;IACb,GAAG,CAAC,EAAE,MAAM,CAAC;IACb,WAAW,CAAC,EAAE,MAAM,CAAC;IACrB,QAAQ,CAAC,EAAE,OAAO,CAAC;CACpB"}

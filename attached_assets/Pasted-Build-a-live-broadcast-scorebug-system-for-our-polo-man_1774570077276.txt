@@ -1,0 +1,322 @@
+Build a live broadcast scorebug system for our polo manager app.
+
+Main goal:
+We need a graphics-only HTML overlay page that can be loaded by URL into Singular Recast for NDI playout. This should be a standalone transparent HTML scorebug page, not a normal app page and not a Singular Composer project. Recast should use a unique URL per match.
+
+What to build:
+1. A transparent broadcast overlay page for each match
+2. Match control page buttons to get the unique video URL
+3. A show/hide control that determines whether the scoreboard is visible on broadcast
+4. Two scorebug design templates based on the approved mockups:
+   - Option 1: Compact Premium Bar
+   - Option 2: Center Block Scoreboard
+5. An optional goal scorer bar that appears at the bottom of the scorebug and then disappears automatically
+
+Very important data source note:
+The data for this overlay must come from the same live match data source already used by:
+- the match control page
+- the spectator home page when a match is live
+
+In other words:
+Do not create a separate scoreboard data system.
+The broadcast overlay should subscribe to the exact same live match state that powers the match control page and the live spectator view, so all three stay in sync:
+1. match control page
+2. spectator live match page
+3. broadcast overlay page
+
+Core requirement:
+Each match must have its own unique broadcast overlay URL, accessible from the match control page with a button labeled:
+- Video URL
+
+That button should:
+- copy the unique overlay URL to clipboard
+- optionally open it in a new tab for preview
+
+Example route:
+ /broadcast/scorebug/:matchId
+
+Optional:
+ /broadcast/scorebug/:matchId?style=option1
+ /broadcast/scorebug/:matchId?style=option2
+
+If security is needed, support a signed token:
+ /broadcast/scorebug/:matchId?token=abc123
+
+Broadcast behavior:
+This overlay URL will be pasted into Singular Recast as a Manual URL for playout. The overlay page must have a transparent background and render only the scorebug graphics. No app chrome, menus, forms, borders, or page backgrounds.
+
+Design system:
+Build two switchable scorebug templates.
+
+OPTION 1: Compact Premium Bar
+Style:
+- clean premium sports broadcast look
+- top left placement
+- dark translucent glass style base
+- team logo on each side
+- team names next to logos
+- very large score numbers
+- center section with large game clock and a separate large standalone chukker number
+- do not show the word “Chukker”
+- just show the number itself, large
+- use team colors as accents behind score panels or logo containers
+- elegant rounded corners
+- subtle shadow, but keep effects light and broadcast safe
+
+Layout:
+[home logo] [home team name] [home score]   [clock] [large chukker number]   [away score] [away team name] [away logo]
+
+OPTION 2: Center Block Scoreboard
+Style:
+- more classic TV sports scoreboard
+- centered at top
+- large rectangular blocks
+- team name and logo area on each end
+- giant score numbers closer to the middle
+- clock in the center on a light panel
+- chukker number directly under or beside the clock as a large number only
+- strong use of team colors on left and right ends
+- bold, highly readable typography
+
+Layout:
+[left team panel] [home score] [center clock + large chukker number] [away score] [right team panel]
+
+Visual requirements for both options:
+- use actual team logos when available
+- support fallback logo placeholder if no logo exists
+- use team primary colors and optional accent colors
+- large readable clock
+- large readable score numbers
+- large standalone chukker number
+- clean typography with tabular numbers for score and clock
+- everything designed for 1920x1080 output
+- safe margins for broadcast
+- crisp rendering using SVG where appropriate
+
+Do not include:
+- the word “chukker”
+- browser-looking UI
+- white page background
+- black full-page background
+- scrollbars
+- extra labels unless necessary
+- full app interface
+
+Overlay page technical requirements:
+Build a graphics-only page that:
+- has fully transparent html and body background
+- has margin 0
+- has overflow hidden
+- renders within a 1920x1080 stage
+- is stable in 16:9
+- uses fixed positioning for scorebug placement
+- renders only the scorebug elements
+- loads fast
+- can stay open continuously in Recast
+- reconnects automatically if live data drops
+- keeps last good state while reconnecting
+- does not require login once the URL is generated
+- supports preview in browser
+
+CSS requirements:
+- html, body { background: transparent !important; margin: 0; width: 100%; height: 100%; overflow: hidden; }
+- no full-screen background layer
+- no page wrapper with visible fill
+- use lightweight shadows and effects only
+- prefer SVG and sharp HTML/CSS shapes for crisp playout
+
+Data requirements:
+Each match overlay should support at minimum:
+- matchId
+- scoreboardVisible
+- selectedStyle
+- homeTeamName
+- awayTeamName
+- homeTeamShortName
+- awayTeamShortName
+- homeScore
+- awayScore
+- chukkerNumber
+- gameClock
+- clockRunning
+- homeTeamPrimaryColor
+- awayTeamPrimaryColor
+- homeTeamAccentColor
+- awayTeamAccentColor
+- homeTeamLogoUrl
+- awayTeamLogoUrl
+- eventName
+- sponsorName
+- sponsorLogoUrl
+- lastScoringPlayerName
+- lastScoringTeam
+- showGoalScorerBar
+
+Important sync requirement:
+The overlay data should not be entered manually in a separate place.
+It should read from the same match state already being updated in the match control page and already displayed on the spectator live page.
+Any change made in match control should immediately affect:
+- the spectator live page
+- the broadcast overlay page
+
+Live update requirements:
+Use WebSocket if possible.
+Fallback to SSE or lightweight polling if needed.
+
+The overlay should subscribe to live match state and update instantly when:
+- score changes
+- clock changes
+- chukker changes
+- logos/colors change
+- show/hide changes
+- style changes
+- goal scorer data changes
+
+Match control page requirements:
+Add these controls to each match control page:
+
+1. Video URL button
+Label:
+- Video URL
+
+Behavior:
+- generate or retrieve the unique overlay URL for that specific match
+- copy to clipboard on click
+- show a small success message like “URL copied”
+- include preview/open option if easy
+
+2. Show/Hide broadcast toggle
+Label:
+- Show
+- Hide
+
+Behavior:
+- controls whether the scoreboard is visible on the overlay output
+- when Hide is active, the page should remain transparent and render no visible scorebug
+- when Show is active, the scorebug appears
+- this must update live so broadcast changes immediately without refreshing the page
+
+3. Style selector
+Allow operator to choose:
+- Option 1
+- Option 2
+
+This should instantly change the layout on the live overlay page for that match.
+
+4. Preview button
+Optional but recommended:
+- Preview Overlay
+
+Behavior:
+- open the same overlay URL in a new tab for quick visual confirmation
+
+5. Goal scorer trigger support
+When a goal is recorded, support passing the scoring player name and scoring team into the live match state so the broadcast overlay can show a temporary goal scorer bar.
+
+Goal scorer bar feature:
+Bonus feature:
+Add a temporary vanishing bar at the bottom of the scoreboard that appears when a goal is scored.
+
+Requirements:
+- show the scoring player’s name
+- place it at the bottom of the scorebug, attached visually to the main scoreboard
+- background color behind the player name should reflect that team’s color
+- text should be highly readable
+- bar should animate in cleanly
+- remain on screen for a short configurable duration such as 3 to 5 seconds
+- then animate out automatically
+- support repeated triggers if multiple goals happen close together
+- ideally queue or replace intelligently
+- should work with both Option 1 and Option 2
+
+Example:
+If DUS scores and the player is Tommy Collingwood, the overlay could briefly show:
+[TOMMY COLLINGWOOD]
+with the bar background using DUS team color styling
+
+Recommended implementation for scorer bar:
+- expose fields like lastScoringPlayerName, lastScoringTeam, goalScorerTimestamp
+- when these fields update, the overlay shows the scorer bar
+- the overlay auto-hides it after the configured duration
+- use the scoring team’s primary or accent color as the bar background
+- allow slight fade/slide animation, but keep it broadcast safe
+
+Recommended implementation:
+Backend:
+- create overlay config per match
+- create unique overlay URL per match
+- expose live match state endpoint or socket channel
+- expose scoreboardVisible boolean
+- expose selectedStyle value
+- expose goal scorer event data
+- optionally sign the URL with a token
+
+Frontend overlay:
+- single transparent overlay page
+- read matchId from route
+- read style from match settings or query param
+- connect to the same live match state used by match control and spectator live page
+- render Option 1 or Option 2 component
+- if scoreboardVisible is false, render nothing visible
+- if a new goal scorer event is received, show the temporary scorer bar
+
+Suggested routes:
+- /matches/:matchId/control
+- /broadcast/scorebug/:matchId
+- /api/matches/:matchId/live-state
+- /api/matches/:matchId/overlay/url
+- /api/matches/:matchId/overlay/visibility
+- /api/matches/:matchId/overlay/style
+
+Suggested state model:
+{
+  "matchId": "abc123",
+  "scoreboardVisible": true,
+  "selectedStyle": "option1",
+  "overlayUrl": "https://yourdomain.com/broadcast/scorebug/abc123?token=xyz",
+  "homeTeam": {
+    "name": "DUS Polo",
+    "shortName": "DUS",
+    "score": 6,
+    "primaryColor": "#0E5A4A",
+    "accentColor": "#19A974",
+    "logoUrl": "https://..."
+  },
+  "awayTeam": {
+    "name": "ERP Polo",
+    "shortName": "ERP",
+    "score": 5,
+    "primaryColor": "#6A1B1A",
+    "accentColor": "#E85D4F",
+    "logoUrl": "https://..."
+  },
+  "chukkerNumber": 4,
+  "gameClock": "2:31",
+  "clockRunning": true,
+  "lastScoringPlayerName": "Tommy Collingwood",
+  "lastScoringTeam": "home",
+  "showGoalScorerBar": true
+}
+
+Acceptance criteria:
+- every match has a unique broadcast overlay URL
+- the match control page includes a Video URL button
+- the match control page includes a live Show/Hide button or toggle
+- the overlay uses the same live data source as the match control page and spectator live page
+- the overlay page is fully transparent except for the scorebug
+- the overlay works in browser preview and can be pasted into Recast as a URL
+- Option 1 and Option 2 both work
+- team logos and team colors are supported
+- the chukker is shown only as a large number
+- score and clock are large and broadcast readable
+- toggling Show/Hide updates the live overlay immediately
+- changing match data updates the overlay immediately
+- when a goal scorer name is provided, a temporary team-colored scorer bar appears and then disappears
+- the page is stable for long-running playout
+
+Nice-to-have:
+- debug mode with safe-area outlines
+- fallback mock data mode for design testing
+- animate score changes lightly
+- animate show/hide in a broadcast-safe way
+- allow per-event branding and sponsor logo

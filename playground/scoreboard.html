@@ -1,0 +1,1177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Polo Clubhouse — Broadcast Scoreboard Playground</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ===========================================================
+     PLAYGROUND CHROME (only — overlays themselves are pure CSS
+     copied 1:1 from the live broadcast components)
+     =========================================================== */
+      :root {
+        --bg: #0b1117;
+        --panel: #131a22;
+        --line: #1f2733;
+        --ink: #e6edf3;
+        --muted: #8b95a3;
+        --field: linear-gradient(135deg, #2d4a2b 0%, #1a3018 100%);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Inter", sans-serif;
+      }
+      body {
+        padding: 24px 24px 80px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 14px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 32px 0 12px;
+        font-weight: 700;
+      }
+      p.lead {
+        color: var(--muted);
+        margin: 0 0 24px;
+        max-width: 760px;
+        line-height: 1.5;
+      }
+      code.kbd {
+        background: #1f2733;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+      }
+
+      /* Each "stage" simulates a broadcast canvas at a chosen resolution. */
+      .stage {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background: var(--field);
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+      }
+      .stage::before {
+        /* faint pitch lines so you can judge spacing */
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(
+            transparent 0%,
+            transparent 49.5%,
+            rgba(255, 255, 255, 0.04) 49.5%,
+            rgba(255, 255, 255, 0.04) 50.5%,
+            transparent 50.5%
+          ),
+          linear-gradient(
+            90deg,
+            transparent 0%,
+            transparent 49.5%,
+            rgba(255, 255, 255, 0.04) 49.5%,
+            rgba(255, 255, 255, 0.04) 50.5%,
+            transparent 50.5%
+          );
+      }
+      .stage-label {
+        position: absolute;
+        top: 8px;
+        right: 12px;
+        z-index: 10;
+        background: rgba(0, 0, 0, 0.55);
+        color: #fff;
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        font-family: "JetBrains Mono", monospace;
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      @media (max-width: 1100px) {
+        .grid-2 {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* ===========================================================
+     SCOREBUG (CompactPremiumBar) — option1 / option2 styles
+     =========================================================== */
+      .scorebug {
+        position: absolute;
+        top: 40px;
+        left: 40px;
+        display: flex;
+        flex-direction: column;
+        border-radius: 8px;
+        overflow: hidden;
+        font-family: "Inter", "Helvetica Neue", sans-serif;
+      }
+      .scorebug .title-bar {
+        background: rgba(0, 0, 0, 0.85);
+        padding: 6px 20px;
+        text-align: center;
+        overflow: hidden;
+      }
+      .scorebug.option1 .title-bar {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .scorebug .title-bar span {
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      .scorebug .row {
+        display: flex;
+        align-items: stretch;
+        height: 52px;
+      }
+      .scorebug .team {
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+        width: 220px;
+        height: 100%;
+        box-sizing: border-box;
+      }
+      .scorebug .team .logo {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        color: #fff;
+        flex-shrink: 0;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        overflow: hidden;
+      }
+      .scorebug .team .logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .scorebug .team .gap {
+        width: 6px;
+        flex-shrink: 0;
+      }
+      .scorebug .team .name {
+        color: #fff;
+        font-size: 16px;
+        font-weight: 800;
+        text-transform: uppercase;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+      }
+      .scorebug .team.away .name {
+        text-align: right;
+      }
+      .scorebug .score {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        padding: 0 6px;
+        background: rgba(0, 0, 0, 0.85);
+      }
+      .scorebug .score .num {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 30px;
+        font-weight: 800;
+        color: #fff;
+        width: 40px;
+        text-align: center;
+        line-height: 1;
+      }
+      .scorebug .score .sep {
+        font-size: 20px;
+        color: rgba(255, 255, 255, 0.3);
+        font-weight: 300;
+        margin: 0 2px;
+      }
+      .scorebug .clock {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0 12px;
+        background: rgba(0, 0, 0, 0.85);
+        border-left: 1px solid rgba(255, 255, 255, 0.08);
+        min-width: 76px;
+      }
+      .scorebug .clock span {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 26px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: 1px;
+      }
+      .scorebug .chukker {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 8px;
+        background: rgba(0, 0, 0, 0.85);
+        border-left: 1px solid rgba(255, 255, 255, 0.08);
+        width: 40px;
+      }
+      .scorebug .chukker span {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 26px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.9);
+        text-align: center;
+        width: 100%;
+      }
+
+      /* ===========================================================
+     SCOREBUG OPTION 3 — scores embedded in team blocks,
+     center cell stacks chukker (top) over clock (below).
+     =========================================================== */
+      .scorebug.option3 .title-bar {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .scorebug.option3 .row {
+        height: 56px;
+      }
+      .scorebug.option3 .team {
+        width: 240px;
+        padding: 0 12px;
+      }
+      .scorebug.option3 .team .name {
+        font-size: 16px;
+      }
+      .scorebug.option3 .team-score {
+        font-family: "JetBrains Mono", "SF Mono", monospace;
+        font-size: 30px;
+        font-weight: 800;
+        color: #fff;
+        line-height: 1;
+        min-width: 36px;
+        text-align: center;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+        flex-shrink: 0;
+      }
+      .scorebug.option3 .team.home .team-score {
+        margin-left: 10px;
+      }
+      .scorebug.option3 .team.away .team-score {
+        margin-right: 10px;
+      }
+      .scorebug.option3 .center-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0 14px;
+        background: rgba(0, 0, 0, 0.85);
+        min-width: 80px;
+        gap: 2px;
+      }
+      .scorebug.option3 .center-stack .chukker-num {
+        font-family: "JetBrains Mono", "SF Mono", monospace;
+        font-size: 24px;
+        font-weight: 800;
+        color: #fff;
+        line-height: 1;
+      }
+      .scorebug.option3 .center-stack .clock-num {
+        font-family: "JetBrains Mono", "SF Mono", monospace;
+        font-size: 20px;
+        font-weight: 700;
+        color: #fff;
+        line-height: 1;
+        letter-spacing: 0.5px;
+      }
+
+      /* ===========================================================
+     MINI STATS (lower-third) — matches MiniStatsOverlay.tsx
+     =========================================================== */
+      .mini-stats {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 36px;
+        display: flex;
+        justify-content: center;
+        font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+      }
+      .mini-stats .panel {
+        /* Flexible columns: 320px team col + 7 equal stat cols (minmax 0,1fr) */
+        width: 1230px; /* design max width */
+        max-width: 95vw; /* shrinks on smaller stages */
+        background: linear-gradient(
+          180deg,
+          rgba(12, 12, 16, 0.82) 0%,
+          rgba(18, 18, 24, 0.86) 100%
+        );
+        backdrop-filter: blur(24px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow:
+          0 32px 80px rgba(0, 0, 0, 0.5),
+          0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+        overflow: hidden;
+      }
+      .mini-stats .header-bar {
+        padding: 14px 38px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .mini-stats .header-bar span {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 3.5px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.75);
+      }
+      .mini-stats .grid {
+        display: grid;
+        grid-template-columns: 320px repeat(7, minmax(0, 1fr));
+        align-items: center;
+      }
+      .mini-stats .grid.headers {
+        padding: 12px 0;
+      }
+      .mini-stats .grid.row {
+        padding: 14px 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .mini-stats .col-label {
+        text-align: center;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.55);
+      }
+      .mini-stats .col-team-label {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.55);
+        padding-left: 38px;
+      }
+      .mini-stats .team-cell {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding-left: 38px;
+      }
+      .mini-stats .team-cell .dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .mini-stats .team-cell .logo-wrap {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .mini-stats .team-cell .logo-wrap span {
+        font-size: 16px;
+        font-weight: 800;
+        color: #fff;
+      }
+      .mini-stats .team-cell .logo-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .mini-stats .team-cell .name {
+        font-size: 22px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .mini-stats .stat-val {
+        text-align: center;
+        font-size: 30px;
+        font-weight: 700;
+        color: #fff;
+        font-family: "JetBrains Mono", "SF Mono", monospace;
+      }
+
+      /* ===========================================================
+     FULL STATS — matches StatsOverlay.tsx
+     =========================================================== */
+      .full-stats {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+      }
+      .full-stats .panel {
+        width: 1030px;
+        max-width: 92%;
+        background: linear-gradient(
+          180deg,
+          rgba(12, 12, 16, 0.82) 0%,
+          rgba(18, 18, 24, 0.86) 100%
+        );
+        backdrop-filter: blur(24px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow:
+          0 32px 80px rgba(0, 0, 0, 0.5),
+          0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .full-stats .head {
+        padding: 20px 38px 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .full-stats .head .tournament {
+        text-align: center;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        color: #fff;
+        margin-bottom: 14px;
+      }
+      .full-stats .head .subtitle {
+        text-align: center;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 3.5px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.5);
+        margin-bottom: 4px;
+      }
+      .full-stats .head .teams {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .full-stats .head .team {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex: 1;
+      }
+      .full-stats .head .team.away {
+        justify-content: flex-end;
+        text-align: right;
+      }
+      .full-stats .head .team .logo {
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .full-stats .head .team .logo span {
+        font-size: 22px;
+        font-weight: 800;
+        color: #fff;
+      }
+      .full-stats .head .team .logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .full-stats .head .team .name {
+        font-size: 24px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.3px;
+      }
+
+      .full-stats .body {
+        padding: 16px 38px 24px;
+      }
+      .full-stats .body .stat-row {
+        display: flex;
+        align-items: center;
+        padding: 11px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .full-stats .body .stat-row:last-child {
+        border-bottom: none;
+      }
+      .full-stats .body .num {
+        width: 62px;
+        text-align: center;
+        font-size: 28px;
+        font-weight: 700;
+        color: #fff;
+        font-family: "JetBrains Mono", monospace;
+      }
+      .full-stats .body .center {
+        flex: 1;
+        padding: 0 20px;
+      }
+      .full-stats .body .label {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: #fff;
+        text-align: center;
+        margin-bottom: 6px;
+      }
+      .full-stats .body .bar {
+        display: flex;
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        width: 100%;
+        gap: 3px;
+      }
+      .full-stats .body .bar .seg {
+        border-radius: 4px;
+        transition: width 0.6s ease;
+      }
+      .full-stats .body .bar .empty {
+        height: 8px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.15);
+        width: 100%;
+      }
+
+      .full-stats .scorers {
+        width: 1030px;
+        max-width: 92%;
+        background: linear-gradient(
+          180deg,
+          rgba(12, 12, 16, 0.82) 0%,
+          rgba(18, 18, 24, 0.86) 100%
+        );
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 12px 38px 14px;
+      }
+      .full-stats .scorers .title {
+        text-align: center;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 3.5px;
+        text-transform: uppercase;
+        color: #fff;
+        margin-bottom: 8px;
+      }
+      .full-stats .scorers .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 0;
+      }
+      .full-stats .scorers .left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .full-stats .scorers .badge {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .full-stats .scorers .name {
+        font-size: 20px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: 0.3px;
+      }
+      .full-stats .scorers .team-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.35);
+      }
+      .full-stats .scorers .goals {
+        display: flex;
+        align-items: baseline;
+        gap: 5px;
+      }
+      .full-stats .scorers .goals .n {
+        font-size: 24px;
+        font-weight: 800;
+        color: #fff;
+        font-family: "JetBrains Mono", monospace;
+      }
+      .full-stats .scorers .goals .l {
+        font-size: 12px;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.4);
+        letter-spacing: 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Polo Clubhouse — Broadcast Scoreboard Playground</h1>
+    <p class="lead">
+      Self-contained sandbox for the broadcast graphics. Open this file in any
+      browser, edit the <code class="kbd">MOCK</code> object near the bottom of
+      the file (or the inline CSS above) in any text editor, then refresh. No
+      build step, no install. The CSS for each overlay is a 1:1 copy of the live
+      components.
+    </p>
+
+    <h2>
+      1. Always-on scorebug — option 1 (with title-bar divider) &amp; option 2
+    </h2>
+    <div class="grid-2">
+      <div class="stage">
+        <div class="stage-label">option 1</div>
+        <div id="scorebug-1"></div>
+      </div>
+      <div class="stage">
+        <div class="stage-label">option 2</div>
+        <div id="scorebug-2"></div>
+      </div>
+    </div>
+
+    <h2>
+      1b. Scorebug — option 3 (scores in team blocks, chukker stacked over
+      clock)
+    </h2>
+    <div class="stage" style="max-width: 1280px">
+      <div class="stage-label">option 3 — tweaked</div>
+      <div id="scorebug-3"></div>
+    </div>
+
+    <h2>2. Mini stats lower-third</h2>
+    <div class="stage" style="max-width: 1280px">
+      <div class="stage-label">stats_mini</div>
+      <div id="mini-stats"></div>
+    </div>
+
+    <h2>3. Full stats overlay (with conversion + top scorers)</h2>
+    <div class="stage" style="max-width: 1280px">
+      <div class="stage-label">stats</div>
+      <div id="full-stats"></div>
+    </div>
+
+    <script>
+      // =========================================================
+      // MOCK DATA — edit anything here, save, refresh the browser.
+      // =========================================================
+      const MOCK = {
+        tournament: { name: "2026 U.S. Open Polo Championship\u00AE" },
+        home: {
+          name: "BTA",
+          shortName: "BTA",
+          primaryColor: "#1B5E20", // dark green
+          logoUrl: null, // or "https://example.com/logo.png"
+        },
+        away: {
+          name: "DUS",
+          shortName: "DUS",
+          primaryColor: "#6A1B1A", // dark red
+          logoUrl: null,
+        },
+        homeScore: 13,
+        awayScore: 14,
+        clock: "5:42",
+        chukker: 6,
+        stats: {
+          home: {
+            goal: 13,
+            shot_on_goal: 16,
+            penalty_goal: 3,
+            foul: 6,
+            bowl_in: 7,
+            knock_in: 6,
+          },
+          away: {
+            goal: 14,
+            shot_on_goal: 16,
+            penalty_goal: 2,
+            foul: 9,
+            bowl_in: 15,
+            knock_in: 8,
+          },
+        },
+        topScorers: [
+          { name: "Tomas Panelo", goals: 8, teamSide: "home" },
+          { name: "Antonio Heguy", goals: 7, teamSide: "away" },
+        ],
+      };
+
+      // =========================================================
+      // Helpers
+      // =========================================================
+      const el = (tag, attrs = {}, children = []) => {
+        const n = document.createElement(tag);
+        for (const k in attrs) {
+          if (k === "style" && typeof attrs[k] === "object")
+            Object.assign(n.style, attrs[k]);
+          else if (k === "class") n.className = attrs[k];
+          else n.setAttribute(k, attrs[k]);
+        }
+        (Array.isArray(children) ? children : [children]).forEach((c) => {
+          if (c == null) return;
+          n.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+        });
+        return n;
+      };
+      const teamFallback = (t) =>
+        (t.shortName || (t.name || "?").substring(0, 3)).toUpperCase();
+      const teamDisplay = (t) => {
+        const name = t.name || "TBD";
+        return name.length > 12 ? name.substring(0, 12) : name;
+      };
+      const conversionPct = (side) => {
+        const shots = side?.shot_on_goal || 0;
+        if (!shots) return null;
+        const goals = (side?.goal || 0) + (side?.penalty_goal || 0);
+        return Math.round((goals / shots) * 100);
+      };
+
+      // =========================================================
+      // Scorebug (option1 / option2)
+      // =========================================================
+      function renderScorebug(targetId, withDivider) {
+        const root = document.getElementById(targetId);
+        const homeColor = MOCK.home.primaryColor;
+        const awayColor = MOCK.away.primaryColor;
+
+        const wrap = el("div", {
+          class: "scorebug " + (withDivider ? "option1" : "option2"),
+        });
+        if (MOCK.tournament?.name) {
+          wrap.appendChild(
+            el(
+              "div",
+              { class: "title-bar" },
+              el("span", {}, MOCK.tournament.name),
+            ),
+          );
+        }
+        const row = el("div", { class: "row" });
+
+        const homeCell = el("div", {
+          class: "team home",
+          style: {
+            background: `linear-gradient(135deg, ${homeColor}dd, ${homeColor}bb)`,
+          },
+        });
+        const homeLogo = el("div", { class: "logo" });
+        if (MOCK.home.logoUrl)
+          homeLogo.appendChild(el("img", { src: MOCK.home.logoUrl, alt: "" }));
+        else homeLogo.textContent = teamFallback(MOCK.home);
+        homeCell.appendChild(homeLogo);
+        homeCell.appendChild(el("div", { class: "gap" }));
+        homeCell.appendChild(
+          el("span", { class: "name" }, teamDisplay(MOCK.home)),
+        );
+        row.appendChild(homeCell);
+
+        const score = el("div", { class: "score" });
+        score.appendChild(el("span", { class: "num" }, String(MOCK.homeScore)));
+        score.appendChild(el("span", { class: "sep" }, ":"));
+        score.appendChild(el("span", { class: "num" }, String(MOCK.awayScore)));
+        row.appendChild(score);
+
+        const awayCell = el("div", {
+          class: "team away",
+          style: {
+            background: `linear-gradient(135deg, ${awayColor}bb, ${awayColor}dd)`,
+          },
+        });
+        awayCell.appendChild(
+          el("span", { class: "name" }, teamDisplay(MOCK.away)),
+        );
+        awayCell.appendChild(el("div", { class: "gap" }));
+        const awayLogo = el("div", { class: "logo" });
+        if (MOCK.away.logoUrl)
+          awayLogo.appendChild(el("img", { src: MOCK.away.logoUrl, alt: "" }));
+        else awayLogo.textContent = teamFallback(MOCK.away);
+        awayCell.appendChild(awayLogo);
+        row.appendChild(awayCell);
+
+        row.appendChild(
+          el("div", { class: "clock" }, el("span", {}, MOCK.clock)),
+        );
+        row.appendChild(
+          el("div", { class: "chukker" }, el("span", {}, String(MOCK.chukker))),
+        );
+
+        wrap.appendChild(row);
+        root.appendChild(wrap);
+      }
+
+      // =========================================================
+      // Scorebug option 3 — scores embedded in team blocks,
+      // chukker stacked over clock in the center.
+      // =========================================================
+      function renderScorebugOption3(targetId) {
+        const root = document.getElementById(targetId);
+        const homeColor = MOCK.home.primaryColor;
+        const awayColor = MOCK.away.primaryColor;
+
+        const wrap = el("div", { class: "scorebug option3" });
+        if (MOCK.tournament?.name) {
+          wrap.appendChild(
+            el(
+              "div",
+              { class: "title-bar" },
+              el("span", {}, MOCK.tournament.name),
+            ),
+          );
+        }
+        const row = el("div", { class: "row" });
+
+        // Home team block: logo, name, score
+        const homeCell = el("div", {
+          class: "team home",
+          style: {
+            background: `linear-gradient(135deg, ${homeColor}dd, ${homeColor}bb)`,
+          },
+        });
+        const homeLogo = el("div", { class: "logo" });
+        if (MOCK.home.logoUrl)
+          homeLogo.appendChild(el("img", { src: MOCK.home.logoUrl, alt: "" }));
+        else homeLogo.textContent = teamFallback(MOCK.home);
+        homeCell.appendChild(homeLogo);
+        homeCell.appendChild(el("div", { class: "gap" }));
+        homeCell.appendChild(
+          el("span", { class: "name" }, teamDisplay(MOCK.home)),
+        );
+        homeCell.appendChild(
+          el("span", { class: "team-score" }, String(MOCK.homeScore)),
+        );
+        row.appendChild(homeCell);
+
+        // Center: chukker on top, clock below (a hair smaller), both bold
+        const center = el("div", { class: "center-stack" });
+        center.appendChild(
+          el("span", { class: "chukker-num" }, String(MOCK.chukker)),
+        );
+        center.appendChild(el("span", { class: "clock-num" }, MOCK.clock));
+        row.appendChild(center);
+
+        // Away team block: score, name, logo (mirrored)
+        const awayCell = el("div", {
+          class: "team away",
+          style: {
+            background: `linear-gradient(135deg, ${awayColor}bb, ${awayColor}dd)`,
+          },
+        });
+        awayCell.appendChild(
+          el("span", { class: "team-score" }, String(MOCK.awayScore)),
+        );
+        awayCell.appendChild(
+          el("span", { class: "name" }, teamDisplay(MOCK.away)),
+        );
+        awayCell.appendChild(el("div", { class: "gap" }));
+        const awayLogo = el("div", { class: "logo" });
+        if (MOCK.away.logoUrl)
+          awayLogo.appendChild(el("img", { src: MOCK.away.logoUrl, alt: "" }));
+        else awayLogo.textContent = teamFallback(MOCK.away);
+        awayCell.appendChild(awayLogo);
+        row.appendChild(awayCell);
+
+        wrap.appendChild(row);
+        root.appendChild(wrap);
+      }
+
+      // =========================================================
+      // Mini stats lower-third
+      // =========================================================
+      function renderMiniStats() {
+        const root = document.getElementById("mini-stats");
+        const COLS = [
+          { key: "goal", label: "Goals" },
+          { key: "foul", label: "Fouls" },
+          { key: "bowl_in", label: "Bowl Ins" },
+          { key: "knock_in", label: "Knock Ins" },
+          { key: "penalty_goal", label: "Pen. Goals" },
+          { key: "shot_on_goal", label: "Shots" },
+          { key: "shot_accuracy", label: "Conversion" },
+        ];
+        const wrap = el("div", { class: "mini-stats" });
+        const panel = el("div", { class: "panel" });
+
+        panel.appendChild(
+          el(
+            "div",
+            { class: "header-bar" },
+            el(
+              "span",
+              {},
+              MOCK.tournament?.name
+                ? MOCK.tournament.name + " \u00B7 Match Stats"
+                : "Match Stats",
+            ),
+          ),
+        );
+
+        const header = el("div", { class: "grid headers" });
+        header.appendChild(el("div", { class: "col-team-label" }, "Team"));
+        COLS.forEach((c) =>
+          header.appendChild(el("div", { class: "col-label" }, c.label)),
+        );
+        panel.appendChild(header);
+
+        function teamRow(side) {
+          const t = MOCK[side];
+          const sideStats = MOCK.stats[side];
+          const color = t.primaryColor;
+          const row = el("div", { class: "grid row" });
+          const teamCell = el("div", { class: "team-cell" });
+          teamCell.appendChild(
+            el("div", { class: "dot", style: { background: color } }),
+          );
+          const logoWrap = el("div", {
+            class: "logo-wrap",
+            style: {
+              background: `linear-gradient(135deg, ${color}40, ${color}20)`,
+              border: `2px solid ${color}60`,
+            },
+          });
+          if (t.logoUrl)
+            logoWrap.appendChild(el("img", { src: t.logoUrl, alt: "" }));
+          else logoWrap.appendChild(el("span", {}, teamFallback(t)));
+          teamCell.appendChild(logoWrap);
+          teamCell.appendChild(el("div", { class: "name" }, t.name));
+          row.appendChild(teamCell);
+
+          COLS.forEach((c) => {
+            let val;
+            if (c.key === "shot_accuracy") {
+              const pct = conversionPct(sideStats);
+              val = pct === null ? "\u2014" : pct + "%";
+            } else {
+              val = String(sideStats[c.key] ?? 0);
+            }
+            row.appendChild(el("div", { class: "stat-val" }, val));
+          });
+          return row;
+        }
+        panel.appendChild(teamRow("home"));
+        panel.appendChild(teamRow("away"));
+        wrap.appendChild(panel);
+        root.appendChild(wrap);
+      }
+
+      // =========================================================
+      // Full stats overlay
+      // =========================================================
+      function renderFullStats() {
+        const root = document.getElementById("full-stats");
+        const ROWS = [
+          { key: "goal", label: "Goals" },
+          { key: "shot_on_goal", label: "Shots on Goal" },
+          { key: "__conversion__", label: "Conversion" },
+          { key: "penalty_goal", label: "Penalty Goals" },
+          { key: "foul", label: "Fouls Committed" },
+          { key: "bowl_in", label: "Bowl-Ins Won" },
+          { key: "knock_in", label: "Knock-Ins" },
+        ];
+        const hColor = MOCK.home.primaryColor;
+        const aColor = MOCK.away.primaryColor;
+
+        const wrap = el("div", { class: "full-stats" });
+        const panel = el("div", {
+          class: "panel",
+          style: {
+            background: `linear-gradient(180deg, rgba(12,12,16,0.82) 0%, rgba(18,18,24,0.86) 100%)`,
+          },
+        });
+
+        const head = el("div", {
+          class: "head",
+          style: {
+            background: `linear-gradient(90deg, ${hColor}20 0%, transparent 30%, transparent 70%, ${aColor}20 100%)`,
+          },
+        });
+        if (MOCK.tournament?.name)
+          head.appendChild(
+            el("div", { class: "tournament" }, MOCK.tournament.name),
+          );
+        head.appendChild(el("div", { class: "subtitle" }, "Match Stats"));
+
+        const teams = el("div", { class: "teams" });
+        function teamHead(side, color, t) {
+          const cell = el("div", { class: "team " + side });
+          const logo = el("div", {
+            class: "logo",
+            style: {
+              background: `linear-gradient(135deg, ${color}40, ${color}20)`,
+              border: `2px solid ${color}60`,
+            },
+          });
+          if (t.logoUrl)
+            logo.appendChild(el("img", { src: t.logoUrl, alt: "" }));
+          else logo.appendChild(el("span", {}, teamFallback(t)));
+          const name = el("div", { class: "name" }, t.name);
+          if (side === "home") {
+            cell.appendChild(logo);
+            cell.appendChild(name);
+          } else {
+            cell.appendChild(name);
+            cell.appendChild(logo);
+          }
+          return cell;
+        }
+        teams.appendChild(teamHead("home", hColor, MOCK.home));
+        teams.appendChild(teamHead("away", aColor, MOCK.away));
+        head.appendChild(teams);
+        panel.appendChild(head);
+
+        const body = el("div", { class: "body" });
+        ROWS.forEach((r) => {
+          let hVal, aVal, hBar, aBar;
+          if (r.key === "__conversion__") {
+            const hp = conversionPct(MOCK.stats.home);
+            const ap = conversionPct(MOCK.stats.away);
+            hVal = hp === null ? "\u2014" : hp + "%";
+            aVal = ap === null ? "\u2014" : ap + "%";
+            hBar = hp || 0;
+            aBar = ap || 0;
+          } else {
+            hVal = String(MOCK.stats.home[r.key] ?? 0);
+            aVal = String(MOCK.stats.away[r.key] ?? 0);
+            hBar = MOCK.stats.home[r.key] ?? 0;
+            aBar = MOCK.stats.away[r.key] ?? 0;
+          }
+          const row = el("div", { class: "stat-row" });
+          row.appendChild(el("div", { class: "num" }, hVal));
+          const center = el("div", { class: "center" });
+          center.appendChild(el("div", { class: "label" }, r.label));
+          const total = hBar + aBar;
+          if (total === 0) {
+            center.appendChild(
+              el("div", { class: "bar" }, el("div", { class: "empty" })),
+            );
+          } else {
+            const homePct = (hBar / total) * 100;
+            const bar = el("div", { class: "bar" });
+            bar.appendChild(
+              el("div", {
+                class: "seg",
+                style: {
+                  width: homePct + "%",
+                  background: hColor,
+                  minWidth: hBar > 0 ? "8px" : "0",
+                },
+              }),
+            );
+            bar.appendChild(
+              el("div", {
+                class: "seg",
+                style: {
+                  flex: "1",
+                  background: aColor,
+                  minWidth: aBar > 0 ? "8px" : "0",
+                },
+              }),
+            );
+            center.appendChild(bar);
+          }
+          row.appendChild(center);
+          row.appendChild(el("div", { class: "num" }, aVal));
+          body.appendChild(row);
+        });
+        panel.appendChild(body);
+        wrap.appendChild(panel);
+
+        if (MOCK.topScorers && MOCK.topScorers.length) {
+          const sc = el("div", { class: "scorers" });
+          sc.appendChild(el("div", { class: "title" }, "Top Scorers"));
+          MOCK.topScorers.slice(0, 2).forEach((s, i) => {
+            const color = s.teamSide === "home" ? hColor : aColor;
+            const t = s.teamSide === "home" ? MOCK.home : MOCK.away;
+            const row = el("div", { class: "row" });
+            const left = el("div", { class: "left" });
+            left.appendChild(
+              el(
+                "div",
+                {
+                  class: "badge",
+                  style: {
+                    background: color + "30",
+                    border: `2px solid ${color}50`,
+                  },
+                },
+                String(i + 1),
+              ),
+            );
+            left.appendChild(el("span", { class: "name" }, s.name));
+            left.appendChild(el("span", { class: "team-name" }, t.name));
+            row.appendChild(left);
+            const goals = el("div", { class: "goals" });
+            goals.appendChild(el("span", { class: "n" }, String(s.goals)));
+            goals.appendChild(
+              el("span", { class: "l" }, "GOAL" + (s.goals !== 1 ? "S" : "")),
+            );
+            row.appendChild(goals);
+            sc.appendChild(row);
+          });
+          wrap.appendChild(sc);
+        }
+
+        root.appendChild(wrap);
+      }
+
+      // =========================================================
+      // Render everything
+      // =========================================================
+      renderScorebug("scorebug-1", true);
+      renderScorebug("scorebug-2", false);
+      renderScorebugOption3("scorebug-3");
+      renderMiniStats();
+      renderFullStats();
+    </script>
+  </body>
+</html>

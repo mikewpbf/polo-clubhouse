@@ -1,0 +1,1 @@
+{"version":3,"file":"acceptInviteRequest.d.ts","sourceRoot":"","sources":["../../../src/generated/types/acceptInviteRequest.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AAEH,MAAM,WAAW,mBAAmB;IAClC,KAAK,EAAE,MAAM,CAAC;IACd,KAAK,CAAC,EAAE,MAAM,CAAC;IACf,QAAQ,CAAC,EAAE,MAAM,CAAC;IAClB,WAAW,CAAC,EAAE,MAAM,CAAC;CACtB"}

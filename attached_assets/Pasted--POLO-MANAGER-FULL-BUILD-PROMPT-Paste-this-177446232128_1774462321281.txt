@@ -1,0 +1,758 @@
+========================================================
+POLO MANAGER — FULL BUILD PROMPT
+Paste this entire document into Replit Agent
+========================================================
+
+Build a full-stack web application called "Polo Manager" — a polo tournament management and spectator platform. It has two surfaces sharing one codebase:
+
+1. A Spectator App at / — public-facing, mobile-first
+2. An Admin Clubhouse Portal at /admin — for club admins and club managers
+3. A Team Manager Portal at /my-team — scoped dashboard for assigned team managers
+
+========================================================
+TECH STACK
+========================================================
+
+- Framework: Next.js 14 (App Router) + TypeScript + Tailwind CSS
+- Database / Auth / Realtime / Storage: Supabase
+- AI: Anthropic Claude API (model: claude-sonnet-4-20250514) — server-side only, silent, no chat UI
+- PNG/PDF export: Puppeteer (puppeteer-core + @sparticuz/chromium)
+- Drag-and-drop draw builder: dnd-kit
+- Maps (field pins): Mapbox GL JS
+- Push notifications: Firebase Cloud Messaging (FCM) via Supabase Edge Functions
+- Image processing: Sharp.js (logo resize on upload)
+- Email: Resend (transactional emails for invites and notifications)
+
+Store all secrets in Replit Secrets:
+NEXT_PUBLIC_SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+ANTHROPIC_API_KEY
+NEXT_PUBLIC_MAPBOX_TOKEN
+FIREBASE_SERVICE_ACCOUNT_JSON
+NEXT_PUBLIC_FIREBASE_CONFIG
+RESEND_API_KEY
+
+========================================================
+DESIGN SYSTEM — FOLLOW EXACTLY
+========================================================
+
+NO EMOJIS ANYWHERE IN THE UI. Not in navigation, buttons, cards, labels, empty states, loading states, notifications, or anywhere else. Zero. This is absolute.
+
+FONTS (load from Google Fonts):
+- Syne (700, 800) — all headings H1–H3, tournament names, score numbers on scoreboard
+- Instrument Sans (300, 400, 500) — all body text, labels, button text
+- JetBrains Mono (300, 400, 500) — clocks, times, stats, data values, eyebrow labels, badge text
+
+CSS VARIABLES (use these everywhere, no hardcoded hex in components):
+--bg:        #f4f6f2
+--bg2:       #edf0ea
+--surface:   #ffffff
+--surface2:  #f9faf7
+--ink:       #0e1a0f
+--ink2:      rgba(14,26,15,0.55)
+--ink3:      rgba(14,26,15,0.30)
+--g900:      #0e2e14
+--g700:      #1a4d22
+--g500:      #2d7a3a
+--g400:      #3d9648
+--g300:      #6ab870
+--g100:      #d6edd8
+--g50:       #edf5ee
+--line:      rgba(14,26,15,0.10)
+--line2:     rgba(14,26,15,0.06)
+--live:      #c0392b
+--live-dim:  rgba(192,57,43,0.08)
+
+No other colors. Red (#c0392b) is for live match indicators and errors only. Team primary_color (team-defined hex) appears only on team logo border rings and score numbers on the live scoreboard.
+
+COMPONENT RULES:
+- Border radius: 4px everywhere. 50% on circular logos only.
+- No drop shadows. Use border + background difference for elevation.
+- No gradient backgrounds on sections or cards.
+- Card grids: 1px gap with background var(--line) as the visible divider line.
+- Buttons: Instrument Sans 500, 13px, 4px radius, text labels only, no icons.
+- Primary button: background var(--g700), color white, hover var(--g900)
+- Secondary button: transparent, border 1px solid var(--g700), color var(--g700)
+- Ghost button: transparent, border 1px solid var(--line), color var(--ink2)
+- Danger button: transparent, border 1px solid rgba(192,57,43,0.3), color var(--live)
+
+LIVE DOT ANIMATION (use only for the live status badge, nowhere else):
+.live-dot { width:5px; height:5px; border-radius:50%; background:currentColor; animation: blink 1.4s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+EMPTY STATES: Plain text only. Example: "No matches scheduled for today." No illustrations, no icons, no emojis.
+LOADING STATES: A thin 2px green bar animating from 0 to 100% width at top of loading container. No spinners.
+
+========================================================
+DATABASE — SUPABASE POSTGRESQL
+========================================================
+
+Create all tables via Supabase migrations. Enable Realtime on the matches and tournaments tables (UPDATE events). Set up Row Level Security on all tables.
+
+--- TABLE: clubs ---
+id (uuid PK default gen_random_uuid())
+name (varchar not null)
+slug (varchar unique not null) -- URL handle, only owner can change
+logo_url (text)
+logo_96_url (text)
+logo_40_url (text)
+logo_initials (varchar(2)) -- auto-computed: first 2 letters of name, uppercase
+description (text)
+website (varchar)
+country (varchar)
+region (varchar)
+created_at (timestamptz default now())
+
+--- TABLE: fields ---
+id (uuid PK)
+club_id (uuid FK -> clubs)
+name (varchar) -- "Main Ground", "Pitch 2"
+number (integer)
+lat (decimal)
+lng (decimal)
+surface_type (varchar)
+is_active (boolean default true)
+
+--- TABLE: teams ---
+id (uuid PK)
+club_id (uuid FK -> clubs)
+name (varchar not null)
+short_name (varchar(8)) -- abbreviation for tight spaces
+logo_url (text)
+logo_thumb_url (text) -- 64px thumbnail
+primary_color (varchar(7)) -- hex e.g. #2e7d4f
+handicap (decimal)
+contact_name (varchar)
+contact_phone (varchar)
+notes (text)
+
+--- TABLE: tournaments ---
+id (uuid PK)
+club_id (uuid FK -> clubs)
+name (varchar not null)
+format (enum: round_robin, single_elim, double_elim, group_knockout, swiss)
+handicap_level (varchar) -- "0 goal", "4 goal", "Open"
+start_date (date)
+end_date (date)
+finals_date (date)
+status (enum: draft, published, in_progress, completed, archived)
+match_duration_min (integer default 90)
+gap_between_min (integer default 20)
+chukkers_per_match (integer default 6)
+chukker_duration_minutes (integer default 7)
+has_third_place (boolean default true)
+schedule_config (jsonb)
+ai_recommendation (jsonb) -- stored AI format response
+is_visiting_league (boolean default false)
+
+--- TABLE: tournament_teams ---
+tournament_id (uuid FK -> tournaments)
+team_id (uuid FK -> teams)
+seed (integer)
+group_label (varchar) -- "A", "B", "C"
+max_games_per_day (integer default 2)
+PRIMARY KEY (tournament_id, team_id)
+
+--- TABLE: team_out_dates ---
+id (uuid PK)
+team_id (uuid FK -> teams)
+tournament_id (uuid FK -> tournaments)
+out_date (date not null)
+reason (varchar)
+created_by_user_id (uuid FK -> users)
+created_at (timestamptz default now())
+
+--- TABLE: play_dates ---
+id (uuid PK)
+tournament_id (uuid FK -> tournaments)
+date (date not null)
+start_time (time)
+end_time (time)
+field_ids (jsonb) -- array of field IDs available this day
+lunch_start (time)
+lunch_end (time)
+
+--- TABLE: matches ---
+id (uuid PK)
+tournament_id (uuid FK -> tournaments)
+home_team_id (uuid FK -> teams, nullable) -- null = TBD
+away_team_id (uuid FK -> teams, nullable) -- null = TBD
+field_id (uuid FK -> fields)
+scheduled_at (timestamptz)
+home_score (integer)
+away_score (integer)
+current_chukker (integer default 1)
+clock_started_at (timestamptz)
+clock_elapsed_seconds (integer default 0)
+clock_is_running (boolean default false)
+status (enum: scheduled, live, halftime, final, postponed, cancelled)
+round (varchar) -- "Group A Round 2", "Semi Final", "Final"
+bracket_position (integer)
+is_locked (boolean default false)
+notes (text)
+
+--- TABLE: match_events ---
+id (uuid PK)
+match_id (uuid FK -> matches)
+event_type (enum: goal, score_correction, chukker_start, chukker_end, match_start, match_end, clock_start, clock_pause)
+team_id (uuid FK -> teams, nullable)
+chukker (integer)
+clock_seconds (integer)
+score_snapshot (jsonb) -- {home: 6, away: 4}
+created_by (uuid FK -> users)
+created_at (timestamptz default now())
+
+--- TABLE: users ---
+id (uuid FK -> auth.users)
+email (varchar)
+display_name (varchar)
+phone (varchar)
+avatar_url (text)
+role (enum: spectator, team_manager, admin)
+created_at (timestamptz default now())
+
+--- TABLE: admin_club_memberships ---
+user_id (uuid FK -> users)
+club_id (uuid FK -> clubs)
+role (enum: owner, manager) -- owner = Club Admin, manager = Club Manager
+assigned_by (uuid FK -> users, nullable)
+created_at (timestamptz default now())
+PRIMARY KEY (user_id, club_id)
+
+--- TABLE: team_manager_assignments ---
+id (uuid PK)
+user_id (uuid FK -> users)
+team_id (uuid FK -> teams)
+tournament_id (uuid FK -> tournaments, nullable) -- null = all tournaments for this team
+assigned_by (uuid FK -> users)
+invite_email (varchar) -- set if user not registered at time of invite
+status (enum: pending_invite, active, revoked)
+created_at (timestamptz default now())
+accepted_at (timestamptz)
+
+--- TABLE: spectator_follows ---
+user_id (uuid FK -> users)
+club_id (uuid FK -> clubs)
+created_at (timestamptz default now())
+PRIMARY KEY (user_id, club_id)
+
+--- TABLE: push_subscriptions ---
+id (uuid PK)
+user_id (uuid FK -> users)
+fcm_token (varchar)
+created_at (timestamptz default now())
+
+--- TABLE: user_invites ---
+id (uuid PK)
+email (varchar)
+team_manager_assignment_id (uuid FK -> team_manager_assignments, nullable)
+club_membership_id (uuid FK -> admin_club_memberships, nullable)
+token (varchar unique)
+expires_at (timestamptz) -- 7 days after send
+used_at (timestamptz)
+sent_by (uuid FK -> users)
+
+RLS POLICIES:
+- tournaments: spectators SELECT where status IN ('published','in_progress','completed')
+- matches: spectators SELECT where tournament status is public
+- team_out_dates: team managers SELECT/INSERT/UPDATE/DELETE where their assignment exists AND tournament status != 'published'. After published: SELECT only.
+- admin_club_memberships: operational access WHERE role IN ('owner','manager'). Logo/slug/role management WHERE role = 'owner' only.
+- All write operations: require authenticated user with appropriate role
+
+========================================================
+SCHEDULING ALGORITHM — /lib/scheduler.ts
+========================================================
+
+Implement as a pure TypeScript function:
+generateSchedule(tournament, teams, playDates, fields, outDates): { matches: Match[], warnings: Conflict[] }
+
+ROUND ROBIN: Berger/Circle method for all pairings. Greedy slot-fill across (date, timeslot, field).
+Constraints:
+- No team plays twice in the same timeslot
+- Respect team_out_dates for every team (hard constraint)
+- Enforce max_games_per_day per team
+- Balance field usage when configured
+- Locked matches (is_locked=true) must not be moved on re-generate
+
+SINGLE ELIMINATION: Generate bracket with byes for non-power-of-2. Place earlier rounds on early dates, finals on tournaments.finals_date. Seed by handicap or manual seed value.
+
+DOUBLE ELIMINATION: Two-loss elimination. Winners bracket + losers bracket. Total matches = 2N-1 or 2N-2.
+
+GROUP + KNOCKOUT: Run round robin scheduler for each group independently. Reserve knockout slots on later play dates.
+
+SWISS: Generate Round 1 randomly. Future rounds are placeholders (home_team_id/away_team_id null) until prior round scores entered. Fill subsequent rounds by standings after each round.
+
+CONFLICT HANDLING: Never throw. Return warnings array.
+- type: 'error' = hard conflict (same team double-booked, team has all dates blocked). Blocks publishing.
+- type: 'warning' = soft conflict (fewer games than expected due to constraints). Admin can proceed.
+- If a team has ALL available play dates in team_out_dates: return error naming that team specifically.
+
+========================================================
+AI FORMAT ADVISOR — SILENT, NO CHAT
+========================================================
+
+IMPORTANT: There is NO chat interface, NO text input to AI, NO AI text shown to users. The AI runs silently in the background and returns structured data that populates the UI.
+
+API route: POST /api/ai/recommend-format (server-side only)
+Fires automatically when admin completes Step 5 of tournament wizard.
+
+Call Anthropic API (claude-sonnet-4-20250514) with system prompt:
+"You are a tournament scheduling advisor. Return ONLY valid JSON, no other text, no markdown."
+
+Input: { teamCount, playDateCount, fieldsPerDay, matchDurationMin, finalsDate, teamConstraints }
+
+Required JSON output format:
+{
+  "formats": [
+    {
+      "format": "group_knockout",
+      "label": "Group Stage + Knockout",
+      "total_matches": 11,
+      "days_needed": 3,
+      "feasibility": "ideal",
+      "ai_rank": 1,
+      "match_counts": { "group": 6, "knockout": 3, "final": 1 },
+      "field_utilization": 0.84
+    }
+  ]
+}
+
+feasibility values: "ideal" | "viable" | "tight" | "not_feasible"
+
+Parse response strictly. Strip any markdown fences before parsing.
+Store full response in tournaments.ai_recommendation.
+Implement rules-based fallback if AI call fails.
+
+Display in Step 6 format picker:
+- Each format as a selectable row: label, total_matches, days_needed
+- feasibility "ideal": no badge
+- feasibility "tight": amber "Tight" label
+- feasibility "not_feasible": grayed out, "Not viable" label, still visible
+- ai_rank 1: small "Recommended" badge in G-100/G-700 colors
+- Pre-select ai_rank 1 option
+- Admin taps to select, no AI explanation text shown
+
+API route: POST /api/ai/resolve-conflicts
+Input: list of scheduling conflicts + schedule config
+AI returns ONLY JSON: { "suggestions": [{ "action": "remove_outdate", "team_id": "...", "date": "2025-06-11", "label": "Allow Black Bears to play Jun 11" }] }
+Display as toggle switches. No AI text shown.
+
+========================================================
+ADMIN CLUBHOUSE PORTAL — /admin
+========================================================
+
+Protected routes. Requires admin_club_memberships record (role owner or manager).
+
+--- /admin/dashboard ---
+Stats: active tournaments, today's matches, total followers
+Quick actions: Create Tournament, Go to Match Day
+Recent activity list
+
+--- /admin/club/settings ---
+Edit: club name, description, website, contact details
+Club Logo upload section (owner only):
+  Drag-and-drop area or file picker. Accept PNG/JPG/SVG, max 2MB.
+  On upload: Sharp.js resize to 400x400, 96x96, 40x40. Store in Supabase Storage /clubs/[id]/logo/
+  Update clubs table with all three URLs.
+  Club Managers see current logo but no upload controls. Show: "Contact club owner to update logo."
+Club Managers section (owner only):
+  List current club managers with name, email, assigned date, remove button.
+  "Appoint Club Manager" button: search modal same as team manager assignment.
+  On assignment: INSERT admin_club_memberships(role='manager'), send notification email.
+
+--- /admin/club/fields ---
+List fields with name, number, GPS coords, surface type, active toggle.
+Add/edit field: Mapbox map with drag-pin for GPS coordinates.
+Delete: only if not used in any future matches.
+
+--- /admin/teams ---
+Searchable team directory.
+Add/edit team: name, short_name, logo upload (circular preview), primary color picker, handicap, contact info, notes.
+Logo upload: same Sharp.js pipeline as club logo. Store /teams/[id]/logo/
+Team Manager slot: shows assigned manager name or "Unassigned" with Assign button.
+
+--- /admin/tournaments ---
+List all tournaments with status badges.
+"Create Tournament" opens a 6-step wizard:
+
+STEP 1 — Basics:
+  Tournament name, handicap level (dropdown), date range picker, finals date (optional pin), VL toggle, chukkers per match (default 6), chukker duration minutes (default 7), match duration, gap between matches.
+
+STEP 2 — Add Teams:
+  Text input with debounced search against teams table (name or handicap).
+  Results list: team logo (30px circular), name, handicap, add/added toggle.
+  Added teams shown as chips: logo + name + x to remove.
+  "Create new team" link opens team creation in a right-panel slide-in drawer without losing wizard state.
+  Live count: "6 teams added"
+
+STEP 3 — Team Availability:
+  For each added team: show tournament date range as calendar.
+  Out-dates entered by team managers already pre-shown.
+  Admin can add/remove out-dates per team from this view.
+  Per-team max games per day setting.
+
+STEP 4 — Select Fields:
+  Checkbox list of club's active fields.
+  Toggle individual fields on/off per play date.
+  Drag to reorder priority.
+
+STEP 5 — Timing:
+  Per-date start time, end time.
+  Optional lunch break window.
+  Fire /api/ai/recommend-format automatically when admin reaches this step.
+
+STEP 6 — Format Picker:
+  Show "Calculating best options..." loading bar while AI call completes.
+  Render format options as described in AI section above.
+  Admin selects format. "Generate Draw" button creates the schedule.
+
+--- /admin/tournaments/[id]/teams ---
+List of entered teams with seed, group label, manager assignment.
+Out Dates Overview tab:
+  Grid view: teams as rows, play dates as columns.
+  Cell: green filled = available, red x = out-date set.
+  Hover red cell shows reason.
+  Admin can click any cell to add/remove out-date.
+
+--- /admin/tournaments/[id]/draw ---
+Two view toggle: Schedule Grid | Bracket
+
+SCHEDULE GRID VIEW:
+  Tabs per play date. Columns = fields. Rows = time slots.
+  Match cards: both team logos (30px), team names, time, round label.
+  dnd-kit drag-and-drop between cells.
+  Conflict highlighting: red border on cell if same team double-booked.
+  Toolbar: Auto-generate, Re-generate unlocked, Lock all, Export PNG, Publish.
+  "Publish" sets tournament status to 'published', triggers FCM push to followers.
+
+BRACKET VIEW:
+  Visual bracket tree with team logos and names.
+  Match times shown below each slot.
+  Click any match to open edit modal.
+
+Both views: Edit match modal — change team A, team B, field, date, time, round label, lock toggle.
+
+--- /admin/tournaments/[id]/scores ---
+Match list with inline score entry inputs.
+Saving triggers match status update and Supabase Realtime broadcast.
+
+--- /admin/matchday ---
+Shows only today's matches for this club across all tournaments.
+Each row: time, teams with logos, field, current status.
+"Go Live" button: sets match status to 'live'.
+"Control" link: goes to /admin/match/[id]/control.
+Realtime subscription shows live status updates.
+
+--- /admin/match/[id]/control ---
+MOBILE-FIRST full-screen layout. No sidebar nav. Large tap targets.
+Built for one-handed field-side use on iPhone.
+
+SECTIONS TOP TO BOTTOM:
+
+1. Header bar (G-900 background):
+   Tournament name, round label, field name.
+   Live status dot (animated) when status = live.
+
+2. Score Controls:
+   Two team columns side by side.
+   Each column: team logo (48px circular, primary_color border), team name.
+   Score display: Syne 800, colored with team.primary_color.
+   Below score: [ - ] [score] [ + ] buttons.
+   [ + ]: 48px tap target minimum. G-50 background, G-300 border, G-700 text.
+   [ - ]: smaller visual weight. live-dim background, live color.
+   Tapping score number: opens numeric input for direct correction.
+   Every score change: UPDATE matches table, INSERT match_events row.
+
+3. Game Clock:
+   Large MM:SS display (JetBrains Mono, 40px).
+   Color: var(--live) when clock_is_running=true, var(--g700) when paused.
+   [Start] / [Pause] toggle. On Start: SET clock_started_at=now(), clock_is_running=true.
+   On Pause: SET clock_elapsed_seconds=elapsed, clock_is_running=false, clock_started_at=null.
+   [Reset] button: sets clock_elapsed_seconds=0, clock_started_at=null, clock_is_running=false. Requires confirmation.
+
+4. Chukker Controls:
+   Row of dots: completed (G-400 filled), current (live red), upcoming (empty, line border).
+   Current chukker number (Syne 700, 28px).
+   "Next Chukker" button: increments current_chukker, resets clock. Confirmation required.
+   On final chukker: replace with "End Match" button.
+   "End Match": sets status='final', locks controls, triggers bracket advance edge function.
+
+5. Match Status Row:
+   Four buttons: Scheduled | Live | Final | Postpone.
+   Active state highlighted.
+   Setting to 'live': triggers push notification edge function.
+   Setting to 'final': locks score and clock, triggers on_match_final edge function.
+
+CLIENT-SIDE CLOCK FORMULA (use in spectator app too):
+const computeClockSeconds = (match) => {
+  if (!match.clock_is_running) return match.clock_elapsed_seconds;
+  return match.clock_elapsed_seconds +
+    Math.floor((Date.now() - new Date(match.clock_started_at).getTime()) / 1000);
+}
+Run setInterval(updateDisplay, 1000) only for live matches. Stop when clock_is_running=false.
+
+========================================================
+SPECTATOR APP — PUBLIC ROUTES /
+========================================================
+
+No auth required to view. Mobile-first responsive.
+
+--- / HOME SCREEN ---
+
+AT THE VERY TOP when any match has status = 'live':
+Show a section header: "Live Now" with animated live dot.
+
+If exactly 1 live match: show full-width Featured Scoreboard card:
+  Background: var(--g900).
+  Top bar: var(--live) background, white text, "Live Now" + animated dot + tournament name.
+  Body: two team columns with center clock column.
+    Team column: logo (64px circular, primary_color border), team name, score.
+    Score: Syne 800, colored with team.primary_color.
+    Center column: clock MM:SS (JetBrains Mono 28px), "Chukker N of M" label (G-300 on dark).
+  Footer: field name + club name, round label, "Notify me" text link in G-300.
+
+If 2+ live matches: show Featured Scoreboard for most recently started match.
+  Below it: compact live cards for all other live matches.
+  Compact card: both team logos (30px), scores, clock, chukker, field name.
+  Both team scores in their respective primary_color.
+
+Below live section: "Today's Matches", then "Upcoming Tournaments".
+Followed clubs surfaced first if user is signed in.
+
+Supabase Realtime subscription on matches table for live matches.
+On UPDATE: update local React state for that match only.
+Score change: flash animation on updated score number (CSS keyframe, 600ms, no other animation).
+
+--- /clubs ---
+Browse all clubs. Search by name. Filter by country/region.
+Club cards: logo (40px circular), name, region, tournament count.
+If no logo: initials fallback in G-700 square.
+
+--- /clubs/[slug] ---
+Club profile: logo (96px), name, description, website link.
+Mapbox map with field location pins.
+List of upcoming and past tournaments.
+Follow/Unfollow button (requires auth).
+
+--- /tournaments ---
+All tournaments. Filter: upcoming/past. Search: queries tournament name AND club name.
+
+Horizontal scrollable club filter strip at top:
+  Shows clubs with at least one published tournament.
+  Each item: club logo (40px circular) + club name.
+  Tap to filter list to that club. Tap again to deselect.
+
+View toggle: "By Date" | "By Club"
+  By Date: flat list, date sorted (default)
+  By Club: grouped by club with club logo+name as section header
+
+"My Clubs" filter button (signed in users who follow clubs): shows only followed clubs' tournaments.
+
+URL: /tournaments?club=[slug] pre-filters to that club.
+
+--- /tournaments/[id] ---
+Tournament overview: format badge, handicap level, dates, status.
+Club name + logo in header.
+Team list with logos.
+Tabs: Schedule | Bracket | Standings.
+
+--- /tournaments/[id]/schedule ---
+Chronological list of all matches.
+Filter by date, field, or team.
+Match cards: both team logos, names, time, field, round, score if final.
+Team score colored with team.primary_color.
+
+--- /tournaments/[id]/bracket ---
+Visual bracket tree (read-only). Team logos + names.
+Scores on completed matches. Scheduled times on upcoming.
+Realtime subscription: bracket updates live as scores entered.
+
+--- /tournaments/[id]/standings ---
+League table for round-robin and group formats.
+Team logos, W/D/L, points.
+Updates live via Realtime.
+Auto-updates when scores entered.
+
+--- /match/[id] ---
+Match detail: both teams (logos, full names), scheduled time, field, round, score if entered.
+"Notify me" text link for authenticated users.
+Share link button.
+
+--- /login and /signup ---
+Supabase Auth: email/password + Google OAuth.
+/signup fields: Full Name, Email, Password (min 8 chars), Sign up with Google button.
+On submit: create Supabase auth user, INSERT users row (role='spectator'), send email confirmation.
+After confirmation: redirect to / (spectator home).
+
+--- /accept-invite?token=[token] ---
+Validates token against user_invites table (not expired, not used).
+If not logged in: show "Create your account" form pre-filled with email.
+On signup: mark invite used, activate assignment, redirect to /my-team.
+If already logged in: activate assignment directly, redirect to /my-team.
+
+========================================================
+TEAM MANAGER PORTAL — /my-team
+========================================================
+
+Accessible only to users with at least one active team_manager_assignments row.
+If user manages multiple teams: show team selector on first load.
+This is a focused personal dashboard — NOT a cut-down admin portal.
+
+Sidebar navigation:
+  Dashboard
+  Out Dates
+  Our Schedule
+  Standings
+  Team Profile
+  --- divider ---
+  Draw Builder (grayed, not clickable — visual boundary reminder)
+  Other Teams (grayed, not clickable)
+  Club Settings (grayed, not clickable)
+
+--- /my-team/[teamId] Dashboard ---
+Stats: games scheduled, out-dates set, next game date.
+Alert banner if draw not yet published: "Draw not yet published — out date changes will be reflected."
+Upcoming fixtures list for this team only: opponent, date, time, field, round.
+
+--- /my-team/[teamId]/out-dates --- CORE FEATURE
+Tournament date range shown as context header: "Tournament runs Jun 10–14"
+
+Current out-date rows:
+  Each row: date picker + optional reason text input + remove x button.
+  Date picker constrained to tournament date range only.
+  Already-added dates shown red in calendar. Outside-range dates disabled.
+  Remove button on each row.
+
+"Add another out date" button: appends new empty row.
+No limit on number of rows.
+
+Auto-save on blur OR explicit "Save Changes" button with success toast notification.
+
+STATUS LOCKING:
+If tournament status = draft/published:
+  Show all rows editable with green "Editable" badge.
+If tournament status = published:
+  Show all rows READ-ONLY with lock indicator.
+  Message: "The draw has been published. Contact your Club Admin to update out-dates."
+
+--- /my-team/[teamId]/schedule ---
+Filtered match list: this team's games only.
+Opponent logo + name, date, time, field, round.
+Updates live via Supabase Realtime.
+
+--- /my-team/[teamId]/standings ---
+Same as spectator standings view. This team highlighted.
+
+--- /my-team/[teamId]/profile ---
+Read-only view: team name, logo, colors, handicap.
+No edit controls. "Contact your Club Admin to update team details."
+
+When team manager is signed in: show "My Team" link in main app nav header.
+
+========================================================
+PNG AND PDF EXPORT ENGINE
+========================================================
+
+Create internal render routes (not in app navigation):
+  /render/bracket/[tournamentId]
+  /render/schedule/[tournamentId]
+  /render/daily/[tournamentId]?date=YYYY-MM-DD
+  /render/standings/[tournamentId]
+
+These render-only routes are styled purely for export. No nav, no sidebar.
+Use the full design system colors but layout optimized for export dimensions.
+Team logos fetched from Supabase Storage URLs and displayed.
+Club logo in top-left header of every export.
+"Polo Manager" in footer text (small, muted).
+
+Export API routes:
+  GET /api/export/bracket/[tournamentId] — returns PNG
+  GET /api/export/schedule/[tournamentId] — returns PNG
+  GET /api/export/daily/[tournamentId]?date=YYYY-MM-DD — returns PNG
+  GET /api/export/pdf/[tournamentId] — returns PDF
+
+Each route: launch Puppeteer, navigate to matching /render/* URL, screenshot at deviceScaleFactor:2, pipe PNG buffer as response with Content-Type: image/png.
+
+Export dimensions:
+  Bracket: 1920x1080 (landscape)
+  Full schedule: 2400x1600 (landscape)
+  Daily fixture sheet: 1080x1350 (portrait, social-friendly)
+  Standings: 1080x1350 (portrait)
+
+Cache exports in Supabase Storage for 1 hour at /exports/[tournamentId]/[type]/[hash].png
+
+NOTE FOR REPLIT: Use puppeteer-core + @sparticuz/chromium for serverless-compatible Puppeteer.
+
+========================================================
+SUPABASE EDGE FUNCTIONS
+========================================================
+
+1. on_match_live — trigger when matches.status changes to 'live'
+   Read spectator_follows WHERE club_id matches tournament's club.
+   Read push_subscriptions for those user_ids.
+   Send FCM batch notification: "[Team A] vs [Team B] is now live on Field [N]"
+
+2. on_match_final — trigger when matches.status changes to 'final'
+   If knockout match: read bracket_position, find next match slot, update that match's
+   home_team_id or away_team_id with the winner's team_id.
+   Send FCM: "Final score: [Team A] [score] - [score] [Team B]"
+
+3. on_club_logo_upload — trigger on Supabase Storage upload to /clubs/ path
+   Sharp.js resize to 400x400, 96x96, 40x40.
+   Update clubs table with all three URLs.
+
+4. on_team_logo_upload — trigger on Supabase Storage upload to /teams/ path
+   Sharp.js resize to 400x400, 64x64.
+   Update teams table with logo_url and logo_thumb_url.
+
+5. send_invite_email — called when creating user_invites row
+   Use Resend to send invite email.
+   For team manager: subject "[Club Name] has added you as Team Manager for [Team Name]"
+   For club manager: subject "You have been appointed Club Manager for [Club Name]"
+   Include magic link to /accept-invite?token=[token]
+
+========================================================
+EMBEDDABLE WIDGET
+========================================================
+
+/api/widget/[clubSlug]/fixtures — returns JSON of upcoming fixtures for this club.
+/widget/[clubSlug] — minimal HTML page (no nav, no header) with fixture list, suitable for iframe.
+
+In Clubhouse settings: generate embed code snippet (iframe src pointing to /widget/[clubSlug]).
+Widget auto-syncs — no manual update needed on club website.
+Widget uses the same green design system. Club logo in widget header. No emojis.
+
+========================================================
+BUILD ORDER — DO THIS SEQUENCE
+========================================================
+
+Build in this exact order:
+
+1. Supabase setup: all tables, RLS policies, auth config, storage buckets
+2. Shared TypeScript types (/types/index.ts) and Supabase client (/lib/supabase.ts)
+3. Scheduling algorithm as standalone tested function (/lib/scheduler.ts)
+4. Admin: club setup, field manager (with Mapbox), team manager with logo upload
+5. Admin: tournament creation wizard (all 6 steps including team search picker)
+6. Admin: draw builder (schedule grid + bracket view + dnd-kit drag-drop)
+7. Admin: match control panel (/admin/match/[id]/control) — score, clock, chukker, status
+8. Admin: matchday screen (/admin/matchday)
+9. Supabase Edge Functions for push notifications and bracket advancement
+10. PNG export render templates and Puppeteer API routes
+11. Spectator app: home with live scoreboard, club browse, tournament view, schedule, bracket, standings
+12. Supabase Realtime subscriptions in spectator app (live score updates)
+13. Silent AI format advisor (/api/ai/recommend-format)
+14. User registration, login, Google OAuth
+15. Team manager portal (/my-team) including out-dates management
+16. Club manager role: assignment flow, permission scoping, email notifications
+17. Tournament browse with club filter and sort-by-club view
+18. Embeddable widget
+19. Polish: loading states, empty states, error handling, mobile responsiveness
+
+DO NOT build payments, player profiles, or statistics. Those are future phases.
+
+Test the full admin -> realtime -> spectator live scoring loop before building anything else after step 8. This is the core value of the app.
+
+========================================================
+END OF PROMPT
+========================================================

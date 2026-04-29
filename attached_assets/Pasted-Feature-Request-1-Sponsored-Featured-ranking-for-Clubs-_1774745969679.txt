@@ -1,0 +1,151 @@
+Feature Request 1: Sponsored / Featured ranking for Clubs and Tournaments
+
+I want to add a Sponsored / Featured ranking system for both clubs and tournaments/events so that super admins can manually override the normal sorting order and prioritize paid placements.
+
+Goal
+
+Normally, clubs and tournaments should sort the usual way. But when something is marked as sponsored, I want it to be able to rise above the normal sort and be featured higher in the list.
+
+Admin behavior
+
+This setting should be available only in:
+	•	Club Settings for clubs
+	•	Tournament Settings for tournaments/events
+
+It should be visible only to super admins.
+
+Fields
+
+Add the following fields to both clubs and tournaments:
+	•	Sponsored: checkbox / toggle
+	•	Sponsored Rank: numeric ranking from 1 to 10
+
+Rules
+	•	If Sponsored is not checked, the club or tournament follows the normal sorting logic.
+	•	If Sponsored is checked, the item can override normal sorting and be prioritized.
+	•	Higher sponsored rank should appear higher in the list.
+	•	10 is the highest priority and should always appear above 9, 8, etc.
+	•	Sponsored items should appear ahead of non sponsored items.
+	•	If multiple sponsored items have the same sponsored rank, then fall back to the normal secondary sort.
+
+Display behavior for clubs
+
+If a club is marked as sponsored / featured, show a small visual badge on the club card or listing:
+	•	a small star icon
+	•	text next to it that says: Featured Club
+
+This should be subtle, clean, and easy to notice.
+
+Display behavior for tournaments
+
+Do the same type of system for tournaments or events.
+If a tournament is sponsored / featured, it should also:
+	•	be prioritized in list sorting
+	•	optionally show a small badge such as Featured Event or Featured Tournament
+
+Suggested implementation notes
+	•	Keep the existing default sorting as the fallback
+	•	Apply sponsored sorting first, then normal sorting after that
+	•	Restrict editing of sponsored fields to super admins only
+	•	Add the fields to the database, API, admin forms, and public list queries
+
+⸻
+
+Feature Request 2: Match Stats section on the Match Page
+
+I want to add a Match Stats section on the match page, displayed above the match timeline.
+
+Goal
+
+The match page should show a quick statistical summary for that specific game, with one row per team, so viewers can compare team performance at a glance.
+
+Layout
+
+Place a Match Stats table above the match timeline.
+
+Use two rows:
+	•	one row for Team A
+	•	one row for Team B
+
+Stats to track and display
+
+For each team, track and display:
+	•	Goals
+	•	Fouls
+	•	Bowls In
+	•	Knock Ins
+
+These stats should be tied to that specific match only.
+
+Additional stat suggestions
+
+Here are two good additional technical stats that fit naturally with the data you are already collecting or could collect easily:
+	•	Penalty Goals
+	•	Shots on Goal
+
+because they make the match page feel more complete and analytical.
+
+Rules / behavior
+	•	Stats should update based on match events or admin input for that game
+	•	Stats should belong to the specific match, not season wide totals
+	•	Stats should display clearly in a side by side comparison format
+	•	This section should appear before the timeline so users see the summary first
+
+UX intent
+
+The match page should feel more professional and complete by giving:
+	•	a quick team comparison at the top
+	•	then the detailed event by event timeline below
+
+⸻
+
+Suggested copy and paste version for Replit
+
+Please add the following two features:
+
+1. Sponsored / Featured ranking system for Clubs and Tournaments
+
+Add a super admin only sponsored override system for both clubs and tournaments.
+
+For both clubs and tournaments/events, add:
+	•	sponsored boolean
+	•	sponsoredRank numeric field from 1 to 10
+
+Rules:
+	•	If sponsored is false, use normal sorting
+	•	If sponsored is true, prioritize the item above non sponsored items
+	•	Higher sponsoredRank should sort higher
+	•	Rank 10 is the highest and should always appear first among sponsored items
+	•	If two sponsored items have the same rank, use the existing default sort as the tiebreaker
+
+Admin UI:
+	•	Add these fields only in Club Settings and Tournament Settings
+	•	Only super admins should be able to see or edit them
+
+Public UI:
+	•	If a club is sponsored, show a small star icon and the text Featured Club
+	•	Apply the same concept for tournaments with a subtle featured badge
+
+2. Match Stats section on Match Page
+
+Add a Match Stats section above the match timeline.
+
+Requirements:
+	•	Show a two row stats table, one row per team
+	•	Track and display per match stats for:
+	•	Goals
+	•	Fouls
+	•	Bowls In
+	•	Knock Ins
+	•	Also add two additional technical stats:
+	•	Penalty Goals
+	•	Shots on Goal
+
+Behavior:
+	•	Stats must belong to the specific game only
+	•	Stats should be updateable from match data / match events / admin controls
+	•	Display the match stats summary above the match timeline
+
+Design intent:
+	•	The match page should first show a clear statistical comparison between both teams
+	•	The timeline should remain below as the play by play detail

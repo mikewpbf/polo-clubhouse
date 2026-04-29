@@ -1,0 +1,40 @@
+modules = ["nodejs-24", "postgresql-16"]
+
+[[artifacts]]
+id = "artifacts/api-server"
+
+[[artifacts]]
+id = "artifacts/mockup-sandbox"
+
+[deployment]
+router = "application"
+deploymentTarget = "autoscale"
+
+[deployment.postBuild]
+args = ["pnpm", "store", "prune"]
+env = { "CI" = "true" }
+
+[workflows]
+runButton = "Project"
+
+[agent]
+stack = "PNPM_WORKSPACE"
+expertMode = true
+integrations = ["resend:1.0.0"]
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
+
+[nix]
+channel = "stable-25_05"
+packages = ["photofield"]
+
+[userenv]
+
+[userenv.shared]
+RESEND_API_KEY = "re_8JUVn9AM_XpVmhf1kjAq8Ebut89kiWjR3"
+JWT_SECRET = "386d199b62c0dbfbea2d638d2d8dadc7442d1d7f581f8d3716e54c370b8ab33f"
+
+[objectStorage]
+defaultBucketID = "replit-objstore-29b2e828-cd3f-451f-bad4-c2d1a2f2c66f"

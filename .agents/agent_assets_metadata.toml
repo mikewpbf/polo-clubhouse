@@ -1,0 +1,50 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "m_4iokfgO8Jp9T15Q_RPj"
+uri = "file://screenshots/mini_stats_1280.jpg"
+type = "image"
+title = "Mini Stats — laptop / preview width (1280×720) — Conversion column now visible"
+
+[[outputs]]
+id = "12iw1f6iRaZ6WZ5MTDqto"
+uri = "file://screenshots/mini_stats_1920.jpg"
+type = "image"
+title = "Mini Stats — full broadcast (1920×1080) — Conversion column"
+
+[[outputs]]
+id = "bvf5hiF9R0WbIAXfYQqz-"
+uri = "file://screenshots/full_stats_1920.jpg"
+type = "image"
+title = "Full Stats overlay (1920×1080) — Conversion row"
+
+[[outputs]]
+id = "rUdubHHRW_0sHIEMRwHW2"
+uri = "file://screenshots/mini_stats_4k_like.jpg"
+type = "image"
+title = "Mini Stats at ~4K (3000×1688) — panel stays at broadcast size, Conversion visible"
+
+[[outputs]]
+id = "Ja4hRr2YhLt86WRR4gBoA"
+uri = "file://screenshots/full_stats_4k_like.jpg"
+type = "image"
+title = "Full Stats overlay at ~4K — Conversion row visible"
+
+[[outputs]]
+id = "WCTWlXWaOta7MzWyIo3l8"
+uri = "file://screenshots/scorebug_compare_overview.jpg"
+type = "image"
+title = "Side-by-side: option 1, option 2, and the new option 3 in the playground"
+
+[[outputs]]
+id = "f7Jn0Gf_xmNrJeRdHX2Mu"
+uri = "file://screenshots/scorebug_option3_closeup.jpg"
+type = "image"
+title = "Close-up: current scorebug vs option 3 (2× zoom) + option 3 at native broadcast size"
+
+[[outputs]]
+id = "CcPVCNeKM0x1BR-J6LyB6"
+uri = "file://screenshots/scorebug_live_v1_v2.jpg"
+type = "image"
+title = "New scorebug now live in both broadcast styles"

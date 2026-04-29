@@ -1,0 +1,156 @@
+Build a feature in my app that generates downloadable match promo graphics.
+
+Feature name:
+Match Graphic Generator
+
+Main goal:
+On the Match Settings page, add a dedicated section for creating downloadable graphics for each match.
+
+Important placement requirement:
+This feature should live on the Match Settings page in its own separate area or panel, not inside Broadcast Control.
+
+What it should generate:
+1. A horizontal thumbnail image for YouTube, Facebook, and general broadcast promo use
+2. A vertical portrait version for Instagram and story/reel style promo use
+
+Export formats and sizes:
+Horizontal version:
+- 1280 x 720 px
+- PNG download
+
+Vertical version:
+- Portrait social graphic
+- Recommended size: 1080 x 1350 px for Instagram feed posts
+- Also consider easy future support for 1080 x 1920 story/reel format
+- PNG download
+
+Suggested buttons:
+- Generate Horizontal Graphic
+- Download Horizontal Graphic
+- Generate Vertical Graphic
+- Download Vertical Graphic
+
+Data source:
+The graphics should auto-fill from the existing match data already in the app whenever possible.
+
+Use match data like:
+- Tournament name
+- Match title
+- Team names
+- Team logos
+- Team colors
+- Date
+- Time
+- Venue / club name
+- Optional badge like LIVE, FINAL, UPCOMING, TODAY
+- Optional sponsor logo
+- Optional background image if available
+
+What I want the feature to do:
+1. Live inside its own Match Settings section
+2. Show preview(s) of the generated graphic
+3. Auto-populate using current match data
+4. Allow quick edits before download
+5. Download clean polished PNG files in the correct sizes
+
+Editable fields:
+- Headline
+- Subheadline
+- Date
+- Time
+- Location
+- Badge text
+- Background image
+- Left logo
+- Right logo
+- Sponsor logo
+- Accent color
+- Text color
+
+Default content behavior:
+- Headline: tournament name or event name
+- Subheadline: Team A vs Team B
+- Date/time/location: from current match data
+- Logos: use team logos if available
+- Accent color: use team or tournament brand colors if available
+
+Design requirements:
+Create premium modern sports/broadcast graphics that feel stylish, polished, and social-ready.
+The design should work well for polo, live sports, event promos, livestreams, and final result posts.
+
+Style notes:
+- Strong typography
+- Large headline
+- Strong contrast
+- Good spacing
+- Gradient overlays
+- Light shadows where helpful
+- Safe margins so text is never too close to edges
+- Must look clean at small sizes on social media
+
+Templates:
+Start with at least 3 templates and make them work in both horizontal and vertical layouts where possible.
+
+1. Sports Poster
+- Large event title
+- Team names
+- Date/time/location
+- Bold badge
+- Background image with dark overlay
+
+2. Luxury Event
+- Elegant and minimal
+- Premium typography
+- Cleaner upscale layout
+- Good for polo and club promo graphics
+
+3. Score / Result
+- Team names and logos
+- Large score area
+- FINAL badge
+- Good for post-match social sharing
+
+User flow:
+- User opens Match Settings page
+- There is a dedicated Match Graphic Generator area
+- User clicks to generate horizontal and/or vertical versions
+- App builds the design from current match data
+- User can edit text, colors, logos, and images
+- User clicks download for the desired version
+- App downloads the finished PNG
+
+Technical implementation guidance:
+- Build the preview as reusable graphic components
+- Use React if the app is already React-based
+- Use a component-based template system
+- Horizontal preview should be fixed at 1280 x 720
+- Vertical preview should be fixed at 1080 x 1350
+- Use html-to-image, dom-to-image, or equivalent for PNG export
+- Keep templates data-driven and easy to expand later
+- Make horizontal and vertical layouts separate but based on the same match data model
+
+Suggested component ideas:
+- MatchGraphicGeneratorPanel
+- GraphicTemplateSelector
+- HorizontalGraphicPreview
+- VerticalGraphicPreview
+- GraphicEditorFields
+- DownloadHorizontalGraphicButton
+- DownloadVerticalGraphicButton
+
+Acceptance criteria:
+- Feature is on the Match Settings page in its own dedicated area
+- Can generate a horizontal graphic
+- Can generate a vertical Instagram-style graphic
+- Uses match data automatically
+- Allows editing of main fields
+- Can switch templates
+- Downloads correct PNG sizes
+- Output looks polished and social-media ready
+
+Bonus ideas if easy:
+- Save last-used template per match
+- Add quick badge presets: LIVE, FINAL, UPCOMING, TODAY
+- Add sponsor logo toggle
+- Add Use Team Colors shortcut
+- Add future support for 1080 x 1920 story format

@@ -1,0 +1,194 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+  --font-mono: 'SF Mono', SFMono-Regular, ui-monospace, Menlo, Monaco, 'Cascadia Mono', monospace;
+
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  
+  --color-bg: var(--bg);
+  --color-bg2: var(--bg2);
+  --color-surface: var(--surface);
+  --color-surface2: var(--surface2);
+  
+  --color-ink: var(--ink);
+  --color-ink2: var(--ink2);
+  --color-ink3: var(--ink3);
+  
+  --color-g900: var(--g900);
+  --color-g700: var(--g700);
+  --color-g500: var(--g500);
+  --color-g400: var(--g400);
+  --color-g300: var(--g300);
+  --color-g100: var(--g100);
+  --color-g50: var(--g50);
+  
+  --color-line: var(--line);
+  --color-line2: var(--line2);
+  
+  --color-live: var(--live);
+  --color-live-dim: var(--live-dim);
+
+  --color-primary: var(--g700);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: transparent;
+  --color-secondary-foreground: var(--g700);
+  --color-destructive: var(--live);
+  --color-destructive-foreground: #ffffff;
+  --color-muted: var(--bg2);
+  --color-muted-foreground: var(--ink2);
+  --color-accent: var(--g50);
+  --color-accent-foreground: var(--g900);
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--g300);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--ink);
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+}
+
+:root {
+  --bg: #f8faf6;
+  --bg2: #eff3ec;
+  --surface: #ffffff;
+  --surface2: #f5f7f3;
+  
+  --ink: #1a2e1c;
+  --ink2: rgba(26, 46, 28, 0.85);
+  --ink3: rgba(26, 46, 28, 0.70);
+  
+  --g900: #1B5E20;
+  --g700: #2E7D32;
+  --g500: #43A047;
+  --g400: #4CAF50;
+  --g300: #66BB6A;
+  --g100: #C8E6C9;
+  --g50: #E8F5E9;
+  
+  --line: rgba(26, 46, 28, 0.10);
+  --line2: rgba(26, 46, 28, 0.05);
+  
+  --live: #c0392b;
+  --live-dim: rgba(192, 57, 43, 0.08);
+
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+  --shadow-card-hover: 0 4px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow: var(--shadow-card);
+  --shadow-md: 0 4px 8px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+  --shadow-xl: 0 12px 32px rgba(0,0,0,0.10);
+  --shadow-2xl: 0 16px 48px rgba(0,0,0,0.12);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    border-color: var(--line);
+  }
+  
+  .rounded-full {
+    border-radius: 9999px !important;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    background-color: var(--bg);
+    color: var(--ink);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight text-ink;
+  }
+}
+
+@layer utilities {
+  .animate-live-dot {
+    animation: pulse-live 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animate-score-flash {
+    animation: score-flash 600ms ease-out;
+  }
+
+  .card-shadow {
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 200ms ease, border-color 200ms ease;
+  }
+
+  .card-shadow:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+@keyframes pulse-live {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes score-flash {
+  0% { transform: scale(1); color: var(--live); }
+  30% { transform: scale(1.15); color: var(--live); }
+  100% { transform: scale(1); }
+}
+
+.btn-primary {
+  background-color: var(--g700);
+  color: white;
+  border: 1px solid var(--g700);
+  border-radius: 8px;
+  transition: all 200ms ease;
+}
+.btn-primary:hover {
+  background-color: var(--g500);
+  border-color: var(--g500);
+}
+
+.btn-secondary {
+  background-color: var(--g50);
+  color: var(--g700);
+  border: 1px solid var(--g100);
+  border-radius: 8px;
+  transition: all 200ms ease;
+}
+.btn-secondary:hover {
+  background-color: var(--g100);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  transition: all 200ms ease;
+}
+.btn-ghost:hover {
+  background-color: var(--bg2);
+}
+
+.btn-danger {
+  background-color: transparent;
+  color: var(--live);
+  border: 1px solid var(--live);
+  border-radius: 8px;
+  transition: all 200ms ease;
+}
+.btn-danger:hover {
+  background-color: var(--live-dim);
+}

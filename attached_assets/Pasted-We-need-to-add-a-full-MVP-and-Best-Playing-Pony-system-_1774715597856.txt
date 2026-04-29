@@ -1,0 +1,269 @@
+We need to add a full MVP and Best Playing Pony system to the app, with the right admin workflow, player horse management, and future AI wizard compatibility.
+
+HIGH LEVEL FEATURES TO ADD
+
+1. Tournament Page
+Add two new sections on the tournament page, placed underneath the tournament stats area:
+- MVP (Most Valuable Player)
+- Best Playing Pony (BPP)
+
+These should visually feel like part of the tournament page and match the styling of the stats area so they look intentional and consistent.
+
+
+3. Horse List Per Player
+Create a horse list section with tabs for each player so that we don’t end up with a very long page  each player in Team Settings, add a horse list section so each player can have multiple horses saved to them.
+
+This horse list needs to be reusable and structured cleanly so it can also work with the AI wizard later. We want ability to use AI wizard to load horses into the 
+
+The horse list should support:
+- Add Horse
+- Edit Horse
+- Delete Horse
+- Reorder Horse if needed
+- Reuse horse data across tournaments
+
+The horse list should belong to the player, not to the tournament directly.
+
+MVP SYSTEM
+
+On the tournament page admin side, allow the admin to select the MVP for that tournament.
+
+MVP selection flow:
+- Choose team
+- Choose player from that team
+
+Once selected, the MVP section should be able to show:
+- Player Name
+- Team Name
+- Games Played in Tournament
+- Goals Scored in Tournament
+
+This should pull from tournament and match data when possible.
+
+We should also allow an admin override in case the admin wants to manually adjust the displayed numbers or text for a specific tournament.
+
+BEST PLAYING PONY SYSTEM
+
+On the tournament page admin side, allow the admin to select the Best Playing Pony for that tournament.
+
+Best Playing Pony selection flow:
+- Choose team
+- Choose player from that team
+- Choose horse from that player’s saved horse list
+
+Important:
+The horse should come from the saved horse list under that player in Team Settings, so we are not manually retyping horse details every time.
+
+HORSE DATA FIELDS
+
+Store full horse information in the backend/admin system, even if not all fields are displayed publicly.
+
+Each horse record should support these fields:
+
+Required / core:
+- horseName
+- owner
+- breeder
+- ownedAndBredBy (optional combined field)
+- sire
+- dam
+- age
+- color
+- sex
+- typeOrBreed
+- notes (optional)
+
+Sex options:
+- Mare
+- Gelding
+- Stallion
+
+Color options:
+- Bay
+- Chestnut
+- Liver Chestnut
+- Gray
+- Black
+- Paint
+- Other
+
+Optional display helper:
+- sireDamDisplay = "Sire x Dam"
+
+Examples of typeOrBreed:
+- Thoroughbred
+- Argentine Polo Horse
+- Crossbreed
+- Other
+
+ADMIN DISPLAY CUSTOMIZATION FOR BEST PLAYING PONY
+
+Important requirement:
+We want to program for all horse data fields, but we do NOT want all fields to automatically show on the tournament page.
+
+Add an admin-only display settings area for the Best Playing Pony section with checkboxes or toggles so the admin can choose what spectators see.
+
+This is admin-only. Spectators do not have access to these controls.
+
+Possible display toggles:
+- Show Horse Name
+- Show Player Name
+- Show Team Name
+- Show Owner
+- Show Breeder
+- Show Owned and Bred By
+- Show Age
+- Show Color
+- Show Sex
+- Show Type/Breed
+- Show Sire and Dam
+- Show Games Played in Tournament
+- Show Notes
+
+Behavior:
+- All horse data is stored in full
+- Only checked fields are shown publicly on the tournament page
+- This allows flexibility depending on the tournament or how much detail we want visible
+
+PUBLIC TOURNAMENT PAGE EXPERIENCE
+
+Spectators should see:
+- Tournament stats
+- MVP section
+- Best Playing Pony section
+
+But they should only see the public-facing data chosen by admin.
+
+Admin users should be able to:
+- Set the MVP
+- Set the Best Playing Pony
+- Customize which BPP fields are displayed
+- Override tournament-specific display values if needed
+
+TEAM SETTINGS USER EXPERIENCE
+
+Because the team page can get too long, redesign the Team Settings experience so it feels organized and scalable.
+
+Recommended structure:
+- Team tab for team-level info
+- Roster tab for overview of all players
+- Individual player tabs/cards/accordion sections for detailed player settings
+- Inside each player section, include a dedicated Horses area
+
+Each player section should include:
+- Player Name
+- Handicap if applicable
+- Horse List
+- Add Horse button
+- Edit Horse button
+- Delete Horse button
+
+AI WIZARD COMPATIBILITY
+
+The horse list per player needs to be compatible with the AI wizard.
+
+That means:
+- Horse data should be stored in a clean structured format
+- Player-to-horse relationships should be explicit
+- Team-to-player relationships should be explicit
+- The AI wizard should be able to read, import, suggest, or help populate horse lists later without needing a redesign
+
+Please structure the data model cleanly for future AI workflows.
+
+DATA MODEL DIRECTION
+
+Recommended relationships:
+
+Team
+- id
+- name
+- roster[]
+
+Player
+- id
+- teamId
+- name
+- handicap
+- horses[]
+
+Horse
+- id
+- playerId
+- horseName
+- owner
+- breeder
+- ownedAndBredBy
+- sire
+- dam
+- age
+- color
+- sex
+- typeOrBreed
+- notes
+
+Tournament
+- id
+- name
+- mvpSelection
+- bppSelection
+- bppDisplaySettings
+- optional admin overrides
+
+MVP Selection
+- teamId
+- playerId
+- gamesPlayed
+- goalsScored
+- optional override fields
+
+BPP Selection
+- teamId
+- playerId
+- horseId
+- gamesPlayed
+- optional override snapshot fields for tournament display
+
+BPP Display Settings
+- showHorseName
+- showPlayerName
+- showTeamName
+- showOwner
+- showBreeder
+- showOwnedAndBredBy
+- showAge
+- showColor
+- showSex
+- showTypeOrBreed
+- showSireDam
+- showGamesPlayed
+- showNotes
+
+IMPORTANT LOGIC
+
+1. Horse records live under players in Team Settings
+2. Best Playing Pony is selected from a player’s saved horse list
+3. MVP is selected from the team roster
+4. Tournament page shows MVP and BPP beneath stats
+5. BPP display is controlled by admin checkboxes/toggles
+6. Spectators only see the approved display fields
+7. Admin can override values for a specific tournament if needed
+8. System should be built to scale and work with the AI wizard later
+
+ADMIN FLOW EXAMPLE
+
+For MVP:
+- Open tournament page in admin mode
+- Click Edit MVP
+- Select team
+- Select player
+- Auto-fill stats if available
+- Save
+
+For BPP:
+- Open tournament page in admin mode
+- Click Edit Best Playing Pony
+- Select team
+- Select player
+- Select horse from that player’s horse list
+- Choose which horse details to display with checkboxes/toggles
+- Save

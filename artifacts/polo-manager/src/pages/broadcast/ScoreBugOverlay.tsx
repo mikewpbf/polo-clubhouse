@@ -664,9 +664,10 @@ export function ScoreBugOverlay() {
       const json: BroadcastData = raw;
 
       if (json.lastGoalTimestamp && json.lastGoalTimestamp !== lastGoalRef.current) {
-        const elapsed = Date.now() - new Date(json.lastGoalTimestamp).getTime();
-        // Use a 45-second window to tolerate server/browser clock skew and
-        // the occasional missed poll cycle in the SSE fallback path.
+        // Use server-side timestamps so clock skew between OBS and the server
+        // doesn't inflate elapsed and suppress the alert.
+        const serverNowMs = json.serverNow ? new Date(json.serverNow).getTime() : Date.now();
+        const elapsed = serverNowMs - new Date(json.lastGoalTimestamp).getTime();
         if (elapsed < 45000) {
           const teamColor = json.lastGoalTeamSide === "home"
             ? json.homeTeam?.primaryColor || "#374151"
@@ -685,6 +686,10 @@ export function ScoreBugOverlay() {
       if (json.lastStoppageEvent && json.lastStoppageEvent.timestamp !== lastStoppageRef.current) {
         lastStoppageRef.current = json.lastStoppageEvent.timestamp;
         setStoppageEvent(json.lastStoppageEvent);
+      } else if (json.clockIsRunning) {
+        // Clock is running → any previous stoppage has been resolved.
+        // Clear local state so subsequent pauses don't re-colour the clock.
+        setStoppageEvent(null);
       }
 
       setData(json);

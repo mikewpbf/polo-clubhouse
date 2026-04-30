@@ -266,7 +266,9 @@ router.put("/teams/:teamId/players/:playerId", requireAuth, requireTeamAdminOrMa
     // isActive = whether this player is currently playing for this specific team.
     // position = their jersey/lineup position on this team.
     if (position !== undefined) rosterUpdates.position = position == null ? null : Number(position);
-    if (isActive !== undefined) rosterUpdates.isActive = Boolean(isActive);
+    // Explicit coercion: treat only literal true or the string "true" as active.
+    // Boolean("false") would incorrectly return true, so we avoid Boolean().
+    if (isActive !== undefined) rosterUpdates.isActive = isActive === true || isActive === "true";
 
     if (Object.keys(rosterUpdates).length > 0) {
       await db.update(teamPlayersTable)

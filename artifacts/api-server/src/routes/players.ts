@@ -200,9 +200,8 @@ router.get("/players", optionalAuth, async (req, res) => {
 router.get("/players/top", async (req, res) => {
   try {
     const limit = Math.max(1, Math.min(50, Number(req.query.limit ?? 8)));
-    // Rank by handicap DESC (higher handicap = stronger player), then career goals
-    // as a secondary sort, then player name. All active players are included (LEFT JOIN),
-    // even those without match events, so the board always reflects the full ranked list.
+    // Rank by career goals DESC, then games played DESC as tiebreaker, then name.
+    // All active players included (LEFT JOIN) even those without match events.
     const rows = await db.execute(sql`
       SELECT
         p.id,
@@ -216,7 +215,7 @@ router.get("/players/top", async (req, res) => {
       LEFT JOIN match_events me ON me.player_id = p.id
       WHERE p.is_active = true
       GROUP BY p.id
-      ORDER BY p.handicap::numeric DESC NULLS LAST, career_goals DESC, p.name ASC
+      ORDER BY career_goals DESC, career_games DESC, p.name ASC
       LIMIT ${limit}
     `);
 

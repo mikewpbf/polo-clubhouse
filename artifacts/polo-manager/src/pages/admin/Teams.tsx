@@ -75,16 +75,18 @@ interface PlayerItem {
   isActive?: boolean;
 }
 
-function PlayerSection({ teamId, player, onUpdate, onDelete }: {
+function PlayerSection({ teamId, player, onUpdate, onDelete, showReactivate }: {
   teamId: string;
   player: PlayerItem;
   onUpdate: () => void;
   onDelete: (id: string) => void;
+  showReactivate?: boolean;
 }) {
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(player.name);
   const [editHandicap, setEditHandicap] = useState(player.handicap || "");
+  const [reactivating, setReactivating] = useState(false);
 
   const handleSaveEdit = async () => {
     if (!editName.trim()) return;
@@ -104,11 +106,11 @@ function PlayerSection({ teamId, player, onUpdate, onDelete }: {
     }
   };
 
-  const handleToggleActive = async () => {
+  const handleMarkInactive = async () => {
     try {
       await apiFetch(`/teams/${teamId}/players/${player.id}`, {
         method: "PUT",
-        body: JSON.stringify({ isActive: !player.isActive }),
+        body: JSON.stringify({ isActive: false }),
       });
       onUpdate();
     } catch (err: unknown) {
@@ -117,22 +119,54 @@ function PlayerSection({ teamId, player, onUpdate, onDelete }: {
     }
   };
 
-  return (
-    <div className={`group border border-line2 rounded-lg ${player.isActive === false ? "opacity-60" : ""}`}>
-      <div className="flex items-center gap-2 px-3 py-2.5">
+  const handleReactivate = async () => {
+    setReactivating(true);
+    try {
+      await apiFetch(`/teams/${teamId}/players/${player.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ isActive: true }),
+      });
+      onUpdate();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to reactivate player";
+      toast({ title: "Error", description: msg, variant: "destructive" });
+    } finally {
+      setReactivating(false);
+    }
+  };
+
+  if (showReactivate) {
+    return (
+      <div className="group flex items-center gap-2 px-3 py-2.5 border border-line2 rounded-lg opacity-60 hover:opacity-80 transition-opacity">
+        <div className="flex-1 flex items-center gap-2 min-w-0">
+          <span className="text-[13px] truncate text-ink3">{player.name}</span>
+          {player.handicap != null && (
+            <span className="text-[11px] text-ink3 bg-surface2 px-1.5 py-0.5 rounded flex-shrink-0">HC {player.handicap}</span>
+          )}
+        </div>
         <button
           type="button"
-          onClick={() => handleToggleActive()}
-          className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
-            player.isActive !== false ? "bg-g500 border-g500" : "border-line hover:border-ink3"
-          }`}
-          title={player.isActive !== false ? "Mark inactive" : "Mark active"}
+          onClick={handleReactivate}
+          disabled={reactivating}
+          className="flex-shrink-0 text-[11px] font-medium text-g700 border border-g200 bg-g50 hover:bg-g100 px-2 py-1 rounded transition-colors disabled:opacity-50"
         >
-          {player.isActive !== false && (
-            <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" /></svg>
-          )}
+          {reactivating ? "..." : "Reactivate"}
         </button>
+        <button
+          type="button"
+          onClick={() => onDelete(player.id)}
+          className="opacity-0 group-hover:opacity-100 text-ink3 hover:text-live transition-all p-1"
+          title="Remove player"
+        >
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    );
+  }
 
+  return (
+    <div className="group border border-line2 rounded-lg">
+      <div className="flex items-center gap-2 px-3 py-2.5">
         {editing ? (
           <div className="flex-1 flex items-center gap-2">
             <Input
@@ -159,14 +193,19 @@ function PlayerSection({ teamId, player, onUpdate, onDelete }: {
         ) : (
           <>
             <div className="flex-1 flex items-center gap-2 min-w-0">
-              <span className={`text-[13px] truncate ${player.isActive === false ? "text-ink3 line-through" : "text-ink font-medium"}`}>{player.name}</span>
+              <span className="text-[13px] truncate text-ink font-medium">{player.name}</span>
               {player.handicap != null && (
                 <span className="text-[11px] text-g700 bg-g50 px-1.5 py-0.5 rounded flex-shrink-0">HC {player.handicap}</span>
               )}
-              {player.isActive === false && (
-                <span className="text-[10px] text-ink3 bg-surface2 px-1.5 py-0.5 rounded flex-shrink-0">inactive</span>
-              )}
             </div>
+            <button
+              type="button"
+              onClick={handleMarkInactive}
+              className="opacity-0 group-hover:opacity-100 text-ink3 hover:text-ink2 transition-all p-1 text-[11px]"
+              title="Mark as inactive"
+            >
+              <CalendarOff className="w-3 h-3" />
+            </button>
             <button
               type="button"
               onClick={() => { setEditName(player.name); setEditHandicap(player.handicap || ""); setEditing(true); }}
@@ -186,7 +225,6 @@ function PlayerSection({ teamId, player, onUpdate, onDelete }: {
           </>
         )}
       </div>
-
     </div>
   );
 }
@@ -356,27 +394,51 @@ function RosterTab({ teamId }: { teamId: string }) {
 
   if (loading) return <div className="text-[12px] text-ink3 py-4">Loading players...</div>;
 
+  const activePlayers = players.filter(p => p.isActive !== false);
+  const inactivePlayers = players.filter(p => p.isActive === false);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h4 className="text-[13px] font-medium text-ink2 flex items-center gap-1.5">
           <Users className="w-3.5 h-3.5" />
-          Players ({players.filter(p => p.isActive !== false).length} active / {players.length} total)
+          Players ({activePlayers.length} active{inactivePlayers.length > 0 ? ` / ${inactivePlayers.length} inactive` : ""})
         </h4>
       </div>
 
-      {players.length > 0 && (
+      {activePlayers.length > 0 && (
         <div className="space-y-2">
-          {[...players].sort((a, b) => (b.isActive !== false ? 1 : 0) - (a.isActive !== false ? 1 : 0)).map((player) => (
-            <div key={player.id} className="group">
+          {activePlayers.map((player) => (
+            <PlayerSection
+              key={player.id}
+              teamId={teamId}
+              player={player}
+              onUpdate={fetchPlayers}
+              onDelete={handleDelete}
+            />
+          ))}
+        </div>
+      )}
+
+      {activePlayers.length === 0 && inactivePlayers.length === 0 && (
+        <div className="text-[12px] text-ink3 italic py-1">No players on this roster yet.</div>
+      )}
+
+      {inactivePlayers.length > 0 && (
+        <div className="pt-3 border-t border-line2">
+          <h5 className="text-[11px] font-semibold uppercase tracking-wide text-ink3 mb-2">Inactive / Departed</h5>
+          <div className="space-y-2">
+            {inactivePlayers.map((player) => (
               <PlayerSection
+                key={player.id}
                 teamId={teamId}
                 player={player}
                 onUpdate={fetchPlayers}
                 onDelete={handleDelete}
+                showReactivate
               />
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 

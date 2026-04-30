@@ -38,9 +38,13 @@ async function enrichMatch(m: MatchRow, includePlayers = false) {
     // join row, so we attach it to each player record for downstream sort/display.
     const seasonYear = new Date().getUTCFullYear();
     const loadRoster = async (teamId: string) => {
+      // Only load players who are currently active on this team's roster.
+      // team_players.is_active is the per-team flag; players.is_active is the
+      // global flag. Both must be true for a player to appear in match control.
       const links = await db.select().from(teamPlayersTable).where(and(
         eq(teamPlayersTable.teamId, teamId),
         eq(teamPlayersTable.seasonYear, seasonYear),
+        eq(teamPlayersTable.isActive, true),
       ));
       const linkedIds = links.map(l => l.playerId).filter((x): x is string => !!x);
       if (linkedIds.length === 0) return [];

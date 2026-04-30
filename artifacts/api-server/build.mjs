@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { build as esbuild } from "esbuild";
 import esbuildPluginPino from "esbuild-plugin-pino";
-import { rm } from "node:fs/promises";
+import { cp, rm, stat } from "node:fs/promises";
 
 // Plugins (e.g. 'esbuild-plugin-pino') may use `require` to resolve dependencies
 globalThis.require = createRequire(import.meta.url);
@@ -118,6 +118,26 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
     `,
     },
   });
+
+  // Copy the polo-manager SPA build alongside the api-server bundle so it can
+  // be served by Express in production. The api-server's app.ts looks for a
+  // sibling `public/` dir and falls back to API-only if it's missing.
+  const polosrc = path.resolve(artifactDir, "..", "polo-manager", "dist", "public");
+  const polodest = path.resolve(distDir, "public");
+  try {
+    await stat(polosrc);
+    await cp(polosrc, polodest, { recursive: true });
+    console.log(`Copied polo-manager SPA -> ${path.relative(artifactDir, polodest)}`);
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      console.warn(
+        `polo-manager build not found at ${polosrc}; api-server will run API-only. ` +
+          `Run \`pnpm --filter @workspace/polo-manager build\` first if you want the SPA bundled.`,
+      );
+    } else {
+      throw err;
+    }
+  }
 }
 
 buildAll().catch((err) => {

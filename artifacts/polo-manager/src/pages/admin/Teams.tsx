@@ -660,6 +660,7 @@ function TeamForm({
           },
         });
         toast({ title: "Team updated" });
+        onSuccess();
       } else {
         await apiFetch("/teams", {
           method: "POST",
@@ -674,9 +675,9 @@ function TeamForm({
           }),
         });
         toast({ title: "Team created" });
+        onSuccess();
+        onClose();
       }
-      onSuccess();
-      onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to save team";
       toast({ title: "Error", description: msg, variant: "destructive" });

@@ -1755,15 +1755,16 @@ function TournamentForm({
           data,
         });
         toast({ title: "Tournament updated" });
+        onSuccess();
       } else {
         await apiFetch("/tournaments", {
           method: "POST",
           body: JSON.stringify(data),
         });
         toast({ title: "Tournament created" });
+        onSuccess();
+        onClose();
       }
-      onSuccess();
-      onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to save";
       toast({ title: "Error", description: msg, variant: "destructive" });

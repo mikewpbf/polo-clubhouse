@@ -522,15 +522,16 @@ function ClubForm({
           body: JSON.stringify(payload),
         });
         toast({ title: "Club updated" });
+        onSuccess();
       } else {
         await apiFetch("/clubs", {
           method: "POST",
           body: JSON.stringify(payload),
         });
         toast({ title: "Club created" });
+        onSuccess();
+        onClose();
       }
-      onSuccess();
-      onClose();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to save";
       toast({ title: "Error", description: msg, variant: "destructive" });

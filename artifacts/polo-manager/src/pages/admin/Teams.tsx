@@ -9,11 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Users, Plus, X, Pencil, Trash2, UserPlus, Shield, Search, ChevronDown, ChevronRight, CalendarOff } from "lucide-react";
+import { Users, Plus, X, Pencil, Trash2, UserPlus, Shield, Search, CalendarOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const HORSE_SEX_OPTIONS = ["Mare", "Gelding", "Stallion"] as const;
-const HORSE_COLOR_OPTIONS = ["Bay", "Chestnut", "Liver Chestnut", "Gray", "Black", "Paint", "Other"] as const;
 
 interface TeamItem {
   id: string;
@@ -26,22 +24,6 @@ interface TeamItem {
   contactPhone?: string | null;
   logoUrl?: string | null;
   clubId?: string | null;
-}
-
-interface HorseItem {
-  id: string;
-  playerId: string;
-  horseName: string;
-  owner?: string | null;
-  breeder?: string | null;
-  ownedAndBredBy?: string | null;
-  sire?: string | null;
-  dam?: string | null;
-  age?: number | null;
-  color?: string | null;
-  sex?: string | null;
-  typeOrBreed?: string | null;
-  notes?: string | null;
 }
 
 async function apiFetch(path: string, options: RequestInit = {}) {
@@ -93,271 +75,6 @@ interface PlayerItem {
   isActive?: boolean;
 }
 
-function HorseFormDialog({
-  open,
-  onOpenChange,
-  teamId,
-  playerId,
-  horse,
-  onSuccess,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  teamId: string;
-  playerId: string;
-  horse?: HorseItem | null;
-  onSuccess: () => void;
-}) {
-  const { toast } = useToast();
-  const [saving, setSaving] = useState(false);
-  const [horseName, setHorseName] = useState("");
-  const [owner, setOwner] = useState("");
-  const [breeder, setBreeder] = useState("");
-  const [sire, setSire] = useState("");
-  const [dam, setDam] = useState("");
-  const [age, setAge] = useState("");
-  const [color, setColor] = useState("");
-  const [sex, setSex] = useState("");
-  const [typeOrBreed, setTypeOrBreed] = useState("");
-  const [notes, setNotes] = useState("");
-
-  useEffect(() => {
-    if (open) {
-      setHorseName(horse?.horseName || "");
-      setOwner(horse?.owner || "");
-      setBreeder(horse?.breeder || "");
-      setSire(horse?.sire || "");
-      setDam(horse?.dam || "");
-      setAge(horse?.age != null ? String(horse.age) : "");
-      setColor(horse?.color || "");
-      setSex(horse?.sex || "");
-      setTypeOrBreed(horse?.typeOrBreed || "");
-      setNotes(horse?.notes || "");
-    }
-  }, [open, horse]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!horseName.trim()) return;
-    setSaving(true);
-    try {
-      const body = {
-        horseName: horseName.trim(),
-        owner: owner || null,
-        breeder: breeder || null,
-        sire: sire || null,
-        dam: dam || null,
-        age: age ? parseInt(age) : null,
-        color: color || null,
-        sex: sex || null,
-        typeOrBreed: typeOrBreed || null,
-        notes: notes || null,
-      };
-      if (horse) {
-        await apiFetch(`/teams/${teamId}/players/${playerId}/horses/${horse.id}`, {
-          method: "PUT",
-          body: JSON.stringify(body),
-        });
-        toast({ title: "Horse updated" });
-      } else {
-        await apiFetch(`/teams/${teamId}/players/${playerId}/horses`, {
-          method: "POST",
-          body: JSON.stringify(body),
-        });
-        toast({ title: "Horse added" });
-      }
-      onSuccess();
-      onOpenChange(false);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to save horse";
-      toast({ title: "Error", description: msg, variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{horse ? "Edit Horse" : "Add Horse"}</DialogTitle>
-          <DialogDescription className="sr-only">
-            {horse ? "Edit horse details" : "Add a new horse to this player"}
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-[12px] font-medium text-ink2 mb-1">Horse Name *</label>
-            <Input value={horseName} onChange={(e) => setHorseName(e.target.value)} required autoFocus />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[12px] font-medium text-ink2 mb-1">Sex</label>
-              <Select value={sex} onValueChange={setSex}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Select sex" />
-                </SelectTrigger>
-                <SelectContent>
-                  {HORSE_SEX_OPTIONS.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="block text-[12px] font-medium text-ink2 mb-1">Color</label>
-              <Select value={color} onValueChange={setColor}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Select color" />
-                </SelectTrigger>
-                <SelectContent>
-                  {HORSE_COLOR_OPTIONS.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[12px] font-medium text-ink2 mb-1">Age</label>
-              <Input value={age} onChange={(e) => setAge(e.target.value)} type="number" min="0" />
-            </div>
-            <div>
-              <label className="block text-[12px] font-medium text-ink2 mb-1">Type / Breed</label>
-              <Input value={typeOrBreed} onChange={(e) => setTypeOrBreed(e.target.value)} />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[12px] font-medium text-ink2 mb-1">Sire</label>
-              <Input value={sire} onChange={(e) => setSire(e.target.value)} />
-            </div>
-            <div>
-              <label className="block text-[12px] font-medium text-ink2 mb-1">Dam</label>
-              <Input value={dam} onChange={(e) => setDam(e.target.value)} />
-            </div>
-          </div>
-          <div>
-            <label className="block text-[12px] font-medium text-ink2 mb-1">Owner</label>
-            <Input value={owner} onChange={(e) => setOwner(e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-[12px] font-medium text-ink2 mb-1">Breeder</label>
-            <Input value={breeder} onChange={(e) => setBreeder(e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-[12px] font-medium text-ink2 mb-1">Notes</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full min-h-[60px] rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              rows={2}
-            />
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={saving || !horseName.trim()}>
-              {saving ? "Saving..." : horse ? "Save Changes" : "Add Horse"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function HorsesList({ teamId, playerId }: { teamId: string; playerId: string }) {
-  const { toast } = useToast();
-  const [horses, setHorses] = useState<HorseItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingHorse, setEditingHorse] = useState<HorseItem | null>(null);
-
-  const fetchHorses = useCallback(async () => {
-    try {
-      const data = await apiFetch(`/teams/${teamId}/players/${playerId}/horses`);
-      setHorses(data);
-    } catch {
-      toast({ title: "Error", description: "Failed to load horses", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
-  }, [teamId, playerId]);
-
-  useEffect(() => { fetchHorses(); }, [fetchHorses]);
-
-  const handleDelete = async (horseId: string) => {
-    try {
-      await apiFetch(`/teams/${teamId}/players/${playerId}/horses/${horseId}`, { method: "DELETE" });
-      toast({ title: "Horse removed" });
-      fetchHorses();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to delete horse";
-      toast({ title: "Error", description: msg, variant: "destructive" });
-    }
-  };
-
-  const openAdd = () => {
-    setEditingHorse(null);
-    setDialogOpen(true);
-  };
-
-  const openEdit = (horse: HorseItem) => {
-    setEditingHorse(horse);
-    setDialogOpen(true);
-  };
-
-  if (loading) return <div className="text-[12px] text-ink3 py-2">Loading horses...</div>;
-
-  return (
-    <div className="mt-2">
-      {horses.length > 0 && (
-        <div className="space-y-1.5 mb-2">
-          {horses.map((horse) => (
-            <div key={horse.id} className="flex items-center gap-2 group py-1 px-2 rounded-lg hover:bg-surface2 transition-colors">
-              <div className="flex-1 min-w-0">
-                <span className="text-[13px] text-ink font-medium">{horse.horseName}</span>
-                <span className="text-[11px] text-ink3 ml-2">
-                  {[horse.sex, horse.color, horse.age != null ? `${horse.age}yo` : null, horse.typeOrBreed].filter(Boolean).join(" · ")}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => openEdit(horse)}
-                className="opacity-0 group-hover:opacity-100 text-ink3 hover:text-ink transition-all p-1"
-                title="Edit horse"
-              >
-                <Pencil className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(horse.id)}
-                className="opacity-0 group-hover:opacity-100 text-ink3 hover:text-live transition-all p-1"
-                title="Remove horse"
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-      <Button type="button" variant="ghost" size="sm" className="h-7 gap-1 text-[12px]" onClick={openAdd}>
-        <Plus className="w-3 h-3" />
-        Add Horse
-      </Button>
-      <HorseFormDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        teamId={teamId}
-        playerId={playerId}
-        horse={editingHorse}
-        onSuccess={fetchHorses}
-      />
-    </div>
-  );
-}
-
 function PlayerSection({ teamId, player, onUpdate, onDelete }: {
   teamId: string;
   player: PlayerItem;
@@ -365,7 +82,6 @@ function PlayerSection({ teamId, player, onUpdate, onDelete }: {
   onDelete: (id: string) => void;
 }) {
   const { toast } = useToast();
-  const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(player.name);
   const [editHandicap, setEditHandicap] = useState(player.handicap || "");
@@ -442,12 +158,7 @@ function PlayerSection({ teamId, player, onUpdate, onDelete }: {
           </div>
         ) : (
           <>
-            <button
-              type="button"
-              onClick={() => setExpanded(!expanded)}
-              className="flex-1 flex items-center gap-2 min-w-0 text-left"
-            >
-              {expanded ? <ChevronDown className="w-3.5 h-3.5 text-ink3 flex-shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 text-ink3 flex-shrink-0" />}
+            <div className="flex-1 flex items-center gap-2 min-w-0">
               <span className={`text-[13px] truncate ${player.isActive === false ? "text-ink3 line-through" : "text-ink font-medium"}`}>{player.name}</span>
               {player.handicap != null && (
                 <span className="text-[11px] text-g700 bg-g50 px-1.5 py-0.5 rounded flex-shrink-0">HC {player.handicap}</span>
@@ -455,7 +166,7 @@ function PlayerSection({ teamId, player, onUpdate, onDelete }: {
               {player.isActive === false && (
                 <span className="text-[10px] text-ink3 bg-surface2 px-1.5 py-0.5 rounded flex-shrink-0">inactive</span>
               )}
-            </button>
+            </div>
             <button
               type="button"
               onClick={() => { setEditName(player.name); setEditHandicap(player.handicap || ""); setEditing(true); }}
@@ -476,11 +187,6 @@ function PlayerSection({ teamId, player, onUpdate, onDelete }: {
         )}
       </div>
 
-      {expanded && !editing && (
-        <div className="px-3 pb-3 border-t border-line2">
-          <HorsesList teamId={teamId} playerId={player.id} />
-        </div>
-      )}
     </div>
   );
 }

@@ -95,6 +95,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/AuthResponse"
 
+  /auth/google:
+    post:
+      operationId: googleAuth
+      tags: [auth]
+      summary: Sign in or sign up with a Google ID token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoogleAuthRequest"
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
   /auth/logout:
     post:
       operationId: logout
@@ -1724,6 +1743,15 @@ components:
       required:
         - user
         - token
+
+    GoogleAuthRequest:
+      type: object
+      properties:
+        idToken:
+          type: string
+          description: The ID token returned by Google Identity Services (`credential` field).
+      required:
+        - idToken
 
     UserWithRoles:
       type: object

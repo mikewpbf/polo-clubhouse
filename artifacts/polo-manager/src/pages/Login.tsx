@@ -4,6 +4,7 @@ import { useLogin } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { setStoredToken } from "@/hooks/use-auth";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 export function Login() {
   const [email, setEmail] = useState("");
@@ -74,7 +75,15 @@ export function Login() {
               {loginMutation.isPending ? "Signing in..." : "Sign In"}
             </Button>
           </form>
-          
+
+          <div className="flex items-center my-5">
+            <div className="flex-grow h-px bg-ink3/20" />
+            <span className="px-3 text-[12px] text-ink3">or</span>
+            <div className="flex-grow h-px bg-ink3/20" />
+          </div>
+
+          <GoogleSignInButton mode="signin" onError={setError} />
+
           <div className="mt-6 text-center text-[13px] text-ink2">
             Don't have an account? <Link href="/signup" className="text-g500 font-medium hover:text-g700 transition-colors">Sign up</Link>
           </div>

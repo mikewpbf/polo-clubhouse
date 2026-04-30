@@ -35,6 +35,7 @@ export * from "./formatRecommendationMatchCounts";
 export * from "./generateScheduleResponse";
 export * from "./getAdminDashboardParams";
 export * from "./getMyTeamScheduleParams";
+export * from "./googleAuthRequest";
 export * from "./healthStatus";
 export * from "./horse";
 export * from "./inviteDetail";

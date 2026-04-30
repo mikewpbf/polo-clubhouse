@@ -4,6 +4,7 @@ import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { OAuth2Client } from "google-auth-library";
 import { generateToken, requireAuth, getUserWithRoles, optionalAuth } from "../lib/auth";
 import { sendEmail, passwordResetEmailHtml } from "../lib/email";
 import { SignupBody, LoginBody } from "@workspace/api-zod";
@@ -11,6 +12,9 @@ import { SignupBody, LoginBody } from "@workspace/api-zod";
 const router: IRouter = Router();
 
 const resetTokens = new Map<string, { userId: string; expiresAt: number }>();
+
+const GOOGLE_OAUTH_CLIENT_ID = process.env.GOOGLE_OAUTH_CLIENT_ID;
+const googleClient = GOOGLE_OAUTH_CLIENT_ID ? new OAuth2Client(GOOGLE_OAUTH_CLIENT_ID) : null;
 
 router.post("/auth/signup", async (req, res) => {
   try {
@@ -54,6 +58,87 @@ router.post("/auth/login", async (req, res) => {
     res.json({ user: userWithRoles, token });
   } catch (e: any) {
     res.status(400).json({ message: e.message || "Login failed" });
+  }
+});
+
+router.post("/auth/google", async (req, res) => {
+  try {
+    if (!googleClient || !GOOGLE_OAUTH_CLIENT_ID) {
+      res.status(503).json({ message: "Google sign-in is not configured on the server" });
+      return;
+    }
+    const idToken = typeof req.body?.idToken === "string" ? req.body.idToken : "";
+    if (!idToken) {
+      res.status(400).json({ message: "idToken is required" });
+      return;
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: GOOGLE_OAUTH_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload || !payload.sub) {
+      res.status(401).json({ message: "Invalid Google token" });
+      return;
+    }
+    const googleId = payload.sub;
+    const email = payload.email;
+    const emailVerified = payload.email_verified === true;
+    const displayName = payload.name || (email ? email.split("@")[0] : "Polo fan");
+    const avatarUrl = payload.picture || null;
+
+    let [user] = await db.select().from(usersTable).where(eq(usersTable.googleId, googleId));
+
+    if (!user && email) {
+      const [byEmail] = await db.select().from(usersTable).where(eq(usersTable.email, email));
+      if (byEmail) {
+        if (!emailVerified) {
+          res.status(409).json({
+            message: "An account with this email already exists. Sign in with your password to link Google.",
+          });
+          return;
+        }
+        const [linked] = await db
+          .update(usersTable)
+          .set({
+            googleId,
+            avatarUrl: byEmail.avatarUrl ?? avatarUrl,
+          })
+          .where(eq(usersTable.id, byEmail.id))
+          .returning();
+        user = linked;
+      }
+    }
+
+    if (!user) {
+      if (!email) {
+        res.status(400).json({ message: "Google account did not provide an email address" });
+        return;
+      }
+      const [created] = await db
+        .insert(usersTable)
+        .values({
+          email,
+          displayName,
+          avatarUrl,
+          googleId,
+          role: "spectator",
+        })
+        .returning();
+      user = created;
+    }
+
+    const token = generateToken({
+      id: user.id,
+      email: user.email!,
+      displayName: user.displayName!,
+      role: user.role!,
+    });
+    const userWithRoles = await getUserWithRoles(user.id);
+    res.json({ user: userWithRoles, token });
+  } catch (e: any) {
+    res.status(401).json({ message: e?.message || "Google sign-in failed" });
   }
 });
 

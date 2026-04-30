@@ -63,6 +63,46 @@ export const LoginResponse = zod.object({
 });
 
 /**
+ * @summary Sign in or sign up with a Google ID token
+ */
+export const GoogleAuthBody = zod.object({
+  idToken: zod
+    .string()
+    .describe(
+      "The ID token returned by Google Identity Services (`credential` field).",
+    ),
+});
+
+export const GoogleAuthResponse = zod.object({
+  user: zod.object({
+    id: zod.string().uuid(),
+    email: zod.string(),
+    displayName: zod.string(),
+    phone: zod.string().nullish(),
+    avatarUrl: zod.string().nullish(),
+    role: zod.enum(["spectator", "team_manager", "admin"]),
+    clubMemberships: zod.array(
+      zod.object({
+        clubId: zod.string().uuid(),
+        clubName: zod.string(),
+        clubSlug: zod.string(),
+        role: zod.enum(["owner", "manager"]),
+      }),
+    ),
+    teamAssignments: zod.array(
+      zod.object({
+        assignmentId: zod.string().uuid(),
+        teamId: zod.string().uuid(),
+        teamName: zod.string(),
+        tournamentId: zod.string().uuid().nullish(),
+        status: zod.string(),
+      }),
+    ),
+  }),
+  token: zod.string(),
+});
+
+/**
  * @summary Log out
  */
 export const LogoutResponse = zod.object({

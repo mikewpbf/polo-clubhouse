@@ -216,7 +216,6 @@ export declare const matchEventsTable: import("drizzle-orm/pg-core").PgTableWith
 }>;
 export declare const insertMatchEventSchema: z.ZodObject<{
     description: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    teamId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     matchId: z.ZodUUID;
     eventType: z.ZodEnum<{
         goal: "goal";
@@ -237,6 +236,7 @@ export declare const insertMatchEventSchema: z.ZodObject<{
         penalty_goal: "penalty_goal";
         shot_on_goal: "shot_on_goal";
     }>;
+    teamId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     playerId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     playerName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     chukker: z.ZodOptional<z.ZodNullable<z.ZodInt>>;

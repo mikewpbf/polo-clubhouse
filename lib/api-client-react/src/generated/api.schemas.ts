@@ -73,6 +73,11 @@ export interface AuthResponse {
   token: string;
 }
 
+export interface GoogleAuthRequest {
+  /** The ID token returned by Google Identity Services (`credential` field). */
+  idToken: string;
+}
+
 export interface Club {
   id: string;
   name: string;

@@ -110,9 +110,9 @@ export declare const teamPlayersTable: import("drizzle-orm/pg-core").PgTableWith
 }>;
 export declare const insertTeamPlayerSchema: z.ZodObject<{
     teamId: z.ZodUUID;
-    position: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     playerId: z.ZodUUID;
     seasonYear: z.ZodInt;
+    position: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
 }, {
     out: {};
     in: {};

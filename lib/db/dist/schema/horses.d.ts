@@ -248,10 +248,10 @@ export declare const horsesTable: import("drizzle-orm/pg-core").PgTableWithColum
 export declare const HORSE_SEX_OPTIONS: readonly ["Mare", "Gelding", "Stallion"];
 export declare const HORSE_COLOR_OPTIONS: readonly ["Bay", "Chestnut", "Liver Chestnut", "Gray", "Black", "Paint", "Other"];
 export declare const insertHorseSchema: z.ZodObject<{
-    owner: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     notes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     playerId: z.ZodUUID;
     horseName: z.ZodString;
+    owner: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     breeder: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     ownedAndBredBy: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     sire: z.ZodOptional<z.ZodNullable<z.ZodString>>;

@@ -78,7 +78,7 @@ artifacts-monorepo/
 
 ## API Routes (all under /api)
 
-- `POST /auth/signup`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`
+- `POST /auth/signup`, `POST /auth/login`, `POST /auth/google`, `POST /auth/logout`, `GET /auth/me`
 - `GET/POST /clubs`, `GET /clubs/:slug`, `PUT /clubs/:clubId/update`, `POST /clubs/:clubId/follow|unfollow`
 - `GET/POST /clubs/:clubId/fields`, `PUT/DELETE /fields/:fieldId`
 - `GET/POST /clubs/:clubId/teams`, `GET/PUT /teams/:teamId`
@@ -103,6 +103,18 @@ artifacts-monorepo/
 - `GET /players/:playerId` (full profile: stats, teams, horses, recentMatches — last 10 matches with tournament + opponent + result for spectator deep-links), `PUT /players/:playerId` (full edit), `PATCH /players/:playerId/profile` (self-edit only — managed user or super_admin), `DELETE /players/:playerId`
 - `POST /players/:playerId/horses`, `DELETE /players/:playerId/horses/:horseId`
 - `GET /me/linked-player`
+
+## Environment Variables
+
+API server (`@workspace/api-server`):
+- `JWT_SECRET` — required in production
+- `GOOGLE_OAUTH_CLIENT_ID` — Google OAuth Web Client ID; required for `/auth/google` to be enabled (otherwise the endpoint returns 503). Same value as the frontend's `VITE_GOOGLE_OAUTH_CLIENT_ID`.
+
+Frontend (`@workspace/polo-manager`, Vite):
+- `VITE_GOOGLE_OAUTH_CLIENT_ID` — Google OAuth Web Client ID; without it the "Sign in with Google" button is hidden.
+
+Current Google OAuth Web Client ID (Render origins: `https://polo-clubhouse.onrender.com`, `https://poloclubhouse.app`):
+`184898223470-t85qmljtsk85iesahvets9d6bomnc9ta.apps.googleusercontent.com`
 
 ## Key Commands
 

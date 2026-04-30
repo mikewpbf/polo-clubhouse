@@ -38,6 +38,7 @@ import type {
   GenerateScheduleResponse,
   GetAdminDashboardParams,
   GetMyTeamScheduleParams,
+  GoogleAuthRequest,
   HealthStatus,
   Horse,
   InviteDetail,
@@ -344,6 +345,92 @@ export const useLogin = <
   TContext
 > => {
   return useMutation(getLoginMutationOptions(options));
+};
+
+/**
+ * @summary Sign in or sign up with a Google ID token
+ */
+export const getGoogleAuthUrl = () => {
+  return `/api/auth/google`;
+};
+
+export const googleAuth = async (
+  googleAuthRequest: GoogleAuthRequest,
+  options?: RequestInit,
+): Promise<AuthResponse> => {
+  return customFetch<AuthResponse>(getGoogleAuthUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(googleAuthRequest),
+  });
+};
+
+export const getGoogleAuthMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof googleAuth>>,
+    TError,
+    { data: BodyType<GoogleAuthRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof googleAuth>>,
+  TError,
+  { data: BodyType<GoogleAuthRequest> },
+  TContext
+> => {
+  const mutationKey = ["googleAuth"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof googleAuth>>,
+    { data: BodyType<GoogleAuthRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return googleAuth(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GoogleAuthMutationResult = NonNullable<
+  Awaited<ReturnType<typeof googleAuth>>
+>;
+export type GoogleAuthMutationBody = BodyType<GoogleAuthRequest>;
+export type GoogleAuthMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Sign in or sign up with a Google ID token
+ */
+export const useGoogleAuth = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof googleAuth>>,
+    TError,
+    { data: BodyType<GoogleAuthRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof googleAuth>>,
+  TError,
+  { data: BodyType<GoogleAuthRequest> },
+  TContext
+> => {
+  return useMutation(getGoogleAuthMutationOptions(options));
 };
 
 /**

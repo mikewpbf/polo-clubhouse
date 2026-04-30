@@ -859,7 +859,7 @@ export function AdminTeams() {
   const loadTeams = useCallback(async () => {
     try {
       const data = await apiFetch("/teams");
-      setTeamsList(data);
+      setTeamsList([...data].sort((a: TeamItem, b: TeamItem) => a.name.localeCompare(b.name)));
     } catch {
     } finally {
       setIsLoading(false);

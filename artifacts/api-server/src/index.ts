@@ -14,13 +14,25 @@ async function applyStartupMigrations() {
     `);
     logger.info("team_players.is_active column ensured");
 
-    await pool.query(`
-      UPDATE players
+    // Broad data correction for the roster-toggle bug:
+    // The old PUT /teams/:teamId/players/:playerId incorrectly wrote isActive to
+    // players.is_active (global) instead of team_players.is_active (per-team).
+    // Any player who has team memberships but is globally inactive was almost
+    // certainly deactivated by that bug, not intentionally archived. Restore them.
+    const { rowCount: restoredPlayers } = await pool.query(`
+      UPDATE players p
          SET is_active = true
-       WHERE id = 'fe1eca3a-ec6b-4d65-8bff-bf264d9d8243'
-         AND is_active = false
+       WHERE p.is_active = false
+         AND EXISTS (
+           SELECT 1 FROM team_players tp WHERE tp.player_id = p.id
+         )
     `);
+    if ((restoredPlayers ?? 0) > 0) {
+      logger.info({ restoredPlayers }, "Restored players incorrectly deactivated by roster-toggle bug");
+    }
 
+    // Per-player targeted fix: Riley Ganzi's Boca Raton 2026 roster row should be
+    // inactive (she left that squad). Set it only if it wasn't already corrected.
     await pool.query(`
       UPDATE team_players
          SET is_active = false

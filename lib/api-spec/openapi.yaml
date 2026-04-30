@@ -3264,10 +3264,14 @@ components:
           nullable: true
         seasonYear:
           type: integer
+        isActive:
+          type: boolean
+          description: Whether the player is currently active on this team's roster.
       required:
         - teamId
         - teamName
         - seasonYear
+        - isActive
 
     PlayerProfile:
       type: object

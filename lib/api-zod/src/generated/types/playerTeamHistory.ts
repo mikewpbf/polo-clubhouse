@@ -11,4 +11,6 @@ export interface PlayerTeamHistory {
   teamName: string;
   teamLogoUrl?: string | null;
   seasonYear: number;
+  /** Whether the player is currently active on this team's roster. */
+  isActive: boolean;
 }

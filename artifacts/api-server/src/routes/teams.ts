@@ -177,10 +177,13 @@ router.get("/teams/:teamId/players", async (req, res) => {
     const canonical = playerIds.length > 0
       ? await db.select().from(playersTable).where(inArray(playersTable.id, playerIds))
       : [];
-    const tpPositionMap = new Map(tps.map(t => [t.playerId, t.position]));
+    const tpMap = new Map(tps.map(t => [t.playerId, t]));
     const players = canonical.map(p => ({
       ...p,
-      position: tpPositionMap.get(p.id) ?? null,
+      position: tpMap.get(p.id)?.position ?? null,
+      // isActive reflects whether this player is currently playing for this team
+      // (team_players.is_active), NOT the global players.is_active flag.
+      isActive: tpMap.get(p.id)?.isActive ?? true,
     }));
     res.json(players);
   } catch (e: any) {
@@ -238,7 +241,8 @@ router.put("/teams/:teamId/players/:playerId", requireAuth, requireTeamAdminOrMa
     const callerIsClubAdminOrSuper = callerIsSuper || callerIsClubAdmin;
 
     const { name, handicap, position, isActive } = req.body;
-    const updates: Record<string, any> = {};
+    const playerUpdates: Record<string, any> = {};
+    const rosterUpdates: Record<string, any> = {};
 
     if (!callerIsClubAdminOrSuper) {
       // Team-manager-only path: reject identity mutations to prevent privilege escalation
@@ -246,38 +250,44 @@ router.put("/teams/:teamId/players/:playerId", requireAuth, requireTeamAdminOrMa
       const forbidden: string[] = [];
       if (name !== undefined) forbidden.push("name");
       if (handicap !== undefined) forbidden.push("handicap");
-      if (isActive !== undefined) forbidden.push("isActive");
       if (forbidden.length > 0) {
         res.status(403).json({
-          message: "Team managers cannot edit player identity. Ask a club admin to update name/handicap/active state.",
+          message: "Team managers cannot edit player identity. Ask a club admin to update name/handicap.",
           forbiddenFields: forbidden,
         });
         return;
       }
     } else {
-      if (name !== undefined) updates.name = name.trim();
-      if (handicap !== undefined) updates.handicap = handicap != null ? String(handicap) : null;
-      if (isActive !== undefined) updates.isActive = isActive;
+      if (name !== undefined) playerUpdates.name = name.trim();
+      if (handicap !== undefined) playerUpdates.handicap = handicap != null ? String(handicap) : null;
     }
 
-    // Position is roster-scoped: persists to team_players for the (teamId, playerId) link.
-    if (position !== undefined) {
-      const positionValue = position == null ? null : Number(position);
+    // Roster-scoped fields: persisted to team_players, NOT to players.
+    // isActive = whether this player is currently playing for this specific team.
+    // position = their jersey/lineup position on this team.
+    if (position !== undefined) rosterUpdates.position = position == null ? null : Number(position);
+    if (isActive !== undefined) rosterUpdates.isActive = Boolean(isActive);
+
+    if (Object.keys(rosterUpdates).length > 0) {
       await db.update(teamPlayersTable)
-        .set({ position: positionValue })
+        .set(rosterUpdates)
         .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId)));
     }
 
-    if (Object.keys(updates).length === 0) {
+    if (Object.keys(playerUpdates).length === 0) {
       const [player] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
       if (!player) { res.status(404).json({ message: "Player not found" }); return; }
-      res.json(player);
+      const tp = await db.select().from(teamPlayersTable)
+        .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId))).limit(1);
+      res.json({ ...player, isActive: tp[0]?.isActive ?? true, position: tp[0]?.position ?? null });
       return;
     }
 
-    const [player] = await db.update(playersTable).set(updates).where(eq(playersTable.id, playerId)).returning();
+    const [player] = await db.update(playersTable).set(playerUpdates).where(eq(playersTable.id, playerId)).returning();
     if (!player) { res.status(404).json({ message: "Player not found" }); return; }
-    res.json(player);
+    const tp = await db.select().from(teamPlayersTable)
+      .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId))).limit(1);
+    res.json({ ...player, isActive: tp[0]?.isActive ?? true, position: tp[0]?.position ?? null });
   } catch (e: any) {
     res.status(400).json({ message: e.message });
   }

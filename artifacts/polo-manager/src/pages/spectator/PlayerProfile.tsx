@@ -19,9 +19,8 @@ export function PlayerProfile() {
     return <SpectatorLayout><EmptyState title="Player not found" description="This player profile does not exist." /></SpectatorLayout>;
   }
 
-  const currentYear = new Date().getUTCFullYear();
-  const currentTeams = data.teams.filter(t => t.seasonYear === currentYear);
-  const pastTeams = data.teams.filter(t => t.seasonYear !== currentYear);
+  const currentTeams = data.teams.filter(t => t.isActive);
+  const pastTeams = data.teams.filter(t => !t.isActive);
 
   return (
     <SpectatorLayout>

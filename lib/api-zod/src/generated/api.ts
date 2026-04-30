@@ -2897,6 +2897,11 @@ export const GetPlayerProfileResponse = zod.object({
       teamName: zod.string(),
       teamLogoUrl: zod.string().nullish(),
       seasonYear: zod.number(),
+      isActive: zod
+        .boolean()
+        .describe(
+          "Whether the player is currently active on this team's roster.",
+        ),
     }),
   ),
   horses: zod.array(

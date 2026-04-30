@@ -1,4 +1,4 @@
-import { pgTable, uuid, integer, timestamp, unique } from "drizzle-orm/pg-core";
+import { pgTable, uuid, integer, timestamp, unique, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { teamsTable } from "./teams";
@@ -10,6 +10,7 @@ export const teamPlayersTable = pgTable("team_players", {
   playerId: uuid("player_id").references(() => playersTable.id, { onDelete: "cascade" }).notNull(),
   seasonYear: integer("season_year").notNull(),
   position: integer("position"),
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 }, (t) => [
   unique("team_players_team_player_season_unique").on(t.teamId, t.playerId, t.seasonYear),

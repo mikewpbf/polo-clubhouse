@@ -15,7 +15,7 @@ import {
   HORSE_SEX_OPTIONS,
   HORSE_COLOR_OPTIONS,
 } from "@workspace/db/schema";
-import { eq, ilike, and, or, inArray, desc, sql, isNotNull } from "drizzle-orm";
+import { eq, ilike, and, inArray, desc, sql, isNotNull } from "drizzle-orm";
 import { requireAuth, optionalAuth, isSuperAdmin } from "../lib/auth";
 
 const router: IRouter = Router();
@@ -294,7 +294,7 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
       club = c || null;
     }
 
-    // teams history (current + past via team_players); current season highlighted on the client
+    // teams history (current + past via team_players); is_active = currently on squad
     const tps = await db.select().from(teamPlayersTable).where(eq(teamPlayersTable.playerId, playerId));
     const teamIds = Array.from(new Set(tps.map(t => t.teamId)));
     const teamRows = teamIds.length > 0 ? await db.select().from(teamsTable).where(inArray(teamsTable.id, teamIds)) : [];
@@ -306,6 +306,7 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
         teamName: t?.name ?? "",
         teamLogoUrl: t?.logoUrl ?? null,
         seasonYear: tp.seasonYear,
+        isActive: tp.isActive,
       };
     }).sort((a, b) => b.seasonYear - a.seasonYear);
 
@@ -316,39 +317,19 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
     const allEvents = await db.select().from(matchEventsTable).where(eq(matchEventsTable.playerId, playerId));
     const careerGoals = allEvents.filter(e => e.eventType === "goal").length;
 
-    // Wins are computed across every match the player participated in, regardless of
-    // whether they scored. We collect candidate matches from BOTH directions so that
-    // legacy data without team_players rows still works:
-    //   1. team_players → all matches involving any team this player has been on.
-    //   2. match_events → matches where this player has at least one event recorded
-    //      (covers players added directly to a tournament without a roster link).
-    const playerTeamIds = Array.from(new Set(tps.map(t => t.teamId)));
-    const matchesViaTeams = playerTeamIds.length > 0
-      ? await db.select().from(matchesTable).where(or(
-          inArray(matchesTable.homeTeamId, playerTeamIds),
-          inArray(matchesTable.awayTeamId, playerTeamIds),
-        )!)
-      : [];
+    // Participation is determined exclusively by match_events. A player is considered
+    // to have participated in a match only if they have at least one recorded event
+    // in that match. This prevents roster-only members (who haven't played yet) from
+    // inheriting the team's historical wins.
     const matchIdsViaEvents = Array.from(new Set(allEvents.map(e => e.matchId).filter((x): x is string => !!x)));
-    const missingMatchIds = matchIdsViaEvents.filter(id => !matchesViaTeams.some(m => m.id === id));
-    const matchesViaEvents = missingMatchIds.length > 0
-      ? await db.select().from(matchesTable).where(inArray(matchesTable.id, missingMatchIds))
+    const matchRows = matchIdsViaEvents.length > 0
+      ? await db.select().from(matchesTable).where(inArray(matchesTable.id, matchIdsViaEvents))
       : [];
-    const matchRows = [...matchesViaTeams, ...matchesViaEvents];
     const matchById = new Map(matchRows.map(m => [m.id, m]));
 
-    // For each match we need to know which side ("home" or "away") this player was on.
-    // Prefer team_players (canonical roster), but fall back to match_events.team_id
-    // when no roster link exists for that match.
-    const playerTeamsAllSeasons = new Set(playerTeamIds);
+    // Determine which side ("home"/"away") the player was on in each match using
+    // the team_id stored on their match events.
     const playerSideByMatch = new Map<string, "home" | "away">();
-    for (const m of matchRows) {
-      if (m.homeTeamId && playerTeamsAllSeasons.has(m.homeTeamId)) {
-        playerSideByMatch.set(m.id, "home");
-      } else if (m.awayTeamId && playerTeamsAllSeasons.has(m.awayTeamId)) {
-        playerSideByMatch.set(m.id, "away");
-      }
-    }
     for (const ev of allEvents) {
       if (!ev.matchId || !ev.teamId) continue;
       if (playerSideByMatch.has(ev.matchId)) continue;

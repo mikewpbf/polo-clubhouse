@@ -226,6 +226,63 @@ export function PlayerManage() {
           </div>
         )}
 
+        {data.teams && data.teams.length > 0 && (() => {
+          const currentYear = new Date().getUTCFullYear();
+          const currentTeams = data.teams.filter(t => t.isActive && t.seasonYear >= currentYear);
+          const pastTeams = data.teams.filter(t => !t.isActive || t.seasonYear < currentYear);
+          return (
+            <div className="bg-white rounded-[12px] p-5 card-shadow">
+              <h2 className="font-display text-lg font-bold text-ink mb-3">Team Memberships</h2>
+              {currentTeams.length > 0 && (
+                <div className="mb-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-ink3 mb-2">Active</div>
+                  <div className="space-y-1.5">
+                    {currentTeams.map(t => (
+                      <div key={`${t.teamId}-${t.seasonYear}`} className="flex items-center gap-3 bg-g50 rounded-[8px] px-3 py-2">
+                        {t.teamLogoUrl ? (
+                          <img src={t.teamLogoUrl} alt={t.teamName} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full bg-g100 flex items-center justify-center text-[10px] font-display font-bold text-g600 flex-shrink-0">
+                            {t.teamName.substring(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-sans font-medium text-ink">{t.teamName}</div>
+                          <div className="text-[11px] text-ink3">{t.seasonYear} season</div>
+                        </div>
+                        <span className="text-[11px] text-emerald-600 font-semibold">Active</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {pastTeams.length > 0 && (
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-ink3 mb-2">Past / Inactive</div>
+                  <div className="space-y-1.5">
+                    {pastTeams.map(t => (
+                      <div key={`${t.teamId}-${t.seasonYear}`} className="flex items-center gap-3 rounded-[8px] px-3 py-2 border border-line">
+                        {t.teamLogoUrl ? (
+                          <img src={t.teamLogoUrl} alt={t.teamName} className="w-7 h-7 rounded-full object-cover flex-shrink-0 opacity-60" />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full bg-bg2 flex items-center justify-center text-[10px] font-display font-bold text-ink3 flex-shrink-0">
+                            {t.teamName.substring(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] font-sans font-medium text-ink2">{t.teamName}</div>
+                          <div className="text-[11px] text-ink3">{t.seasonYear} season</div>
+                        </div>
+                        <span className="text-[11px] text-ink3">Past</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         <div className="bg-white rounded-[12px] p-5 card-shadow">
           <h2 className="font-display text-lg font-bold text-ink mb-3">Public Profile</h2>
           <Link href={`/players/${playerId}`} className="text-g700 hover:underline text-[13px]">View public profile →</Link>

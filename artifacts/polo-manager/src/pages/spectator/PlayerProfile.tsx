@@ -19,8 +19,12 @@ export function PlayerProfile() {
     return <SpectatorLayout><EmptyState title="Player not found" description="This player profile does not exist." /></SpectatorLayout>;
   }
 
-  const currentTeams = data.teams.filter(t => t.isActive);
-  const pastTeams = data.teams.filter(t => !t.isActive);
+  const currentYear = new Date().getUTCFullYear();
+  // A team entry is "current" only when the player is still active on that squad
+  // AND it belongs to this season. Historical entries default to isActive=true in
+  // the DB, so we must also gate on seasonYear to avoid misclassifying them.
+  const currentTeams = data.teams.filter(t => t.isActive && t.seasonYear >= currentYear);
+  const pastTeams = data.teams.filter(t => !t.isActive || t.seasonYear < currentYear);
 
   return (
     <SpectatorLayout>

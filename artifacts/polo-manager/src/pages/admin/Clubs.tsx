@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Plus, X, Building2, Pencil, Globe, MapPin, Trash2, ImageIcon, Landmark, Shield, UserPlus, Star } from "lucide-react";
+import { Plus, X, Building2, Pencil, Globe, MapPin, Trash2, Landmark, Shield, UserPlus, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ClubItem {
@@ -51,33 +51,6 @@ async function apiFetch(path: string, options: RequestInit = {}) {
     throw new Error(data.message || `Request failed (${res.status})`);
   }
   return res.json();
-}
-
-async function uploadLogo(file: File): Promise<string> {
-  const token = getStoredToken();
-  const res = await fetch("/api/storage/uploads/request-url", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify({
-      name: file.name,
-      size: file.size,
-      contentType: file.type,
-    }),
-  });
-  if (!res.ok) throw new Error("Failed to get upload URL");
-  const { uploadURL, objectPath } = await res.json();
-
-  const uploadRes = await fetch(uploadURL, {
-    method: "PUT",
-    body: file,
-    headers: { "Content-Type": file.type },
-  });
-  if (!uploadRes.ok) throw new Error("Failed to upload file");
-
-  return `/api/storage${objectPath}`;
 }
 
 function ClubLogoUpload({
@@ -279,72 +252,23 @@ function ClubManagersPanel({ clubId }: { clubId: string }) {
 }
 
 function FieldImageUpload({ value, onChange }: { value: string; onChange: (url: string) => void }) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPreview(URL.createObjectURL(file));
-    setUploading(true);
-    try {
-      const url = await uploadLogo(file);
-      onChange(url);
-    } catch {
-      setPreview(null);
-      toast({ title: "Upload failed", variant: "destructive" });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const display = preview || value || "";
-
   return (
-    <div className="flex items-center gap-2">
-      <div
-        className="w-14 h-14 rounded-[6px] bg-bg border border-line flex items-center justify-center overflow-hidden flex-shrink-0"
-      >
-        {display ? (
-          <img src={display} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <ImageIcon className="w-5 h-5 text-ink3" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0 space-y-1">
-        <Input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Image URL (or upload)"
-          className="h-7 text-[12px]"
-        />
-        <div className="flex items-center gap-1.5">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-6 px-2 text-[11px]"
-            onClick={() => fileRef.current?.click()}
-            disabled={uploading}
-          >
-            {uploading ? "Uploading..." : "Upload"}
-          </Button>
-          {value && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-[11px] text-ink3"
-              onClick={() => { onChange(""); setPreview(null); }}
-            >
-              Clear
-            </Button>
-          )}
-        </div>
-        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
-      </div>
+    <div className="flex items-center gap-3">
+      <ImageCropUpload
+        value={value || null}
+        onChange={onChange}
+        shape="square"
+        size={72}
+      />
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          className="text-[11px] text-ink3 hover:text-live transition-colors"
+        >
+          Remove
+        </button>
+      )}
     </div>
   );
 }

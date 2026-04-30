@@ -2,13 +2,14 @@ import { getStoredToken } from "@/hooks/use-auth";
 import { useUpdateTeam } from "@workspace/api-client-react";
 import { AdminLayout } from "./AdminLayout";
 import { PageLoading, EmptyState } from "@/components/LoadingBar";
+import { ImageCropUpload } from "@/components/ImageCropUpload";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Users, Plus, X, Pencil, ImageIcon, Trash2, UserPlus, Shield, Search, ChevronDown, ChevronRight, CalendarOff } from "lucide-react";
+import { Users, Plus, X, Pencil, Trash2, UserPlus, Shield, Search, ChevronDown, ChevronRight, CalendarOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const HORSE_SEX_OPTIONS = ["Mare", "Gelding", "Stallion"] as const;
@@ -60,37 +61,9 @@ async function apiFetch(path: string, options: RequestInit = {}) {
   return res.json();
 }
 
-async function uploadLogo(file: File): Promise<string> {
-  const token = getStoredToken();
-  const res = await fetch("/api/storage/uploads/request-url", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify({
-      name: file.name,
-      size: file.size,
-      contentType: file.type,
-    }),
-  });
-  if (!res.ok) throw new Error("Failed to get upload URL");
-  const { uploadURL, objectPath } = await res.json();
-
-  const uploadRes = await fetch(uploadURL, {
-    method: "PUT",
-    body: file,
-    headers: { "Content-Type": file.type },
-  });
-  if (!uploadRes.ok) throw new Error("Failed to upload file");
-
-  return `/api/storage${objectPath}`;
-}
-
 function LogoUpload({
   currentLogo,
   onLogoChange,
-  color,
   initials,
 }: {
   currentLogo?: string | null;
@@ -98,62 +71,16 @@ function LogoUpload({
   color: string;
   initials: string;
 }) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPreview(URL.createObjectURL(file));
-    setUploading(true);
-    try {
-      const url = await uploadLogo(file);
-      onLogoChange(url);
-    } catch {
-      setPreview(null);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const displayUrl = preview || currentLogo;
-
   return (
     <div className="flex flex-col items-center gap-2">
-      <button
-        type="button"
-        onClick={() => fileRef.current?.click()}
-        className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-line hover:border-g300 transition-colors cursor-pointer group"
-      >
-        {displayUrl ? (
-          <img src={displayUrl} alt="Team logo" className="w-full h-full object-cover" />
-        ) : (
-          <div
-            className="w-full h-full flex items-center justify-center"
-            style={{ backgroundColor: color + "18" }}
-          >
-            <span className="font-medium text-sm" style={{ color }}>
-              {initials}
-            </span>
-          </div>
-        )}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          {uploading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <ImageIcon className="w-5 h-5 text-white" />
-          )}
-        </div>
-      </button>
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFile}
+      <ImageCropUpload
+        value={currentLogo ?? null}
+        onChange={onLogoChange}
+        name={initials}
+        shape="circle"
+        size={64}
       />
-      <span className="text-[11px] text-ink3">{uploading ? "Uploading..." : "Upload logo"}</span>
+      <span className="text-[11px] text-ink3">Team logo</span>
     </div>
   );
 }

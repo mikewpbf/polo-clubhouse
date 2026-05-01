@@ -48,6 +48,8 @@ interface BroadcastData {
   stats?: { home: Record<string, number>; away: Record<string, number> };
   topScorers?: { name: string; goals: number; teamSide: "home" | "away" }[];
   possession?: { homePercent: number; awayPercent: number; homeSeconds: number; awaySeconds: number } | null;
+  scoringLocation?: string;
+  broadcastOffsetSeconds?: number;
 }
 
 interface GoalAlert {
@@ -603,6 +605,7 @@ export function ScoreBugOverlay() {
   const lastGoalRef = useRef<string | null>(null);
   const lastStoppageRef = useRef<string | null>(null);
   const goalIdCounter = useRef(0);
+  const broadcastQueueRef = useRef<{ payload: BroadcastData; fireAt: number }[]>([]);
 
   const pathname = window.location.pathname;
   const channelMatch = pathname.match(/\/broadcast\/channel\/([^/]+)\/([^/?]+)/);
@@ -646,6 +649,35 @@ export function ScoreBugOverlay() {
     return () => { style.remove(); };
   }, [is4K, tweakScale, tweakOffsetX, tweakOffsetY]);
 
+  const applyData = useCallback((json: BroadcastData) => {
+    if (json.lastGoalTimestamp && json.lastGoalTimestamp !== lastGoalRef.current) {
+      const serverNowMs = json.serverNow ? new Date(json.serverNow).getTime() : Date.now();
+      const elapsed = serverNowMs - new Date(json.lastGoalTimestamp).getTime();
+      if (elapsed < 45000) {
+        const teamColor = json.lastGoalTeamSide === "home"
+          ? json.homeTeam?.primaryColor || "#374151"
+          : json.awayTeam?.primaryColor || "#374151";
+        goalIdCounter.current++;
+        setGoalAlert({
+          playerName: json.lastGoalScorerName || "Goal",
+          teamSide: json.lastGoalTeamSide || "home",
+          color: teamColor,
+          id: goalIdCounter.current,
+        });
+      }
+      lastGoalRef.current = json.lastGoalTimestamp;
+    }
+
+    if (json.lastStoppageEvent && json.lastStoppageEvent.timestamp !== lastStoppageRef.current) {
+      lastStoppageRef.current = json.lastStoppageEvent.timestamp;
+      setStoppageEvent(json.lastStoppageEvent);
+    } else if (json.clockIsRunning) {
+      setStoppageEvent(null);
+    }
+
+    setData(json);
+  }, []);
+
   const fetchData = useCallback(async () => {
     if (!isChannelMode && !matchId) return;
     if (isChannelMode && (!channelClubId || !channelName)) return;
@@ -663,41 +695,38 @@ export function ScoreBugOverlay() {
       }
       const json: BroadcastData = raw;
 
-      if (json.lastGoalTimestamp && json.lastGoalTimestamp !== lastGoalRef.current) {
-        // Use server-side timestamps so clock skew between OBS and the server
-        // doesn't inflate elapsed and suppress the alert.
-        const serverNowMs = json.serverNow ? new Date(json.serverNow).getTime() : Date.now();
-        const elapsed = serverNowMs - new Date(json.lastGoalTimestamp).getTime();
-        if (elapsed < 45000) {
-          const teamColor = json.lastGoalTeamSide === "home"
-            ? json.homeTeam?.primaryColor || "#374151"
-            : json.awayTeam?.primaryColor || "#374151";
-          goalIdCounter.current++;
-          setGoalAlert({
-            playerName: json.lastGoalScorerName || "Goal",
-            teamSide: json.lastGoalTeamSide || "home",
-            color: teamColor,
-            id: goalIdCounter.current,
-          });
-        }
-        lastGoalRef.current = json.lastGoalTimestamp;
-      }
+      const isFieldSide = json.scoringLocation === "field";
+      const delayMs = isFieldSide && json.broadcastOffsetSeconds
+        ? Math.max(0, Number(json.broadcastOffsetSeconds) * 1000)
+        : 0;
 
-      if (json.lastStoppageEvent && json.lastStoppageEvent.timestamp !== lastStoppageRef.current) {
-        lastStoppageRef.current = json.lastStoppageEvent.timestamp;
-        setStoppageEvent(json.lastStoppageEvent);
-      } else if (json.clockIsRunning) {
-        // Clock is running → any previous stoppage has been resolved.
-        // Clear local state so subsequent pauses don't re-colour the clock.
-        setStoppageEvent(null);
+      if (delayMs > 0) {
+        broadcastQueueRef.current.push({ payload: json, fireAt: Date.now() + delayMs });
+      } else {
+        // Switching to immediate mode (studio): discard any queued delayed payloads
+        // so stale field-side entries don't overwrite newer studio state.
+        broadcastQueueRef.current = [];
+        applyData(json);
       }
-
-      setData(json);
     } catch {
     }
-  }, [matchId]);
+  }, [matchId, applyData]);
 
   const TERMINAL_STATUSES = ["final", "cancelled", "completed"];
+
+  useEffect(() => {
+    const iv = setInterval(() => {
+      const now = Date.now();
+      const queue = broadcastQueueRef.current;
+      const ready = queue.filter(item => item.fireAt <= now);
+      if (ready.length > 0) {
+        broadcastQueueRef.current = queue.filter(item => item.fireAt > now);
+        const latest = ready[ready.length - 1];
+        applyData(latest.payload);
+      }
+    }, 200);
+    return () => clearInterval(iv);
+  }, [applyData]);
 
   useEffect(() => {
     fetchData();

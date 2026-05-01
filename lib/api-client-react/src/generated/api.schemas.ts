@@ -543,6 +543,14 @@ export const MatchDetailStatus = {
   cancelled: "cancelled",
 } as const;
 
+export type MatchDetailScoringLocation =
+  (typeof MatchDetailScoringLocation)[keyof typeof MatchDetailScoringLocation];
+
+export const MatchDetailScoringLocation = {
+  studio: "studio",
+  field: "field",
+} as const;
+
 export type MatchEventEventType =
   (typeof MatchEventEventType)[keyof typeof MatchEventEventType];
 
@@ -594,7 +602,18 @@ export interface MatchDetail {
   field?: Field;
   tournament?: TournamentBrief;
   events: MatchEvent[];
+  streamStartedAt?: string | null;
+  scoringLocation: MatchDetailScoringLocation;
+  broadcastOffsetSeconds: number;
 }
+
+export type UpdateMatchRequestScoringLocation =
+  (typeof UpdateMatchRequestScoringLocation)[keyof typeof UpdateMatchRequestScoringLocation];
+
+export const UpdateMatchRequestScoringLocation = {
+  studio: "studio",
+  field: "field",
+} as const;
 
 export interface UpdateMatchRequest {
   homeTeamId?: string;
@@ -604,6 +623,9 @@ export interface UpdateMatchRequest {
   round?: string;
   isLocked?: boolean;
   notes?: string;
+  streamStartedAt?: string | null;
+  scoringLocation?: UpdateMatchRequestScoringLocation;
+  broadcastOffsetSeconds?: number;
 }
 
 export interface UpdateScoreRequest {

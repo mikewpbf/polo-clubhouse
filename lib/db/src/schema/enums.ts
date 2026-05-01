@@ -43,6 +43,11 @@ export const assignmentStatusEnum = pgEnum("assignment_status", [
   "revoked",
 ]);
 
+export const scoringLocationEnum = pgEnum("scoring_location", [
+  "studio",
+  "field",
+]);
+
 export const matchEventTypeEnum = pgEnum("match_event_type", [
   "goal",
   "score_correction",

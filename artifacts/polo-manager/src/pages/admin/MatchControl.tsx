@@ -3,9 +3,10 @@ import { useState, useEffect, useCallback, useRef, type CSSProperties } from "re
 import { MatchClock } from "@/components/MatchClock";
 import { PageLoading } from "@/components/LoadingBar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Play, Pause, RotateCcw, ChevronLeft, ChevronRight, CheckSquare, ChevronUp, ChevronDown, Plus, AlertTriangle, RefreshCw, Shield, HeartPulse, Copy, Eye, EyeOff, Monitor, Crosshair, Trash2, Link, Moon, Sun, Video } from "lucide-react";
+import { ArrowLeft, Play, Pause, RotateCcw, ChevronLeft, ChevronRight, CheckSquare, ChevronUp, ChevronDown, Plus, AlertTriangle, RefreshCw, Shield, HeartPulse, Copy, Eye, EyeOff, Monitor, Crosshair, Trash2, Link, Moon, Sun, Video, Timer } from "lucide-react";
 import { getStoredToken } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { formatDate } from "@/lib/utils";
 
 async function apiFetch(path: string, options: RequestInit = {}) {
   const token = getStoredToken();
@@ -55,6 +56,9 @@ interface MatchData {
   broadcast4kOffsetY?: number;
   broadcastChannel?: string | null;
   streamUrl?: string | null;
+  streamStartedAt?: string | null;
+  scoringLocation?: "studio" | "field";
+  broadcastOffsetSeconds?: number;
 }
 
 export function MatchControl() {
@@ -160,6 +164,18 @@ export function MatchControl() {
 
   const [possessionOpen, setPossessionOpen] = useState(false);
   const [possessionToken, setPossessionToken] = useState<string | null>(null);
+
+  const [timingOpen, setTimingOpen] = useState(false);
+  const [broadcastOffsetLocal, setBroadcastOffsetLocal] = useState<string>("");
+  const [scoringLocationLocal, setScoringLocationLocal] = useState<"studio" | "field">("studio");
+  const [editAnchorOpen, setEditAnchorOpen] = useState(false);
+  const [editAnchorDateInput, setEditAnchorDateInput] = useState<string>("");
+
+  useEffect(() => {
+    if (!match) return;
+    setScoringLocationLocal(match.scoringLocation || "studio");
+    setBroadcastOffsetLocal(match.broadcastOffsetSeconds != null ? String(match.broadcastOffsetSeconds) : "0");
+  }, [match?.id]);
   const [possessionStats, setPossessionStats] = useState<{ homePercent: number; awayPercent: number; homeSeconds: number; awaySeconds: number } | null>(null);
   const [possessionState, setPossessionState] = useState<string | null>(null);
 
@@ -832,6 +848,198 @@ export function MatchControl() {
                     }}
                   />
                 </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
+          <button
+            onClick={() => setTimingOpen(prev => !prev)}
+            className="w-full flex items-center gap-2"
+          >
+            <Timer className="w-4 h-4" style={dk ? { color: textMuted } : undefined} />
+            <span className="text-[12px] font-sans font-medium uppercase tracking-wider flex-1 text-left" style={dk ? { color: textMuted } : undefined}>Timing Offset</span>
+            <ChevronRight className={`w-4 h-4 transition-transform ${timingOpen ? "rotate-90" : ""}`} style={dk ? { color: textMuted } : undefined} />
+          </button>
+
+          {timingOpen && (
+            <div className="mt-3 space-y-4">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={dk ? { color: textMuted } : { color: "#888" }}>Stream Anchor</div>
+                {match.streamStartedAt ? (
+                  <div className="space-y-2">
+                    <div className="rounded-[8px] p-3 flex items-start justify-between gap-3" style={dk ? { background: "rgba(255,255,255,0.05)" } : { background: "rgba(0,0,0,0.03)" }}>
+                      <div>
+                        <div className="text-[12px] font-medium" style={dk ? { color: textPrimary } : undefined}>Stream live since</div>
+                        <div className="text-[11px] mt-0.5" style={dk ? { color: textMuted } : { color: "#777" }}>
+                          {formatDate(match.streamStartedAt, "MMM d, h:mm:ss a")}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 shrink-0 mt-0.5">
+                        <button
+                          onClick={() => {
+                            setEditAnchorOpen(prev => !prev);
+                            setEditAnchorDateInput(
+                              new Date(new Date(match.streamStartedAt!).getTime() - new Date().getTimezoneOffset() * 60000)
+                                .toISOString().slice(0, 16)
+                            );
+                          }}
+                          className="text-[11px] font-medium"
+                          style={dk ? { color: "#86efac" } : { color: "#166534" }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditAnchorOpen(false);
+                            setMatch(prev => prev ? { ...prev, streamStartedAt: null } : prev);
+                            mutatePut(`/matches/${match.id}`, { streamStartedAt: null });
+                          }}
+                          className="text-[11px] text-red-500 hover:text-red-700 font-medium"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                    {editAnchorOpen && (
+                      <div className="rounded-[8px] p-3 space-y-3" style={dk ? { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" } : { background: "#f9f9f9", border: "1px solid #e8e8e8" }}>
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={dk ? { color: textMuted } : { color: "#888" }}>Shift anchor</div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {([-60, -30, -10, +10, +30, +60] as const).map(delta => (
+                              <button
+                                key={delta}
+                                className="px-2.5 h-7 rounded-[6px] text-[12px] font-medium font-mono transition-colors"
+                                style={dk
+                                  ? { background: "rgba(255,255,255,0.08)", color: textPrimary }
+                                  : { background: "#f0f0f0", color: "#333" }}
+                                onClick={() => {
+                                  const current = new Date(match.streamStartedAt!).getTime();
+                                  const updated = new Date(current + delta * 1000).toISOString();
+                                  setMatch(prev => prev ? { ...prev, streamStartedAt: updated } : prev);
+                                  mutatePut(`/matches/${match.id}`, { streamStartedAt: updated });
+                                }}
+                              >
+                                {delta > 0 ? `+${delta}s` : `${delta}s`}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={dk ? { color: textMuted } : { color: "#888" }}>Set exact time</div>
+                          <div className="flex gap-2">
+                            <input
+                              type="datetime-local"
+                              className="flex-1 h-8 rounded-[6px] px-2 text-[12px]"
+                              style={dk
+                                ? { background: "rgba(255,255,255,0.06)", color: "#e0e0e0", border: "1px solid rgba(255,255,255,0.1)" }
+                                : { background: "#fff", color: "#333", border: "1px solid #e0e0e0" }}
+                              value={editAnchorDateInput}
+                              onChange={e => setEditAnchorDateInput(e.target.value)}
+                            />
+                            <button
+                              className="px-3 h-8 rounded-[6px] text-[12px] font-medium transition-colors"
+                              style={dk
+                                ? { background: "rgba(34,197,94,0.15)", color: "#86efac" }
+                                : { background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0" }}
+                              onClick={() => {
+                                if (!editAnchorDateInput) return;
+                                const updated = new Date(editAnchorDateInput).toISOString();
+                                setMatch(prev => prev ? { ...prev, streamStartedAt: updated } : prev);
+                                mutatePut(`/matches/${match.id}`, { streamStartedAt: updated });
+                                setEditAnchorOpen(false);
+                              }}
+                            >
+                              Set
+                            </button>
+                            <button
+                              className="px-3 h-8 rounded-[6px] text-[12px] font-medium transition-colors"
+                              style={dk
+                                ? { background: "rgba(255,255,255,0.06)", color: textMuted }
+                                : { background: "#f5f5f5", color: "#555" }}
+                              onClick={() => setEditAnchorOpen(false)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="text-[12px]" style={dk ? { color: textMuted } : { color: "#777" }}>
+                      No stream anchor set. Set it now to enable jump-to-video on the spectator timeline.
+                    </div>
+                    <button
+                      className="w-full h-9 rounded-[8px] text-[13px] font-medium flex items-center justify-center gap-2 transition-colors"
+                      style={dk
+                        ? { background: "rgba(255,255,255,0.08)", color: textPrimary, border: "1px solid rgba(255,255,255,0.15)" }
+                        : { background: "#f5f5f5", color: "#333", border: "1px solid #e0e0e0" }}
+                      onClick={() => {
+                        const now = new Date().toISOString();
+                        setMatch(prev => prev ? { ...prev, streamStartedAt: now } : prev);
+                        mutatePut(`/matches/${match.id}`, { streamStartedAt: now });
+                      }}
+                    >
+                      <Video className="w-3.5 h-3.5" />
+                      Anchor stream to now
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={dk ? { color: textMuted } : { color: "#888" }}>Broadcast Timing</div>
+                <div className="flex gap-2 mb-3">
+                  {(["studio", "field"] as const).map(loc => (
+                    <button
+                      key={loc}
+                      className={`flex-1 h-9 rounded-[8px] text-[13px] font-medium capitalize transition-colors ${scoringLocationLocal === loc ? "ring-2 ring-green-500" : ""}`}
+                      style={scoringLocationLocal === loc
+                        ? (dk ? { background: "rgba(34,197,94,0.15)", color: "#86efac" } : { background: "#f0fdf4", color: "#166534" })
+                        : (dk ? { background: "rgba(255,255,255,0.06)", color: textMuted } : { background: "#f5f5f5", color: "#555" })}
+                      onClick={() => {
+                        setScoringLocationLocal(loc);
+                        mutatePut(`/matches/${match.id}`, { scoringLocation: loc });
+                      }}
+                    >
+                      {loc === "studio" ? "Studio" : "Field Side"}
+                    </button>
+                  ))}
+                </div>
+                {scoringLocationLocal === "field" && (
+                  <div>
+                    <label className="text-[12px] block mb-1.5" style={dk ? { color: textMuted } : { color: "#777" }}>
+                      Broadcast delay (seconds)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      className="w-full h-9 rounded-[8px] px-3 text-[13px] font-mono"
+                      style={dk
+                        ? { background: "rgba(255,255,255,0.06)", color: "#e0e0e0", border: "1px solid rgba(255,255,255,0.1)" }
+                        : { background: "#f5f5f5", color: "#333", border: "1px solid #e0e0e0" }}
+                      value={broadcastOffsetLocal}
+                      onChange={e => setBroadcastOffsetLocal(e.target.value)}
+                      onBlur={() => {
+                        const val = parseFloat(broadcastOffsetLocal);
+                        const clamped = isNaN(val) ? 0 : Math.max(0, val);
+                        setBroadcastOffsetLocal(String(clamped));
+                        if (clamped !== (match.broadcastOffsetSeconds ?? 0)) {
+                          setMatch(prev => prev ? { ...prev, broadcastOffsetSeconds: clamped } : prev);
+                          mutatePut(`/matches/${match.id}`, { broadcastOffsetSeconds: clamped });
+                        }
+                      }}
+                      onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                    />
+                    <div className="text-[11px] mt-1.5" style={dk ? { color: textMuted } : { color: "#999" }}>
+                      Score updates on the broadcast overlay will be delayed by this many seconds.
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

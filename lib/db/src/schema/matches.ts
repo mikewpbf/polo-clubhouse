@@ -1,10 +1,10 @@
-import { pgTable, uuid, varchar, integer, boolean, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, integer, boolean, text, timestamp, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { tournamentsTable } from "./tournaments";
 import { teamsTable } from "./teams";
 import { fieldsTable } from "./fields";
-import { matchStatusEnum } from "./enums";
+import { matchStatusEnum, scoringLocationEnum } from "./enums";
 
 export const matchesTable = pgTable("matches", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -36,6 +36,9 @@ export const matchesTable = pgTable("matches", {
   lastGoalTimestamp: timestamp("last_goal_timestamp", { withTimezone: true }),
   streamUrl: text("stream_url"),
   possessionToken: varchar("possession_token", { length: 64 }),
+  streamStartedAt: timestamp("stream_started_at", { withTimezone: true }),
+  scoringLocation: scoringLocationEnum("scoring_location").notNull().default("studio"),
+  broadcastOffsetSeconds: numeric("broadcast_offset_seconds", { precision: 6, scale: 2 }).notNull().default("0"),
 });
 
 export const insertMatchSchema = createInsertSchema(matchesTable).omit({ id: true });

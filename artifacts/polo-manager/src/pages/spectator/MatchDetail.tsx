@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { MatchClock } from "@/components/MatchClock";
 import { formatDate } from "@/lib/utils";
 import { MapPin, Calendar, BarChart3, Clock } from "lucide-react";
-import { getYouTubeEmbedUrl } from "@/lib/youtube";
-import React, { useState, useEffect } from "react";
+import { getYouTubeVideoId } from "@/lib/youtube";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { getStoredToken, useAuth } from "@/hooks/use-auth";
 import { X } from "lucide-react";
 
@@ -62,6 +62,19 @@ function eventDotColor(evt: MatchEvent): string {
   return "bg-g300";
 }
 
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: (() => void) | undefined;
+  }
+}
+
+function formatStreamOffset(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
 export function MatchDetail() {
   const [, params] = useRoute("/match/:id");
   const matchId = params?.id || "";
@@ -74,6 +87,12 @@ export function MatchDetail() {
   });
   const { user } = useAuth();
   const canManage = user?.role === "super_admin" || user?.role === "admin";
+
+  const playerRef = useRef<any>(null);
+  const playerReadyRef = useRef(false);
+  const pendingSeekRef = useRef<number | null>(null);
+  const embedRef = useRef<HTMLDivElement>(null);
+  const currentVideoIdRef = useRef<string | null>(null);
 
   const handleDeleteEvent = async (eventId: string) => {
     if (!window.confirm("Remove this event from the timeline?")) return;
@@ -113,29 +132,106 @@ export function MatchDetail() {
     return () => clearInterval(interval);
   }, [matchId]);
 
+  const seekTo = useCallback((seconds: number) => {
+    if (playerReadyRef.current && playerRef.current) {
+      playerRef.current.seekTo(seconds, true);
+      playerRef.current.playVideo();
+      embedRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      pendingSeekRef.current = seconds;
+      embedRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, []);
+
+  const m = match as Record<string, any> | undefined;
+  const videoId = m ? getYouTubeVideoId(m.streamUrl) : null;
+  const isLive = m?.status === "live";
+  const isHalftime = m?.status === "halftime";
+  const hasVideo = !!(videoId && (isLive || isHalftime || m?.status === "final"));
+  const autoplay = isLive || isHalftime;
+
+  useEffect(() => {
+    if (!hasVideo || !videoId) return;
+
+    const createPlayer = () => {
+      if (!embedRef.current) return;
+      if (currentVideoIdRef.current === videoId && playerRef.current) return;
+
+      if (playerRef.current) {
+        try { playerRef.current.destroy(); } catch {}
+        playerRef.current = null;
+        playerReadyRef.current = false;
+      }
+
+      currentVideoIdRef.current = videoId;
+      const divId = `yt-player-${matchId}`;
+      const container = embedRef.current;
+      container.innerHTML = `<div id="${divId}"></div>`;
+
+      playerRef.current = new window.YT.Player(divId, {
+        videoId,
+        playerVars: {
+          autoplay: autoplay ? 1 : 0,
+          mute: autoplay ? 1 : 0,
+          rel: 0,
+          modestbranding: 1,
+        },
+        events: {
+          onReady: () => {
+            playerReadyRef.current = true;
+            if (pendingSeekRef.current !== null) {
+              playerRef.current.seekTo(pendingSeekRef.current, true);
+              playerRef.current.playVideo();
+              pendingSeekRef.current = null;
+            }
+          },
+        },
+      });
+    };
+
+    if (window.YT && window.YT.Player) {
+      createPlayer();
+    } else {
+      const prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        if (prev) prev();
+        createPlayer();
+      };
+      if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        const tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.head.appendChild(tag);
+      }
+    }
+  }, [videoId, hasVideo, autoplay, matchId]);
+
+  useEffect(() => {
+    return () => {
+      if (playerRef.current) {
+        try { playerRef.current.destroy(); } catch {}
+        playerRef.current = null;
+        playerReadyRef.current = false;
+        currentVideoIdRef.current = null;
+      }
+    };
+  }, []);
+
   if (isLoading) return <SpectatorLayout><PageLoading /></SpectatorLayout>;
   if (!match) return <SpectatorLayout><EmptyState title="Match not found" /></SpectatorLayout>;
 
-  // Match payload is enriched server-side beyond the OpenAPI MatchDetail schema
-  // (rosters on home/away teams, streamUrl, lastGoal* fields). Casting to a loose
-  // record matches the established pattern in this file and avoids a giant
-  // duplicate type definition. Property accesses below are runtime-defensive.
-  const m = match as Record<string, any>;
-  const homeTeam = m.homeTeam;
-  const awayTeam = m.awayTeam;
-  const field = m.field;
-  const tournament = m.tournament;
-  const rawEvents: MatchEvent[] = (m.events || events || []);
+  const homeTeam = m!.homeTeam;
+  const awayTeam = m!.awayTeam;
+  const field = m!.field;
+  const tournament = m!.tournament;
+  const rawEvents: MatchEvent[] = (m!.events || events || []);
   const eventList = rawEvents
     .filter(e => VISIBLE_EVENT_TYPES.has(e.eventType))
     .slice()
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  const isLive = m.status === "live";
-  const isHalftime = m.status === "halftime";
-  const showClock = isLive || isHalftime;
+  const showClock = m!.status === "live" || m!.status === "halftime";
 
-  const liveEmbedUrl = (isLive || isHalftime) ? getYouTubeEmbedUrl(m.streamUrl) : null;
-  const replayEmbedUrl = (m.status === "final" && m.streamUrl) ? getYouTubeEmbedUrl(m.streamUrl)?.replace("autoplay=1&mute=1&", "") : null;
+  const streamStartedAt: string | null = m!.streamStartedAt || null;
+  const streamAnchorMs = streamStartedAt ? new Date(streamStartedAt).getTime() : null;
 
   return (
     <SpectatorLayout>
@@ -143,8 +239,8 @@ export function MatchDetail() {
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             {isLive && <div className="w-2 h-2 rounded-full bg-live animate-live-dot" />}
-            <Badge variant={isLive ? "destructive" : m.status === "final" ? "default" : "status"}>
-              {String(m.status || "").replace("_", " ").toUpperCase()}
+            <Badge variant={isLive ? "destructive" : m!.status === "final" ? "default" : "status"}>
+              {String(m!.status || "").replace("_", " ").toUpperCase()}
             </Badge>
           </div>
           {tournament && (
@@ -152,15 +248,9 @@ export function MatchDetail() {
           )}
         </div>
 
-        {liveEmbedUrl && (
+        {hasVideo && (
           <div className="rounded-[12px] overflow-hidden" style={{ aspectRatio: "16/9" }}>
-            <iframe
-              src={liveEmbedUrl}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full border-0"
-              title="Live Stream"
-            />
+            <div ref={embedRef} className="w-full h-full" style={{ background: "#000" }} />
           </div>
         )}
 
@@ -179,7 +269,7 @@ export function MatchDetail() {
               </div>
               <span className="mt-3 font-sans font-medium text-[15px] text-ink text-center">{homeTeam?.name || "TBD"}</span>
               <span className="mt-2 font-display font-bold text-5xl" style={{ color: homeTeam?.primaryColor || "var(--ink)" }}>
-                {Number(m.homeScore || 0)}
+                {Number(m!.homeScore || 0)}
               </span>
               {homeTeam?.players?.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-line2 w-full">
@@ -206,27 +296,26 @@ export function MatchDetail() {
               {showClock && (
                 <>
                   <MatchClock
-                    clockStartedAt={m.clockStartedAt ?? null}
-                    clockElapsedSeconds={m.clockElapsedSeconds ?? 0}
-                    clockIsRunning={m.clockIsRunning ?? false}
-                    status={m.status}
+                    clockStartedAt={m!.clockStartedAt ?? null}
+                    clockElapsedSeconds={m!.clockElapsedSeconds ?? 0}
+                    clockIsRunning={m!.clockIsRunning ?? false}
+                    status={m!.status}
                     size="lg"
-                    lastGoalScorerName={m.lastGoalScorerName}
-                    lastGoalTimestamp={m.lastGoalTimestamp}
-                    lastStoppageEvent={m.lastStoppageEvent}
-
+                    lastGoalScorerName={m!.lastGoalScorerName}
+                    lastGoalTimestamp={m!.lastGoalTimestamp}
+                    lastStoppageEvent={m!.lastStoppageEvent}
                   />
                   {!isHalftime && (
                     <div className="mt-2 text-[13px] text-ink3">
-                      Chukker {Number(m.currentChukker || 1)}
+                      Chukker {Number(m!.currentChukker || 1)}
                     </div>
                   )}
                 </>
               )}
-              {m.status === "scheduled" && (
+              {m!.status === "scheduled" && (
                 <span className="text-2xl font-display font-bold text-g300">vs</span>
               )}
-              {m.status === "final" && (
+              {m!.status === "final" && (
                 <span className="text-[13px] font-sans text-ink3 uppercase tracking-wider font-semibold">Final</span>
               )}
             </div>
@@ -244,7 +333,7 @@ export function MatchDetail() {
               </div>
               <span className="mt-3 font-sans font-medium text-[15px] text-ink text-center">{awayTeam?.name || "TBD"}</span>
               <span className="mt-2 font-display font-bold text-5xl" style={{ color: awayTeam?.primaryColor || "var(--ink)" }}>
-                {Number(m.awayScore || 0)}
+                {Number(m!.awayScore || 0)}
               </span>
               {awayTeam?.players?.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-line2 w-full">
@@ -270,22 +359,10 @@ export function MatchDetail() {
 
           <div className="mt-6 pt-4 border-t border-line flex items-center justify-center gap-6 text-[14px] text-ink2 font-medium">
             {field && <span className="flex items-center"><MapPin className="w-4 h-4 mr-1.5" />{field.name}</span>}
-            {m.scheduledAt && <span className="flex items-center"><Calendar className="w-4 h-4 mr-1.5" />{formatDate(String(m.scheduledAt), "MMM d, h:mm a")}</span>}
-            {m.round && <span>{String(m.round)}</span>}
+            {m!.scheduledAt && <span className="flex items-center"><Calendar className="w-4 h-4 mr-1.5" />{formatDate(String(m!.scheduledAt), "MMM d, h:mm a")}</span>}
+            {m!.round && <span>{String(m!.round)}</span>}
           </div>
         </div>
-
-        {replayEmbedUrl && (
-          <div className="rounded-[12px] overflow-hidden" style={{ aspectRatio: "16/9" }}>
-            <iframe
-              src={replayEmbedUrl}
-              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full border-0"
-              title="Match Replay"
-            />
-          </div>
-        )}
 
         {matchStats && (homeTeam || awayTeam) && (
           <div className="bg-white rounded-[12px] overflow-hidden" style={{ boxShadow: 'var(--shadow-card)' }}>
@@ -448,6 +525,22 @@ export function MatchDetail() {
                             const positiveTeamEvent = !!evt.teamColor && ["bowl_in", "knock_in", "goal", "penalty_goal"].includes(evt.eventType);
                             const isGoal = evt.eventType === "goal" || evt.eventType === "penalty_goal";
                             const teamColor = evt.teamColor as string | null;
+
+                            const evtMs = new Date(evt.createdAt).getTime();
+                            let streamOffsetSeconds: number | null = null;
+                            let isBeforeStream = false;
+
+                            if (streamAnchorMs !== null) {
+                              const diff = (evtMs - streamAnchorMs) / 1000;
+                              if (diff >= 0) {
+                                streamOffsetSeconds = diff;
+                              } else {
+                                isBeforeStream = true;
+                              }
+                            }
+
+                            const isClickable = streamOffsetSeconds !== null && hasVideo;
+
                             return (
                               <div
                                 key={evt.id}
@@ -470,6 +563,21 @@ export function MatchDetail() {
                                   {evt.clockSeconds != null && (
                                     <span className="text-[12px] text-ink3 ml-2">
                                       {(() => { const remaining = Math.max(0, 450 - (evt.clockSeconds || 0)); return `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`; })()}
+                                    </span>
+                                  )}
+                                  {streamAnchorMs !== null && (
+                                    <span className="ml-2">
+                                      {isBeforeStream ? (
+                                        <span className="text-[11px] text-ink3">(before stream)</span>
+                                      ) : isClickable ? (
+                                        <button
+                                          onClick={() => seekTo(streamOffsetSeconds!)}
+                                          className="text-[11px] text-g600 hover:text-g800 hover:underline font-medium transition-colors"
+                                          title={`Jump to ${formatStreamOffset(streamOffsetSeconds!)} in video`}
+                                        >
+                                          → {formatStreamOffset(streamOffsetSeconds!)}
+                                        </button>
+                                      ) : null}
                                     </span>
                                   )}
                                 </div>
@@ -495,6 +603,11 @@ export function MatchDetail() {
                       </div>
                     ))}
                   </div>
+                  {streamAnchorMs !== null && hasVideo && (
+                    <p className="mt-3 text-[11px] text-ink3 text-center">
+                      Jump-to works best on replays. Live streams may seek to the live edge.
+                    </p>
+                  )}
                 </div>
               </div>
             </>

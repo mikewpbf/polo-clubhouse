@@ -1322,6 +1322,9 @@ export const GetMatchResponse = zod.object({
       createdAt: zod.date().optional(),
     }),
   ),
+  streamStartedAt: zod.date().nullish(),
+  scoringLocation: zod.enum(["studio", "field"]),
+  broadcastOffsetSeconds: zod.number(),
 });
 
 /**
@@ -1339,6 +1342,9 @@ export const UpdateMatchBody = zod.object({
   round: zod.string().optional(),
   isLocked: zod.boolean().optional(),
   notes: zod.string().optional(),
+  streamStartedAt: zod.date().nullish(),
+  scoringLocation: zod.enum(["studio", "field"]).optional(),
+  broadcastOffsetSeconds: zod.number().optional(),
 });
 
 export const UpdateMatchResponse = zod.object({

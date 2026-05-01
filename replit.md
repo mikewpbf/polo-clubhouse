@@ -64,7 +64,7 @@ artifacts-monorepo/
 - **tournament_teams** - Teams enrolled in tournaments (seed, group, max games/day)
 - **team_out_dates** - Dates teams can't play
 - **play_dates** - Available play dates with field/time slots
-- **matches** - Scheduled/live/final matches with real-time clock state + broadcast overlay config (visibility, style, resolution, 4K-only fine tune scale/offsets, last goal scorer)
+- **matches** - Scheduled/live/final matches with real-time clock state + broadcast overlay config (visibility, style, resolution, 4K-only fine tune scale/offsets, last goal scorer) + stream_started_at (UTC anchor for jump-to-video), scoring_location (enum: studio/field), broadcast_offset_seconds (numeric 6,2 — delay for field-side scoring)
 - **match_events** - Goal events, clock events, chukker transitions
 - **admin_club_memberships** - Club admin roles (owner/manager)
 - **team_manager_assignments** - Team manager invites and assignments
@@ -92,8 +92,9 @@ artifacts-monorepo/
 - `GET /matches/live`, `GET /matches/today`, `GET/PUT /matches/:matchId`
 - `POST /matches/:matchId/score|clock|status|chukker`
 - `GET /matches/:matchId/events`
-- `GET /matches/:matchId/broadcast` (public, no auth — returns live overlay state)
+- `GET /matches/:matchId/broadcast` (public, no auth — returns live overlay state including streamStartedAt, scoringLocation, broadcastOffsetSeconds)
 - `PUT /matches/:matchId/broadcast` (admin — update visibility/style/resolution and 4K fine-tune scale & X/Y offsets)
+- `PUT /matches/:matchId` accepts `streamStartedAt` (ISO timestamp or null), `scoringLocation` ("studio"|"field"), `broadcastOffsetSeconds` (number)
 - `GET /matches/:matchId/possession` — current possession state + stats
 - `POST /matches/:matchId/possession` — switch possession state (token auth or JWT)
 - `DELETE /matches/:matchId/possession` — reset possession data (admin only)

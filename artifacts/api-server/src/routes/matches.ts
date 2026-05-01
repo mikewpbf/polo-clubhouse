@@ -293,7 +293,7 @@ router.get("/matches/:matchId", async (req, res) => {
 router.put("/matches/:matchId", requireAuth, requireMatchAdmin, async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
-    const { homeTeamId, awayTeamId, fieldId, scheduledAt, round, isLocked, notes, streamUrl } = req.body;
+    const { homeTeamId, awayTeamId, fieldId, scheduledAt, round, isLocked, notes, streamUrl, streamStartedAt, scoringLocation, broadcastOffsetSeconds } = req.body;
     const updates: Record<string, any> = {};
     if (homeTeamId !== undefined) updates.homeTeamId = homeTeamId;
     if (awayTeamId !== undefined) updates.awayTeamId = awayTeamId;
@@ -303,6 +303,9 @@ router.put("/matches/:matchId", requireAuth, requireMatchAdmin, async (req, res)
     if (isLocked !== undefined) updates.isLocked = isLocked;
     if (notes !== undefined) updates.notes = notes;
     if (streamUrl !== undefined) updates.streamUrl = streamUrl || null;
+    if (streamStartedAt !== undefined) updates.streamStartedAt = streamStartedAt ? new Date(streamStartedAt) : null;
+    if (scoringLocation !== undefined && ["studio", "field"].includes(scoringLocation)) updates.scoringLocation = scoringLocation;
+    if (broadcastOffsetSeconds !== undefined && typeof broadcastOffsetSeconds === "number") updates.broadcastOffsetSeconds = String(broadcastOffsetSeconds);
     const [match] = await db.update(matchesTable).set(updates).where(eq(matchesTable.id, matchId)).returning();
     emitMatchUpdate(matchId);
     const enriched = await enrichMatch(match);
@@ -383,15 +386,18 @@ router.post("/matches/:matchId/status", requireAuth, requireMatchAdmin, async (r
   try {
     const matchId = String(req.params.matchId);
     const { status } = req.body;
+    const [current] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
     const updates: Record<string, any> = { status };
     if (status === "final") {
-      const [current] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
       if (current?.clockIsRunning && current?.clockStartedAt) {
         const additional = Math.floor((Date.now() - new Date(current.clockStartedAt).getTime()) / 1000);
         updates.clockElapsedSeconds = (current.clockElapsedSeconds || 0) + additional;
       }
       updates.clockIsRunning = false;
       updates.clockStartedAt = null;
+    }
+    if (status === "live" && !current?.streamStartedAt) {
+      updates.streamStartedAt = new Date();
     }
     const [match] = await db.update(matchesTable).set(updates).where(eq(matchesTable.id, matchId)).returning();
 
@@ -1006,6 +1012,9 @@ async function buildBroadcastPayload(matchId: string) {
         if (!p) return null;
         return bSwap ? { homePercent: p.awayPercent, awayPercent: p.homePercent, homeSeconds: p.awaySeconds, awaySeconds: p.homeSeconds } : p;
       })(),
+      streamStartedAt: match.streamStartedAt ? match.streamStartedAt.toISOString() : null,
+      scoringLocation: match.scoringLocation || "studio",
+      broadcastOffsetSeconds: Number(match.broadcastOffsetSeconds ?? 0),
     };
 }
 

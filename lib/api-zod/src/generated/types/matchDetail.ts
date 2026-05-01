@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Field } from "./field";
+import type { MatchDetailScoringLocation } from "./matchDetailScoringLocation";
 import type { MatchDetailStatus } from "./matchDetailStatus";
 import type { MatchEvent } from "./matchEvent";
 import type { Team } from "./team";
@@ -34,4 +35,7 @@ export interface MatchDetail {
   field?: Field;
   tournament?: TournamentBrief;
   events: MatchEvent[];
+  streamStartedAt?: Date | null;
+  scoringLocation: MatchDetailScoringLocation;
+  broadcastOffsetSeconds: number;
 }

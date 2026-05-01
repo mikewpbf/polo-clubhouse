@@ -109,7 +109,12 @@ Important rules:
 - Generate reasonable slugs from club names (lowercase, hyphens, no special chars).
 - IMPORTANT: When the text mentions player names on a team (e.g. "Black Watch: Facundo Pieres 10, Hilario Ulloa 10"), extract each player with their FULL NAME (text string like "Facundo Pieres") in the "name" field and their handicap (number like 10) in the "handicap" field. The "name" field must ALWAYS be the player's actual name, NEVER a number.
 - When teams are listed under a tournament or in a schedule, include those team names in the tournament's teamNames array AND the tournament name in each team's tournamentNames array.
-- If a schedule/draw is provided with matchups, extract them into the matches array. For matches where both teams are known, include them. For matches where one or both teams are not yet determined (e.g. "Final" without specific teams), use "TBD" as the team name.
+- ROUND ROBIN SCHEDULE GENERATION (CRITICAL): When a tournament has format "round_robin", you MUST generate ALL matchups so that every team plays every other team exactly once. For N teams this means N*(N-1)/2 matches total. Examples:
+  * 3 teams (A, B, C) → 3 matches: A vs B, A vs C, B vs C
+  * 4 teams (A, B, C, D) → 6 matches: A vs B, A vs C, A vs D, B vs C, B vs D, C vs D
+  * 5 teams → 10 matches, 6 teams → 15 matches, etc.
+  Generate ALL of these matches in the matches array, even if the text only says "round robin" without listing individual games. It is fine for all matches to have the same scheduledDate and scheduledTime (or null) — same start time is acceptable.
+- If a schedule/draw is provided with explicit matchups, extract those. For matches where one or both teams are not yet determined (e.g. "Final" without specific teams), use "TBD" as the team name.
 - ALL team name references across teams, tournaments, and matches MUST be consistent and exact.
 - Return ONLY valid JSON, no markdown fences or explanation.`;
 
@@ -475,6 +480,68 @@ router.post("/admin/ai/execute-setup", requireAuth, requireSuperAdmin, async (re
           results.matches.created++;
         } catch (e: any) {
           results.matches.errors.push(`Match "${m.homeTeamName} vs ${m.awayTeamName}": ${e.message}`);
+        }
+      }
+    }
+
+    // 6. Round robin safety net: for every round_robin tournament that was just
+    //    created or referenced, ensure all team-vs-team matchups exist.
+    //    This catches cases where the AI omitted some combinations.
+    {
+      const roundRobinTournIds = Array.from(tournamentMap.values());
+      if (roundRobinTournIds.length > 0) {
+        const rrTournaments = await db.select({ id: tournamentsTable.id, format: tournamentsTable.format })
+          .from(tournamentsTable)
+          .where(inArray(tournamentsTable.id, roundRobinTournIds));
+
+        for (const tourn of rrTournaments) {
+          if (tourn.format !== "round_robin") continue;
+
+          // Get all teams linked to this tournament
+          const linkedTeams = await db.select({ teamId: tournamentTeamsTable.teamId })
+            .from(tournamentTeamsTable)
+            .where(eq(tournamentTeamsTable.tournamentId, tourn.id));
+          const teamIds = linkedTeams.map(l => l.teamId).filter((x): x is string => !!x);
+          if (teamIds.length < 2) continue;
+
+          // Get all existing matches for this tournament so we don't duplicate
+          const existingMatches = await db.select({
+            homeTeamId: matchesTable.homeTeamId,
+            awayTeamId: matchesTable.awayTeamId,
+          }).from(matchesTable).where(eq(matchesTable.tournamentId, tourn.id));
+
+          // Build a set of existing pairings (order-independent)
+          const existingPairs = new Set<string>();
+          for (const m of existingMatches) {
+            if (m.homeTeamId && m.awayTeamId) {
+              const pair = [m.homeTeamId, m.awayTeamId].sort().join("|");
+              existingPairs.add(pair);
+            }
+          }
+
+          // Generate all missing pairings
+          for (let i = 0; i < teamIds.length; i++) {
+            for (let j = i + 1; j < teamIds.length; j++) {
+              const a = teamIds[i];
+              const b = teamIds[j];
+              const pair = [a, b].sort().join("|");
+              if (!existingPairs.has(pair)) {
+                try {
+                  await db.insert(matchesTable).values({
+                    tournamentId: tourn.id,
+                    homeTeamId: a,
+                    awayTeamId: b,
+                    status: "scheduled",
+                    round: "Preliminary",
+                  });
+                  results.matches.created++;
+                  existingPairs.add(pair);
+                } catch (e: any) {
+                  results.matches.errors.push(`Auto round-robin match: ${e.message}`);
+                }
+              }
+            }
+          }
         }
       }
     }

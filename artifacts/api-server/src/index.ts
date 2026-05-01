@@ -1,25 +1,10 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { db, pool } from "@workspace/db";
+import { db, runMigrations } from "@workspace/db";
 import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { startWeatherCacheCleanup } from "./lib/weather-cache-cleanup";
-
-async function applyStartupMigrations() {
-  try {
-    await pool.query(`
-      ALTER TABLE team_players
-        ADD COLUMN IF NOT EXISTS is_active boolean NOT NULL DEFAULT true
-    `);
-    logger.info("team_players.is_active column ensured");
-
-    logger.info("Startup migrations applied");
-  } catch (e) {
-    logger.error({ err: e }, "Startup migration failed — aborting server start");
-    throw e;
-  }
-}
 
 async function seedSuperAdmin() {
   try {
@@ -53,8 +38,11 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-applyStartupMigrations()
-  .then(() => seedSuperAdmin())
+runMigrations()
+  .then(() => {
+    logger.info("Database migrations applied");
+    return seedSuperAdmin();
+  })
   .then(() => {
     app.listen(port, (err) => {
       if (err) {

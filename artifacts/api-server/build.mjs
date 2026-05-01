@@ -119,6 +119,13 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
     },
   });
 
+  // Copy Drizzle migration files alongside the bundle so runMigrations() can
+  // locate them at runtime via __dirname.
+  const migrationsSrc = path.resolve(artifactDir, "..", "..", "lib", "db", "migrations");
+  const migrationsDest = path.resolve(distDir, "migrations");
+  await cp(migrationsSrc, migrationsDest, { recursive: true });
+  console.log(`Copied db migrations -> ${path.relative(artifactDir, migrationsDest)}`);
+
   // Copy the polo-manager SPA build alongside the api-server bundle so it can
   // be served by Express in production. The api-server's app.ts looks for a
   // sibling `public/` dir and falls back to API-only if it's missing.

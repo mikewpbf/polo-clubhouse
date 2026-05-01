@@ -46,6 +46,7 @@ artifacts-monorepo/
 │   ├── api-client-react/   # Generated React Query hooks
 │   ├── api-zod/            # Generated Zod schemas from OpenAPI
 │   └── db/                 # Drizzle ORM schema + DB connection
+│       ├── migrations/     # Versioned SQL migration files (drizzle-kit generate → migrate)
 │       └── src/schema/     # 19 tables: clubs, fields, teams, players, horses, users, tournaments, tournament_teams, team_out_dates, play_dates, matches, match_events, admin_club_memberships, team_manager_assignments, spectator_follows, push_subscriptions, user_invites, possession_segments, field_weather_cache
 ├── scripts/
 ├── pnpm-workspace.yaml
@@ -110,4 +111,6 @@ artifacts-monorepo/
 - `pnpm --filter @workspace/api-server run dev` — Start API server
 - `pnpm --filter @workspace/polo-manager run dev` — Start frontend
 - `pnpm --filter @workspace/api-spec run codegen` — Regenerate API hooks/schemas
-- `pnpm --filter @workspace/db run push` — Push schema to database
+- `pnpm --filter @workspace/db run generate` — Generate new migration file from schema changes
+- `pnpm --filter @workspace/db run migrate` — Apply pending migrations via drizzle-kit (CI/manual)
+- `pnpm --filter @workspace/db run push` — Push schema to database (dev shortcut, bypasses migration history)

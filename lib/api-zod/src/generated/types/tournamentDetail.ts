@@ -18,6 +18,8 @@ export interface TournamentDetail {
   id: string;
   clubId: string;
   name: string;
+  /** Event/tournament logo shown on the jumbotron scoreboard and (future) lineup graphics. */
+  logoUrl?: string | null;
   format?: TournamentDetailFormat;
   handicapLevel?: string | null;
   startDate?: string | null;

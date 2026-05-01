@@ -14,6 +14,8 @@ export interface Tournament {
   id: string;
   clubId: string;
   name: string;
+  /** Event/tournament logo shown on the jumbotron scoreboard and (future) lineup graphics. */
+  logoUrl?: string | null;
   format?: TournamentFormat;
   handicapLevel?: string | null;
   startDate?: string | null;

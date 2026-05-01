@@ -48,9 +48,9 @@ router.get("/clubs/:clubId/teams", async (req, res) => {
 router.post("/clubs/:clubId/teams", requireAuth, requireClubAdminForTeamWrite, async (req, res) => {
   try {
     const clubId = String(req.params.clubId);
-    const { name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, scoreboardName } = req.body;
+    const { name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, jerseyImageUrl, scoreboardName } = req.body;
     const [team] = await db.insert(teamsTable).values({
-      clubId, name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, scoreboardName,
+      clubId, name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, jerseyImageUrl, scoreboardName,
     }).returning();
     res.status(201).json(team);
   } catch (e: any) {
@@ -74,7 +74,7 @@ router.get("/teams", async (req, res) => {
 
 router.post("/teams", requireAuth, async (req, res) => {
   try {
-    const { name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, clubId, scoreboardName } = req.body;
+    const { name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, jerseyImageUrl, clubId, scoreboardName } = req.body;
     if (!name) { res.status(400).json({ message: "Team name is required" }); return; }
     if (clubId && !isSuperAdmin(req.user!)) {
       const memberships = await db.select().from(adminClubMembershipsTable).where(eq(adminClubMembershipsTable.userId, req.user!.id));
@@ -84,7 +84,7 @@ router.post("/teams", requireAuth, async (req, res) => {
     }
     const [team] = await db.insert(teamsTable).values({
       clubId: clubId || null,
-      name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, scoreboardName,
+      name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, jerseyImageUrl, scoreboardName,
     }).returning();
     res.status(201).json(team);
   } catch (e: any) {
@@ -108,7 +108,7 @@ router.get("/teams/:teamId", async (req, res) => {
 router.put("/teams/:teamId", requireAuth, requireTeamAdminOrManager, async (req, res) => {
   try {
     const teamId = String(req.params.teamId);
-    const { name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, scoreboardName } = req.body;
+    const { name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, jerseyImageUrl, scoreboardName } = req.body;
     const updates: Record<string, any> = {};
     if (name !== undefined) updates.name = name;
     if (shortName !== undefined) updates.shortName = shortName;
@@ -118,6 +118,7 @@ router.put("/teams/:teamId", requireAuth, requireTeamAdminOrManager, async (req,
     if (contactPhone !== undefined) updates.contactPhone = contactPhone;
     if (notes !== undefined) updates.notes = notes;
     if (logoUrl !== undefined) updates.logoUrl = logoUrl;
+    if (jerseyImageUrl !== undefined) updates.jerseyImageUrl = jerseyImageUrl || null;
     if (scoreboardName !== undefined) updates.scoreboardName = scoreboardName || null;
     const [team] = await db.update(teamsTable).set(updates).where(eq(teamsTable.id, teamId)).returning();
     res.json(team);

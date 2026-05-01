@@ -135,6 +135,8 @@ export interface Tournament {
   id: string;
   clubId: string;
   name: string;
+  /** Event/tournament logo shown on the jumbotron scoreboard and (future) lineup graphics. */
+  logoUrl?: string | null;
   format?: TournamentFormat;
   handicapLevel?: string | null;
   startDate?: string | null;
@@ -216,6 +218,8 @@ export interface Team {
   shortName?: string | null;
   logoUrl?: string | null;
   logoThumbUrl?: string | null;
+  /** Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views. */
+  jerseyImageUrl?: string | null;
   primaryColor?: string | null;
   handicap?: string | null;
   contactName?: string | null;
@@ -251,6 +255,8 @@ export interface TeamDetail {
   shortName?: string | null;
   logoUrl?: string | null;
   logoThumbUrl?: string | null;
+  /** Team jersey image used by the jumbotron scoreboard. */
+  jerseyImageUrl?: string | null;
   primaryColor?: string | null;
   handicap?: string | null;
   contactName?: string | null;
@@ -268,6 +274,7 @@ export interface CreateTeamRequest {
   contactPhone?: string;
   notes?: string;
   logoUrl?: string;
+  jerseyImageUrl?: string | null;
 }
 
 export interface UpdateTeamRequest {
@@ -279,6 +286,7 @@ export interface UpdateTeamRequest {
   contactPhone?: string;
   notes?: string;
   logoUrl?: string;
+  jerseyImageUrl?: string | null;
 }
 
 export type TournamentWithClubStatus =
@@ -402,6 +410,8 @@ export interface TournamentDetail {
   id: string;
   clubId: string;
   name: string;
+  /** Event/tournament logo shown on the jumbotron scoreboard and (future) lineup graphics. */
+  logoUrl?: string | null;
   format?: TournamentDetailFormat;
   handicapLevel?: string | null;
   startDate?: string | null;
@@ -435,6 +445,7 @@ export const CreateTournamentRequestFormat = {
 
 export interface CreateTournamentRequest {
   name: string;
+  logoUrl?: string | null;
   format?: CreateTournamentRequestFormat;
   handicapLevel?: string;
   startDate?: string;
@@ -476,6 +487,7 @@ export type UpdateTournamentRequestAiRecommendation = {
 
 export interface UpdateTournamentRequest {
   name?: string;
+  logoUrl?: string | null;
   format?: UpdateTournamentRequestFormat;
   handicapLevel?: string;
   startDate?: string;

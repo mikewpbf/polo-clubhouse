@@ -11,6 +11,7 @@ import type { UpdateTournamentRequestStatus } from "./updateTournamentRequestSta
 
 export interface UpdateTournamentRequest {
   name?: string;
+  logoUrl?: string | null;
   format?: UpdateTournamentRequestFormat;
   handicapLevel?: string;
   startDate?: string;

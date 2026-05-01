@@ -15,4 +15,5 @@ export interface UpdateTeamRequest {
   contactPhone?: string;
   notes?: string;
   logoUrl?: string;
+  jerseyImageUrl?: string | null;
 }

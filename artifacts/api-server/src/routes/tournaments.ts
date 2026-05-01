@@ -64,7 +64,7 @@ router.post("/clubs/:clubId/tournaments", requireAuth, requireClubAdminForTourna
 
 router.post("/tournaments", requireAuth, async (req, res) => {
   try {
-    const { name, clubId, format, status, startDate, endDate, handicapLevel, chukkersPerMatch, description, matchDurationMin, gapBetweenMin, chukkerDurationMinutes, hasThirdPlace, finalsDate, isVisitingLeague } = req.body;
+    const { name, clubId, logoUrl, format, status, startDate, endDate, handicapLevel, chukkersPerMatch, description, matchDurationMin, gapBetweenMin, chukkerDurationMinutes, hasThirdPlace, finalsDate, isVisitingLeague } = req.body;
     if (!name) { res.status(400).json({ message: "Tournament name is required" }); return; }
     if (clubId && !isSuperAdmin(req.user!)) {
       const memberships = await db.select().from(adminClubMembershipsTable).where(eq(adminClubMembershipsTable.userId, req.user!.id));
@@ -74,7 +74,7 @@ router.post("/tournaments", requireAuth, async (req, res) => {
     }
     const [tournament] = await db.insert(tournamentsTable).values({
       clubId: clubId || null,
-      name, format, status, startDate, endDate, handicapLevel, chukkersPerMatch, description,
+      name, logoUrl, format, status, startDate, endDate, handicapLevel, chukkersPerMatch, description,
       matchDurationMin, gapBetweenMin, chukkerDurationMinutes, hasThirdPlace, finalsDate, isVisitingLeague,
     }).returning();
     res.status(201).json(tournament);

@@ -2050,6 +2050,10 @@ components:
         logoThumbUrl:
           type: string
           nullable: true
+        jerseyImageUrl:
+          type: string
+          nullable: true
+          description: Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.
         primaryColor:
           type: string
           nullable: true
@@ -2090,6 +2094,10 @@ components:
         logoThumbUrl:
           type: string
           nullable: true
+        jerseyImageUrl:
+          type: string
+          nullable: true
+          description: Team jersey image used by the jumbotron scoreboard.
         primaryColor:
           type: string
           nullable: true
@@ -2131,6 +2139,9 @@ components:
           type: string
         logoUrl:
           type: string
+        jerseyImageUrl:
+          type: string
+          nullable: true
       required:
         - name
 
@@ -2153,6 +2164,9 @@ components:
           type: string
         logoUrl:
           type: string
+        jerseyImageUrl:
+          type: string
+          nullable: true
 
     Tournament:
       type: object
@@ -2165,6 +2179,10 @@ components:
           format: uuid
         name:
           type: string
+        logoUrl:
+          type: string
+          nullable: true
+          description: Event/tournament logo shown on the jumbotron scoreboard and (future) lineup graphics.
         format:
           type: string
           nullable: true
@@ -2260,6 +2278,10 @@ components:
           format: uuid
         name:
           type: string
+        logoUrl:
+          type: string
+          nullable: true
+          description: Event/tournament logo shown on the jumbotron scoreboard and (future) lineup graphics.
         format:
           type: string
           nullable: true
@@ -2326,6 +2348,9 @@ components:
       properties:
         name:
           type: string
+        logoUrl:
+          type: string
+          nullable: true
         format:
           type: string
           enum: [round_robin, single_elim, double_elim, group_knockout, swiss]
@@ -2357,6 +2382,9 @@ components:
       properties:
         name:
           type: string
+        logoUrl:
+          type: string
+          nullable: true
         format:
           type: string
           enum: [round_robin, single_elim, double_elim, group_knockout, swiss]

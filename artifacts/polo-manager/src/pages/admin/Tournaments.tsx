@@ -12,10 +12,12 @@ import { Plus, Trophy, Calendar, X, Trash2, Pencil, Users, Sparkles, Check, Load
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { TournamentExportButton } from "@/components/TournamentExportImage";
+import { ImageCropUpload } from "@/components/ImageCropUpload";
 
 interface TournamentItem {
   id: string;
   name: string;
+  logoUrl?: string | null;
   format?: string | null;
   status: string;
   startDate?: string | null;
@@ -1711,6 +1713,7 @@ function TournamentForm({
 
   const isEditing = !!tournament;
   const [name, setName] = useState(tournament?.name || "");
+  const [logoUrl, setLogoUrl] = useState<string | null>(tournament?.logoUrl || null);
   const [clubId, setClubId] = useState(tournament?.clubId || "");
   const [clubs, setClubs] = useState<{ id: string; name: string }[]>([]);
   const [format, setFormat] = useState(tournament?.format || "round_robin");
@@ -1736,6 +1739,7 @@ function TournamentForm({
     try {
       const data: Record<string, any> = {
         name,
+        logoUrl,
         clubId: clubId || null,
         format,
         status,
@@ -1801,11 +1805,32 @@ function TournamentForm({
         </button>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-[12px] font-medium text-ink2 mb-1">Tournament Name</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} required />
+        <div className="flex items-start gap-4">
+          <div className="flex flex-col items-center gap-1.5">
+            <ImageCropUpload
+              value={logoUrl}
+              onChange={setLogoUrl}
+              name={name || "?"}
+              size={64}
+            />
+            <span className="text-[11px] text-ink3 text-center leading-tight">
+              Event logo
+            </span>
+            {logoUrl && (
+              <button
+                type="button"
+                className="text-[11px] text-red-600 hover:underline"
+                onClick={() => setLogoUrl(null)}
+              >
+                Remove
+              </button>
+            )}
           </div>
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-[12px] font-medium text-ink2 mb-1">Tournament Name</label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
           <div>
             <label className="block text-[12px] font-medium text-ink2 mb-1">Host Club</label>
             <select
@@ -1830,6 +1855,7 @@ function TournamentForm({
                 <option key={f.value} value={f.value}>{f.label}</option>
               ))}
             </select>
+          </div>
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

@@ -23,6 +23,7 @@ interface TeamItem {
   contactName?: string | null;
   contactPhone?: string | null;
   logoUrl?: string | null;
+  jerseyImageUrl?: string | null;
   clubId?: string | null;
 }
 
@@ -63,6 +64,31 @@ function LogoUpload({
         size={64}
       />
       <span className="text-[11px] text-ink3">Team logo</span>
+    </div>
+  );
+}
+
+function JerseyUpload({
+  currentJersey,
+  onJerseyChange,
+  initials,
+}: {
+  currentJersey?: string | null;
+  onJerseyChange: (url: string) => void;
+  initials: string;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <ImageCropUpload
+        value={currentJersey ?? null}
+        onChange={onJerseyChange}
+        name={initials}
+        size={64}
+      />
+      <span className="text-[11px] text-ink3 text-center">
+        Jersey<br />
+        <span className="text-[10px]">(broadcast only)</span>
+      </span>
     </div>
   );
 }
@@ -695,6 +721,7 @@ function TeamForm({
   const [scoreboardName, setScoreboardName] = useState(team?.scoreboardName || "");
   const [color, setColor] = useState(team?.primaryColor || "#0e2e14");
   const [logoUrl, setLogoUrl] = useState(team?.logoUrl || "");
+  const [jerseyImageUrl, setJerseyImageUrl] = useState(team?.jerseyImageUrl || "");
   const [contactName, setContactName] = useState(team?.contactName || "");
   const [contactPhone, setContactPhone] = useState(team?.contactPhone || "");
   const [saving, setSaving] = useState(false);
@@ -717,6 +744,7 @@ function TeamForm({
             scoreboardName: scoreboardName || null,
             primaryColor: color,
             logoUrl: logoUrl || undefined,
+            jerseyImageUrl: jerseyImageUrl || null,
             contactName: contactName || undefined,
             contactPhone: contactPhone || undefined,
           },
@@ -732,6 +760,7 @@ function TeamForm({
             scoreboardName: scoreboardName || undefined,
             primaryColor: color,
             logoUrl: logoUrl || undefined,
+            jerseyImageUrl: jerseyImageUrl || undefined,
             contactName: contactName || undefined,
             contactPhone: contactPhone || undefined,
           }),
@@ -779,12 +808,19 @@ function TeamForm({
       {isEditing ? (
         <form onSubmit={handleSubmit}>
           <div className="flex gap-6">
-            <LogoUpload
-              currentLogo={logoUrl}
-              onLogoChange={setLogoUrl}
-              color={color}
-              initials={initials}
-            />
+            <div className="flex flex-col gap-4">
+              <LogoUpload
+                currentLogo={logoUrl}
+                onLogoChange={setLogoUrl}
+                color={color}
+                initials={initials}
+              />
+              <JerseyUpload
+                currentJersey={jerseyImageUrl}
+                onJerseyChange={setJerseyImageUrl}
+                initials={initials}
+              />
+            </div>
             <div className="flex-1 space-y-3">
               <div className="flex gap-3">
                 <div className="flex-1">
@@ -856,12 +892,19 @@ function TeamForm({
       ) : (
         <form onSubmit={handleSubmit}>
           <div className="flex gap-6">
-            <LogoUpload
-              currentLogo={logoUrl}
-              onLogoChange={setLogoUrl}
-              color={color}
-              initials={initials}
-            />
+            <div className="flex flex-col gap-4">
+              <LogoUpload
+                currentLogo={logoUrl}
+                onLogoChange={setLogoUrl}
+                color={color}
+                initials={initials}
+              />
+              <JerseyUpload
+                currentJersey={jerseyImageUrl}
+                onJerseyChange={setJerseyImageUrl}
+                initials={initials}
+              />
+            </div>
             <div className="flex-1 space-y-3">
               <div className="flex gap-3">
                 <div className="flex-1">

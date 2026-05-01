@@ -211,6 +211,12 @@ export const GetClubBySlugResponse = zod.object({
       id: zod.string().uuid(),
       clubId: zod.string().uuid(),
       name: zod.string(),
+      logoUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Event\/tournament logo shown on the jumbotron scoreboard and (future) lineup graphics.",
+        ),
       format: zod
         .enum([
           "round_robin",
@@ -393,6 +399,12 @@ export const ListTeamsResponseItem = zod.object({
   shortName: zod.string().nullish(),
   logoUrl: zod.string().nullish(),
   logoThumbUrl: zod.string().nullish(),
+  jerseyImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+    ),
   primaryColor: zod.string().nullish(),
   handicap: zod.string().nullish(),
   contactName: zod.string().nullish(),
@@ -417,6 +429,7 @@ export const CreateTeamBody = zod.object({
   contactPhone: zod.string().optional(),
   notes: zod.string().optional(),
   logoUrl: zod.string().optional(),
+  jerseyImageUrl: zod.string().nullish(),
 });
 
 /**
@@ -433,6 +446,10 @@ export const GetTeamResponse = zod.object({
   shortName: zod.string().nullish(),
   logoUrl: zod.string().nullish(),
   logoThumbUrl: zod.string().nullish(),
+  jerseyImageUrl: zod
+    .string()
+    .nullish()
+    .describe("Team jersey image used by the jumbotron scoreboard."),
   primaryColor: zod.string().nullish(),
   handicap: zod.string().nullish(),
   contactName: zod.string().nullish(),
@@ -469,6 +486,7 @@ export const UpdateTeamBody = zod.object({
   contactPhone: zod.string().optional(),
   notes: zod.string().optional(),
   logoUrl: zod.string().optional(),
+  jerseyImageUrl: zod.string().nullish(),
 });
 
 export const UpdateTeamResponse = zod.object({
@@ -478,6 +496,12 @@ export const UpdateTeamResponse = zod.object({
   shortName: zod.string().nullish(),
   logoUrl: zod.string().nullish(),
   logoThumbUrl: zod.string().nullish(),
+  jerseyImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+    ),
   primaryColor: zod.string().nullish(),
   handicap: zod.string().nullish(),
   contactName: zod.string().nullish(),
@@ -500,6 +524,12 @@ export const ListTournamentsResponseItem = zod.object({
   id: zod.string().uuid(),
   clubId: zod.string().uuid(),
   name: zod.string(),
+  logoUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Event\/tournament logo shown on the jumbotron scoreboard and (future) lineup graphics.",
+    ),
   format: zod
     .enum([
       "round_robin",
@@ -541,6 +571,7 @@ export const CreateTournamentParams = zod.object({
 
 export const CreateTournamentBody = zod.object({
   name: zod.string(),
+  logoUrl: zod.string().nullish(),
   format: zod
     .enum([
       "round_robin",
@@ -617,6 +648,12 @@ export const GetTournamentResponse = zod.object({
   id: zod.string().uuid(),
   clubId: zod.string().uuid(),
   name: zod.string(),
+  logoUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Event\/tournament logo shown on the jumbotron scoreboard and (future) lineup graphics.",
+    ),
   format: zod
     .enum([
       "round_robin",
@@ -673,6 +710,12 @@ export const GetTournamentResponse = zod.object({
         shortName: zod.string().nullish(),
         logoUrl: zod.string().nullish(),
         logoThumbUrl: zod.string().nullish(),
+        jerseyImageUrl: zod
+          .string()
+          .nullish()
+          .describe(
+            "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+          ),
         primaryColor: zod.string().nullish(),
         handicap: zod.string().nullish(),
         contactName: zod.string().nullish(),
@@ -715,6 +758,12 @@ export const GetTournamentResponse = zod.object({
           shortName: zod.string().nullish(),
           logoUrl: zod.string().nullish(),
           logoThumbUrl: zod.string().nullish(),
+          jerseyImageUrl: zod
+            .string()
+            .nullish()
+            .describe(
+              "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+            ),
           primaryColor: zod.string().nullish(),
           handicap: zod.string().nullish(),
           contactName: zod.string().nullish(),
@@ -730,6 +779,12 @@ export const GetTournamentResponse = zod.object({
           shortName: zod.string().nullish(),
           logoUrl: zod.string().nullish(),
           logoThumbUrl: zod.string().nullish(),
+          jerseyImageUrl: zod
+            .string()
+            .nullish()
+            .describe(
+              "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+            ),
           primaryColor: zod.string().nullish(),
           handicap: zod.string().nullish(),
           contactName: zod.string().nullish(),
@@ -783,6 +838,7 @@ export const UpdateTournamentParams = zod.object({
 
 export const UpdateTournamentBody = zod.object({
   name: zod.string().optional(),
+  logoUrl: zod.string().nullish(),
   format: zod
     .enum([
       "round_robin",
@@ -812,6 +868,12 @@ export const UpdateTournamentResponse = zod.object({
   id: zod.string().uuid(),
   clubId: zod.string().uuid(),
   name: zod.string(),
+  logoUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Event\/tournament logo shown on the jumbotron scoreboard and (future) lineup graphics.",
+    ),
   format: zod
     .enum([
       "round_robin",
@@ -863,6 +925,12 @@ export const ListTournamentTeamsResponseItem = zod.object({
     shortName: zod.string().nullish(),
     logoUrl: zod.string().nullish(),
     logoThumbUrl: zod.string().nullish(),
+    jerseyImageUrl: zod
+      .string()
+      .nullish()
+      .describe(
+        "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+      ),
     primaryColor: zod.string().nullish(),
     handicap: zod.string().nullish(),
     contactName: zod.string().nullish(),
@@ -915,6 +983,12 @@ export const UpdateTournamentTeamResponse = zod.object({
     shortName: zod.string().nullish(),
     logoUrl: zod.string().nullish(),
     logoThumbUrl: zod.string().nullish(),
+    jerseyImageUrl: zod
+      .string()
+      .nullish()
+      .describe(
+        "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+      ),
     primaryColor: zod.string().nullish(),
     handicap: zod.string().nullish(),
     contactName: zod.string().nullish(),
@@ -1116,6 +1190,12 @@ export const ListMatchesResponseItem = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1131,6 +1211,12 @@ export const ListMatchesResponseItem = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1204,6 +1290,12 @@ export const GenerateScheduleResponse = zod.object({
           shortName: zod.string().nullish(),
           logoUrl: zod.string().nullish(),
           logoThumbUrl: zod.string().nullish(),
+          jerseyImageUrl: zod
+            .string()
+            .nullish()
+            .describe(
+              "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+            ),
           primaryColor: zod.string().nullish(),
           handicap: zod.string().nullish(),
           contactName: zod.string().nullish(),
@@ -1219,6 +1311,12 @@ export const GenerateScheduleResponse = zod.object({
           shortName: zod.string().nullish(),
           logoUrl: zod.string().nullish(),
           logoThumbUrl: zod.string().nullish(),
+          jerseyImageUrl: zod
+            .string()
+            .nullish()
+            .describe(
+              "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+            ),
           primaryColor: zod.string().nullish(),
           handicap: zod.string().nullish(),
           contactName: zod.string().nullish(),
@@ -1297,6 +1395,12 @@ export const GetMatchResponse = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1312,6 +1416,12 @@ export const GetMatchResponse = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1414,6 +1524,12 @@ export const UpdateMatchResponse = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1429,6 +1545,12 @@ export const UpdateMatchResponse = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1504,6 +1626,12 @@ export const UpdateMatchScoreResponse = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1519,6 +1647,12 @@ export const UpdateMatchScoreResponse = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1593,6 +1727,12 @@ export const UpdateMatchClockResponse = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1608,6 +1748,12 @@ export const UpdateMatchClockResponse = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1689,6 +1835,12 @@ export const UpdateMatchStatusResponse = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1704,6 +1856,12 @@ export const UpdateMatchStatusResponse = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1774,6 +1932,12 @@ export const AdvanceChukkerResponse = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1789,6 +1953,12 @@ export const AdvanceChukkerResponse = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1884,6 +2054,12 @@ export const ListLiveMatchesResponseItem = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1899,6 +2075,12 @@ export const ListLiveMatchesResponseItem = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1971,6 +2153,12 @@ export const ListTodayMatchesResponseItem = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -1986,6 +2174,12 @@ export const ListTodayMatchesResponseItem = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -2060,6 +2254,12 @@ export const ListUpcomingMatchesResponseItem = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -2075,6 +2275,12 @@ export const ListUpcomingMatchesResponseItem = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -2153,6 +2359,12 @@ export const GetAdminDashboardResponse = zod.object({
           shortName: zod.string().nullish(),
           logoUrl: zod.string().nullish(),
           logoThumbUrl: zod.string().nullish(),
+          jerseyImageUrl: zod
+            .string()
+            .nullish()
+            .describe(
+              "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+            ),
           primaryColor: zod.string().nullish(),
           handicap: zod.string().nullish(),
           contactName: zod.string().nullish(),
@@ -2168,6 +2380,12 @@ export const GetAdminDashboardResponse = zod.object({
           shortName: zod.string().nullish(),
           logoUrl: zod.string().nullish(),
           logoThumbUrl: zod.string().nullish(),
+          jerseyImageUrl: zod
+            .string()
+            .nullish()
+            .describe(
+              "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+            ),
           primaryColor: zod.string().nullish(),
           handicap: zod.string().nullish(),
           contactName: zod.string().nullish(),
@@ -2294,6 +2512,12 @@ export const GetMyTeamDashboardResponse = zod.object({
     shortName: zod.string().nullish(),
     logoUrl: zod.string().nullish(),
     logoThumbUrl: zod.string().nullish(),
+    jerseyImageUrl: zod
+      .string()
+      .nullish()
+      .describe(
+        "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+      ),
     primaryColor: zod.string().nullish(),
     handicap: zod.string().nullish(),
     contactName: zod.string().nullish(),
@@ -2336,6 +2560,12 @@ export const GetMyTeamDashboardResponse = zod.object({
           shortName: zod.string().nullish(),
           logoUrl: zod.string().nullish(),
           logoThumbUrl: zod.string().nullish(),
+          jerseyImageUrl: zod
+            .string()
+            .nullish()
+            .describe(
+              "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+            ),
           primaryColor: zod.string().nullish(),
           handicap: zod.string().nullish(),
           contactName: zod.string().nullish(),
@@ -2351,6 +2581,12 @@ export const GetMyTeamDashboardResponse = zod.object({
           shortName: zod.string().nullish(),
           logoUrl: zod.string().nullish(),
           logoThumbUrl: zod.string().nullish(),
+          jerseyImageUrl: zod
+            .string()
+            .nullish()
+            .describe(
+              "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+            ),
           primaryColor: zod.string().nullish(),
           handicap: zod.string().nullish(),
           contactName: zod.string().nullish(),
@@ -2415,6 +2651,12 @@ export const GetMyTeamDashboardResponse = zod.object({
           shortName: zod.string().nullish(),
           logoUrl: zod.string().nullish(),
           logoThumbUrl: zod.string().nullish(),
+          jerseyImageUrl: zod
+            .string()
+            .nullish()
+            .describe(
+              "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+            ),
           primaryColor: zod.string().nullish(),
           handicap: zod.string().nullish(),
           contactName: zod.string().nullish(),
@@ -2430,6 +2672,12 @@ export const GetMyTeamDashboardResponse = zod.object({
           shortName: zod.string().nullish(),
           logoUrl: zod.string().nullish(),
           logoThumbUrl: zod.string().nullish(),
+          jerseyImageUrl: zod
+            .string()
+            .nullish()
+            .describe(
+              "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+            ),
           primaryColor: zod.string().nullish(),
           handicap: zod.string().nullish(),
           contactName: zod.string().nullish(),
@@ -2465,6 +2713,12 @@ export const GetMyTeamDashboardResponse = zod.object({
       id: zod.string().uuid(),
       clubId: zod.string().uuid(),
       name: zod.string(),
+      logoUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Event\/tournament logo shown on the jumbotron scoreboard and (future) lineup graphics.",
+        ),
       format: zod
         .enum([
           "round_robin",
@@ -2543,6 +2797,12 @@ export const GetMyTeamScheduleResponseItem = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -2558,6 +2818,12 @@ export const GetMyTeamScheduleResponseItem = zod.object({
       shortName: zod.string().nullish(),
       logoUrl: zod.string().nullish(),
       logoThumbUrl: zod.string().nullish(),
+      jerseyImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+        ),
       primaryColor: zod.string().nullish(),
       handicap: zod.string().nullish(),
       contactName: zod.string().nullish(),
@@ -2607,6 +2873,12 @@ export const GetTournamentStandingsResponseItem = zod.object({
     shortName: zod.string().nullish(),
     logoUrl: zod.string().nullish(),
     logoThumbUrl: zod.string().nullish(),
+    jerseyImageUrl: zod
+      .string()
+      .nullish()
+      .describe(
+        "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+      ),
     primaryColor: zod.string().nullish(),
     handicap: zod.string().nullish(),
     contactName: zod.string().nullish(),
@@ -2766,6 +3038,12 @@ export const GetWidgetFixturesResponse = zod.object({
           shortName: zod.string().nullish(),
           logoUrl: zod.string().nullish(),
           logoThumbUrl: zod.string().nullish(),
+          jerseyImageUrl: zod
+            .string()
+            .nullish()
+            .describe(
+              "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+            ),
           primaryColor: zod.string().nullish(),
           handicap: zod.string().nullish(),
           contactName: zod.string().nullish(),
@@ -2781,6 +3059,12 @@ export const GetWidgetFixturesResponse = zod.object({
           shortName: zod.string().nullish(),
           logoUrl: zod.string().nullish(),
           logoThumbUrl: zod.string().nullish(),
+          jerseyImageUrl: zod
+            .string()
+            .nullish()
+            .describe(
+              "Team jersey image used by the jumbotron scoreboard. Not surfaced in spectator views.",
+            ),
           primaryColor: zod.string().nullish(),
           handicap: zod.string().nullish(),
           contactName: zod.string().nullish(),
@@ -3162,6 +3446,12 @@ export const PublishTournamentResponse = zod.object({
   id: zod.string().uuid(),
   clubId: zod.string().uuid(),
   name: zod.string(),
+  logoUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Event\/tournament logo shown on the jumbotron scoreboard and (future) lineup graphics.",
+    ),
   format: zod
     .enum([
       "round_robin",

@@ -9,6 +9,7 @@ import type { CreateTournamentRequestFormat } from "./createTournamentRequestFor
 
 export interface CreateTournamentRequest {
   name: string;
+  logoUrl?: string | null;
   format?: CreateTournamentRequestFormat;
   handicapLevel?: string;
   startDate?: string;

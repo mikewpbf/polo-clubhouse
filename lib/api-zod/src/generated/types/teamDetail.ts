@@ -14,6 +14,8 @@ export interface TeamDetail {
   shortName?: string | null;
   logoUrl?: string | null;
   logoThumbUrl?: string | null;
+  /** Team jersey image used by the jumbotron scoreboard. */
+  jerseyImageUrl?: string | null;
   primaryColor?: string | null;
   handicap?: string | null;
   contactName?: string | null;

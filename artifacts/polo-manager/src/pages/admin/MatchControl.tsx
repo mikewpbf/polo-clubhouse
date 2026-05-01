@@ -1005,69 +1005,6 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
         </div>
         )}
 
-        {/* Possession Tracker */}
-        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[12px] font-sans font-medium uppercase tracking-wider" style={dk ? { color: textMuted } : undefined}>Possession Tracker</span>
-            <button
-              onClick={async () => {
-                if (!confirm("Reset all possession data for this match?")) return;
-                try {
-                  await apiFetch(`/matches/${match.id}/possession`, { method: "DELETE" });
-                  setPossessionStats(null);
-                  setPossessionState(null);
-                } catch {}
-              }}
-              className="text-[11px] px-2 py-0.5 rounded text-red-500 hover:bg-red-50 transition-colors"
-            >Reset</button>
-          </div>
-          {(() => {
-            const homeColor = match.homeTeam?.primaryColor || "#1B5E20";
-            const awayColor = match.awayTeam?.primaryColor || "#6A1B1A";
-            return (
-              <div className="flex gap-2 mb-3">
-                {([
-                  { state: "home" as const, label: match.homeTeam?.name || "Home", color: homeColor },
-                  { state: "loose" as const, label: "50/50", color: dk ? "#555" : "#999" },
-                  { state: "away" as const, label: match.awayTeam?.name || "Away", color: awayColor },
-                ]).map(({ state, label, color }) => {
-                  const isActive = possessionState === state;
-                  return (
-                    <button
-                      key={state}
-                      onClick={() => handleSetPossession(state)}
-                      disabled={isFinal}
-                      className="flex-1 h-11 rounded-[8px] font-sans font-bold text-[12px] transition-all disabled:opacity-30 active:scale-95 leading-tight px-2"
-                      style={{
-                        background: isActive ? color : `${color}28`,
-                        color: isActive ? "#fff" : color,
-                        border: `2px solid ${color}`,
-                        boxShadow: isActive ? `0 0 0 3px ${color}44` : undefined,
-                      }}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })()}
-          {possessionStats ? (
-            <>
-              <div className="flex items-center justify-between text-[13px] font-bold mb-1.5">
-                <span style={{ color: match.homeTeam?.primaryColor || (dk ? "#f0f0f0" : "var(--ink)") }}>{possessionStats.homePercent}%</span>
-                <span className="text-[10px] font-normal uppercase tracking-wider" style={{ color: dk ? textMuted : "#aaa" }}>possession</span>
-                <span style={{ color: match.awayTeam?.primaryColor || (dk ? "#f0f0f0" : "var(--ink)") }}>{possessionStats.awayPercent}%</span>
-              </div>
-              <div className="flex h-3 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.06)" }}>
-                <div style={{ width: `${possessionStats.homePercent}%`, background: match.homeTeam?.primaryColor || "#1B5E20", transition: "width 0.5s", minWidth: possessionStats.homePercent > 0 ? 4 : 0 }} />
-                <div style={{ flex: 1, background: match.awayTeam?.primaryColor || "#6A1B1A", transition: "width 0.5s", minWidth: possessionStats.awayPercent > 0 ? 4 : 0 }} />
-              </div>
-            </>
-          ) : (
-            <div className="text-[12px] text-center py-1" style={{ color: dk ? textMuted : "#aaa" }}>Tap a team to start tracking</div>
-          )}
-        </div>
         </>)}
 
         {showSection("gfx") && (
@@ -1102,28 +1039,6 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
         )}
 
         {(showSection("gfx") || mode === "score") && (<>
-        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
-          <span className="text-[12px] font-sans font-medium uppercase tracking-wider block mb-3" style={dk ? { color: textMuted } : undefined}>Match Status</span>
-          <div className="flex gap-2">
-            {statusOptions.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => handleStatus(opt.value)}
-                className={`flex-1 py-2.5 px-2 rounded-[8px] font-sans font-medium text-[13px] transition-colors ${
-                  match.status === opt.value
-                    ? "bg-g700 text-white"
-                    : dk ? "" : "bg-g50 text-ink2 hover:bg-g100 hover:text-ink"
-                }`}
-                style={match.status !== opt.value && dk ? { background: btnMuted, color: btnMutedText } : undefined}
-              >
-                {opt.value === "live" && match.status === "live" && (
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-white mr-1.5 animate-live-dot align-middle" />
-                )}
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <div className="flex items-center gap-2 mb-3">
             <Monitor className="w-4 h-4" style={dk ? { color: textMuted } : undefined} />
@@ -1188,6 +1103,28 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                 );
               })}
             </div>
+          </div>
+        </div>
+        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
+          <span className="text-[12px] font-sans font-medium uppercase tracking-wider block mb-3" style={dk ? { color: textMuted } : undefined}>Match Status</span>
+          <div className="flex gap-2">
+            {statusOptions.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleStatus(opt.value)}
+                className={`flex-1 py-2.5 px-2 rounded-[8px] font-sans font-medium text-[13px] transition-colors ${
+                  match.status === opt.value
+                    ? "bg-g700 text-white"
+                    : dk ? "" : "bg-g50 text-ink2 hover:bg-g100 hover:text-ink"
+                }`}
+                style={match.status !== opt.value && dk ? { background: btnMuted, color: btnMutedText } : undefined}
+              >
+                {opt.value === "live" && match.status === "live" && (
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-white mr-1.5 animate-live-dot align-middle" />
+                )}
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
         </>)}
@@ -1302,6 +1239,71 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
           )}
         </div>
         </>)}
+
+        {mode === "score" && (
+        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[12px] font-sans font-medium uppercase tracking-wider" style={dk ? { color: textMuted } : undefined}>Possession Tracker</span>
+            <button
+              onClick={async () => {
+                if (!confirm("Reset all possession data for this match?")) return;
+                try {
+                  await apiFetch(`/matches/${match.id}/possession`, { method: "DELETE" });
+                  setPossessionStats(null);
+                  setPossessionState(null);
+                } catch {}
+              }}
+              className="text-[11px] px-2 py-0.5 rounded text-red-500 hover:bg-red-50 transition-colors"
+            >Reset</button>
+          </div>
+          {(() => {
+            const homeColor = match.homeTeam?.primaryColor || "#1B5E20";
+            const awayColor = match.awayTeam?.primaryColor || "#6A1B1A";
+            return (
+              <div className="flex gap-2 mb-3">
+                {([
+                  { state: "home" as const, label: match.homeTeam?.name || "Home", color: homeColor },
+                  { state: "loose" as const, label: "50/50", color: dk ? "#555" : "#999" },
+                  { state: "away" as const, label: match.awayTeam?.name || "Away", color: awayColor },
+                ]).map(({ state, label, color }) => {
+                  const isActive = possessionState === state;
+                  return (
+                    <button
+                      key={state}
+                      onClick={() => handleSetPossession(state)}
+                      disabled={isFinal}
+                      className="flex-1 h-11 rounded-[8px] font-sans font-bold text-[12px] transition-all disabled:opacity-30 active:scale-95 leading-tight px-2"
+                      style={{
+                        background: isActive ? color : `${color}28`,
+                        color: isActive ? "#fff" : color,
+                        border: `2px solid ${color}`,
+                        boxShadow: isActive ? `0 0 0 3px ${color}44` : undefined,
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
+          {possessionStats ? (
+            <>
+              <div className="flex items-center justify-between text-[13px] font-bold mb-1.5">
+                <span style={{ color: match.homeTeam?.primaryColor || (dk ? "#f0f0f0" : "var(--ink)") }}>{possessionStats.homePercent}%</span>
+                <span className="text-[10px] font-normal uppercase tracking-wider" style={{ color: dk ? textMuted : "#aaa" }}>possession</span>
+                <span style={{ color: match.awayTeam?.primaryColor || (dk ? "#f0f0f0" : "var(--ink)") }}>{possessionStats.awayPercent}%</span>
+              </div>
+              <div className="flex h-3 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.06)" }}>
+                <div style={{ width: `${possessionStats.homePercent}%`, background: match.homeTeam?.primaryColor || "#1B5E20", transition: "width 0.5s", minWidth: possessionStats.homePercent > 0 ? 4 : 0 }} />
+                <div style={{ flex: 1, background: match.awayTeam?.primaryColor || "#6A1B1A", transition: "width 0.5s", minWidth: possessionStats.awayPercent > 0 ? 4 : 0 }} />
+              </div>
+            </>
+          ) : (
+            <div className="text-[12px] text-center py-1" style={{ color: dk ? textMuted : "#aaa" }}>Tap a team to start tracking</div>
+          )}
+        </div>
+        )}
 
         {(showSection("gfx") || mode === "score") && (<>
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>

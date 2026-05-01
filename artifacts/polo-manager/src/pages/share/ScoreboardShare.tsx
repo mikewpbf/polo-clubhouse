@@ -42,6 +42,15 @@ export function ScoreboardShare() {
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   useEffect(() => {
+    if (match) {
+      const home = match.homeTeam?.name || "Home";
+      const away = match.awayTeam?.name || "Away";
+      document.title = `${home} vs ${away} — Polo Clubhouse`;
+    }
+    return () => { document.title = "Polo Clubhouse"; };
+  }, [match?.homeTeam?.name, match?.awayTeam?.name]);
+
+  useEffect(() => {
     if (!token) return;
     fetch(`${base}/api/share/${token}`)
       .then(async (r) => {
@@ -106,10 +115,18 @@ export function ScoreboardShare() {
   const homeColor = match.homeTeam?.primaryColor || "#4ade80";
   const awayColor = match.awayTeam?.primaryColor || "#f87171";
   const isLive = match.status === "live" || match.status === "halftime";
+  const matchTitle = (match.homeTeam?.name && match.awayTeam?.name)
+    ? `${match.homeTeam.name} vs ${match.awayTeam.name}`
+    : null;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-black px-4 py-8">
       <div className="w-full max-w-sm">
+        {matchTitle && (
+          <h1 className="text-center text-[13px] font-semibold mb-3 tracking-wide" style={{ color: "rgba(255,255,255,0.35)" }}>
+            {matchTitle}
+          </h1>
+        )}
         <div className="rounded-[20px] overflow-hidden" style={{ background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.08)" }}>
           {/* Status bar */}
           <div className="flex items-center justify-center gap-2 px-4 py-2.5" style={{ background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>

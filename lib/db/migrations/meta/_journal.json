@@ -22,6 +22,27 @@
       "when": 1777636684316,
       "tag": "0002_match_event_player_stats_and_share_links",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777636684317,
+      "tag": "0003_share_links_stats_gfx_only",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777636684318,
+      "tag": "0004_share_links_expires_at_required",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1746129600000,
+      "tag": "0005_share_page_type_scoreboard_full_control",
+      "breakpoints": true
     }
   ]
 }

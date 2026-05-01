@@ -526,7 +526,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
               </div>
               <div className="grid grid-cols-3 gap-1.5">
                 {([
-                  { label: "Throw-In Won", type: "throw_in_won" as const },
+                  { label: "Bowl In Won", type: "throw_in_won" as const },
                   { label: "Penalty Out", type: "penalty_out" as const },
                   { label: "Fouls Won", type: "fouls_won" as const },
                 ]).map((b) => (
@@ -816,7 +816,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                       {p.handicap != null && <span className="text-[9px] font-mono px-1 rounded shrink-0 ml-1" style={dk ? { background: "rgba(255,255,255,0.08)", color: textMuted } : { background: "rgba(0,0,0,0.06)", color: "#666" }}>{p.handicap}</span>}
                     </div>
                     <div className="flex gap-1">
-                      <button onClick={() => handlePlayerStat({ eventType: "throw_in_won", teamId, playerId: p.id })} disabled={isFinal} className={playerBtnCls} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>Throw In Won</button>
+                      <button onClick={() => handlePlayerStat({ eventType: "throw_in_won", teamId, playerId: p.id })} disabled={isFinal} className={playerBtnCls} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>Bowl In Won</button>
                       <button onClick={() => handlePlayerStat({ eventType: "penalty_out", teamId, playerId: p.id })} disabled={isFinal} className={playerBtnCls} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>Pen Out</button>
                       <button onClick={() => handlePlayerStat({ eventType: "shot_on_goal", teamId, playerId: p.id })} disabled={isFinal} className={playerBtnCls} style={dk ? { background: btnMuted, color: btnMutedText } : undefined} title="Records shot on goal for this player + knock in for opponents">Shot on Goal</button>
                     </div>
@@ -980,7 +980,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                 const STAT_EVENT_LABELS: Record<string, string> = {
                   bowl_in: "Bowl In", knock_in: "Knock In", foul: "Foul",
                   penalty_goal: "Penalty Goal", shot_on_goal: "Shot on Goal",
-                  throw_in_won: "Throw In Won", penalty_in: "Penalty In",
+                  throw_in_won: "Bowl In Won", penalty_in: "Penalty In",
                   penalty_out: "Pen Out", foul_committed: "Foul Committed",
                   fouls_won: "Fouls Won",
                 };

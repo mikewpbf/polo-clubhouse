@@ -829,6 +829,21 @@ router.post("/matches/:matchId/event", requireMatchWrite("stats", "full_control"
         createdBy: req.user?.id ?? null,
       });
 
+      // When a player wins a throw-in, auto-record a bowl_in for their team.
+      if (eventType === "throw_in_won" && teamId) {
+        await db.insert(matchEventsTable).values({
+          matchId: match.id,
+          eventType: "bowl_in",
+          teamId,
+          playerId: playerId || null,
+          playerName,
+          chukker: match.currentChukker,
+          clockSeconds: elapsed,
+          scoreSnapshot: { home: match.homeScore || 0, away: match.awayScore || 0 },
+          createdBy: req.user?.id ?? null,
+        });
+      }
+
       // When a player records a penalty_in, auto-record a penalty_goal for their team.
       if (eventType === "penalty_in" && teamId) {
         await db.insert(matchEventsTable).values({

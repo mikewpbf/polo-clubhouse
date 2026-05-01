@@ -939,6 +939,28 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
           </div>
         </div>
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
+          <span className="text-[12px] font-sans font-medium uppercase tracking-wider block mb-3" style={dk ? { color: textMuted } : undefined}>Match Status</span>
+          <div className="flex gap-2">
+            {statusOptions.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleStatus(opt.value)}
+                className={`flex-1 py-2.5 px-2 rounded-[8px] font-sans font-medium text-[13px] transition-colors ${
+                  match.status === opt.value
+                    ? "bg-g700 text-white"
+                    : dk ? "" : "bg-g50 text-ink2 hover:bg-g100 hover:text-ink"
+                }`}
+                style={match.status !== opt.value && dk ? { background: btnMuted, color: btnMutedText } : undefined}
+              >
+                {opt.value === "live" && match.status === "live" && (
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-white mr-1.5 animate-live-dot align-middle" />
+                )}
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <div className="flex items-center gap-2 mb-3">
             <Monitor className="w-4 h-4" style={dk ? { color: textMuted } : undefined} />
             <span className="text-[12px] font-sans font-medium uppercase tracking-wider flex-1" style={dk ? { color: textMuted } : undefined}>Broadcast GFX</span>

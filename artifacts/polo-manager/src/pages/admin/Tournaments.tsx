@@ -264,7 +264,9 @@ function TournamentTeamsSection({
   useEffect(() => { loadData(); }, [loadData]);
 
   const enrolledIds = new Set(tournamentTeams.map(tt => tt.teamId));
-  const availableTeams = allClubTeams.filter(t => !enrolledIds.has(t.id));
+  const availableTeams = allClubTeams
+    .filter(t => !enrolledIds.has(t.id))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const handleAdd = async () => {
     if (!selectedTeamId) return;

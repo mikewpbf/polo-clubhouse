@@ -154,6 +154,31 @@ const EVENT_COLORS: Record<string, string> = {
   injury_timeout: "#dc2626",
 };
 
+function DelayBadge({ offsetSeconds }: { offsetSeconds: number }) {
+  return (
+    <div style={{
+      position: "fixed",
+      top: 16,
+      right: 16,
+      display: "flex",
+      alignItems: "center",
+      gap: 6,
+      background: "rgba(0,0,0,0.72)",
+      border: "1px solid rgba(251,191,36,0.55)",
+      borderRadius: 6,
+      padding: "5px 10px",
+      fontFamily: "'Inter', 'Helvetica Neue', sans-serif",
+      pointerEvents: "none",
+      zIndex: 9999,
+    }}>
+      <span style={{ fontSize: 13, color: "#fbbf24" }}>⏱</span>
+      <span style={{ fontSize: 11, fontWeight: 700, color: "#fbbf24", letterSpacing: 1, textTransform: "uppercase" }}>
+        DELAY {offsetSeconds}s
+      </span>
+    </div>
+  );
+}
+
 const BASE_FONT_SIZE = 12;
 const BASE_SPACING = 1.5;
 const MAX_SPACING = 12;
@@ -620,6 +645,7 @@ export function ScoreBugOverlay() {
   const scaleOverride = urlParams.get("scale");
   const oxOverride = urlParams.get("ox");
   const oyOverride = urlParams.get("oy");
+  const hideDelay = urlParams.get("hideDelay") === "1";
 
   const effectiveResolution = resOverride || data?.broadcastResolution || "1080p";
   const is4K = effectiveResolution === "4k";
@@ -766,6 +792,10 @@ export function ScoreBugOverlay() {
 
   const style = styleOverride || data.broadcastStyle || "option1";
   const isVisible = data.broadcastVisible;
+  const delayOffsetSeconds = data.scoringLocation === "field" && data.broadcastOffsetSeconds && data.broadcastOffsetSeconds > 0
+    ? data.broadcastOffsetSeconds
+    : null;
+  const showDelayBadge = !hideDelay && delayOffsetSeconds !== null;
 
   const clockColor = getClockColor(data, remaining, stoppageEvent);
   const hasTournament = !!data.tournament?.name;
@@ -790,6 +820,7 @@ export function ScoreBugOverlay() {
           possession={data.possession}
           tournament={data.tournament}
         />
+        {showDelayBadge && <DelayBadge offsetSeconds={delayOffsetSeconds!} />}
       </div>
     );
   }
@@ -812,6 +843,7 @@ export function ScoreBugOverlay() {
           possession={data.possession}
           tournament={data.tournament}
         />
+        {showDelayBadge && <DelayBadge offsetSeconds={delayOffsetSeconds!} />}
       </div>
     );
   }
@@ -826,6 +858,7 @@ export function ScoreBugOverlay() {
         pointerEvents: isVisible ? "auto" : "none",
       }}>
         <FieldBugOverlay field={data.field ?? null} club={data.club ?? null} showClock />
+        {showDelayBadge && <DelayBadge offsetSeconds={delayOffsetSeconds!} />}
       </div>
     );
   }
@@ -837,6 +870,7 @@ export function ScoreBugOverlay() {
       transform: isVisible ? "translateY(0)" : "translateY(-12px)",
       pointerEvents: isVisible ? "auto" : "none",
     }}>
+      {showDelayBadge && <DelayBadge offsetSeconds={delayOffsetSeconds!} />}
       {style === "option2" ? (
         <>
           <CompactPremiumBar data={data} clock={clock} clockColor={clockColor} titleBarBorderBottom="1px solid rgba(255, 255, 255, 0.08)" />

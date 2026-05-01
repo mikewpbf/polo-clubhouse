@@ -203,7 +203,7 @@ export function ScoreboardShare() {
         {/* Live indicator */}
         {isLive && (
           <p className="text-center text-[11px] mt-4" style={{ color: "rgba(255,255,255,0.2)" }}>
-            Updates automatically every 3 seconds
+            Updates automatically every 5 seconds
           </p>
         )}
       </div>

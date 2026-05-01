@@ -798,6 +798,12 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                         <button key={d} onClick={() => handlePlayerStat({ eventType: "penalty_in", teamId, playerId: p.id, distance: d })} disabled={isFinal} className={penInBtnCls} style={dk ? { background: "rgba(16,185,129,0.15)", color: "#34d399" } : undefined}>{d}y</button>
                       ))}
                     </div>
+                    <div className="flex gap-1 items-center">
+                      <span className="text-[8px] uppercase tracking-wider shrink-0 mr-0.5" style={{ color: dk ? textMuted : "#aaa" }}>Foul</span>
+                      {(["1","2","3","4","5a","5b"] as const).map(sev => (
+                        <button key={sev} onClick={() => handlePlayerStat({ eventType: "foul_committed", teamId, playerId: p.id, severity: sev })} disabled={isFinal} className={`flex-1 h-6 rounded-[5px] font-sans font-bold text-[9px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-rose-50 text-rose-800 hover:bg-rose-100"}`} style={dk ? { background: "rgba(239,68,68,0.15)", color: "#f87171" } : undefined}>{sev.toUpperCase()}</button>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>

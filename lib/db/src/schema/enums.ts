@@ -66,4 +66,15 @@ export const matchEventTypeEnum = pgEnum("match_event_type", [
   "foul",
   "penalty_goal",
   "shot_on_goal",
+  "penalty_in",
+  "penalty_out",
+  "throw_in_won",
+  "foul_committed",
+  "fouls_won",
+]);
+
+export const sharePageTypeEnum = pgEnum("share_page_type", [
+  "score",
+  "stats",
+  "gfx",
 ]);

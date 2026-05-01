@@ -20,23 +20,6 @@ export declare const playersTable: import("drizzle-orm/pg-core").PgTableWithColu
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        teamId: import("drizzle-orm/pg-core").PgColumn<{
-            name: "team_id";
-            tableName: "players";
-            dataType: "string";
-            columnType: "PgUUID";
-            data: string;
-            driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
         name: import("drizzle-orm/pg-core").PgColumn<{
             name: "name";
             tableName: "players";
@@ -63,23 +46,6 @@ export declare const playersTable: import("drizzle-orm/pg-core").PgTableWithColu
             columnType: "PgNumeric";
             data: string;
             driverParam: string;
-            notNull: false;
-            hasDefault: false;
-            isPrimaryKey: false;
-            isAutoincrement: false;
-            hasRuntimeDefault: false;
-            enumValues: undefined;
-            baseColumn: never;
-            identity: undefined;
-            generated: undefined;
-        }, {}, {}>;
-        position: import("drizzle-orm/pg-core").PgColumn<{
-            name: "position";
-            tableName: "players";
-            dataType: "number";
-            columnType: "PgInteger";
-            data: number;
-            driverParam: string | number;
             notNull: false;
             hasDefault: false;
             isPrimaryKey: false;
@@ -233,8 +199,6 @@ export declare const insertPlayerSchema: z.ZodObject<{
     name: z.ZodString;
     isActive: z.ZodOptional<z.ZodBoolean>;
     handicap: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    teamId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
-    position: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     headshotUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     dateOfBirth: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     homeClubId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;

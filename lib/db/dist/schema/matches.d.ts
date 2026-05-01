@@ -510,6 +510,57 @@ export declare const matchesTable: import("drizzle-orm/pg-core").PgTableWithColu
         }, {}, {
             length: 64;
         }>;
+        streamStartedAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "stream_started_at";
+            tableName: "matches";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        scoringLocation: import("drizzle-orm/pg-core").PgColumn<{
+            name: "scoring_location";
+            tableName: "matches";
+            dataType: "string";
+            columnType: "PgEnumColumn";
+            data: "studio" | "field";
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: ["studio", "field"];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        broadcastOffsetSeconds: import("drizzle-orm/pg-core").PgColumn<{
+            name: "broadcast_offset_seconds";
+            tableName: "matches";
+            dataType: "string";
+            columnType: "PgNumeric";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
     };
     dialect: "pg";
 }>;
@@ -549,6 +600,12 @@ export declare const insertMatchSchema: z.ZodObject<{
     lastGoalTimestamp: z.ZodOptional<z.ZodNullable<z.ZodDate>>;
     streamUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     possessionToken: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    streamStartedAt: z.ZodOptional<z.ZodNullable<z.ZodDate>>;
+    scoringLocation: z.ZodOptional<z.ZodEnum<{
+        studio: "studio";
+        field: "field";
+    }>>;
+    broadcastOffsetSeconds: z.ZodOptional<z.ZodString>;
 }, {
     out: {};
     in: {};

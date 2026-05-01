@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { ogMetaMiddleware } from "./lib/og-meta";
 
 const app: Express = express();
 
@@ -42,6 +43,7 @@ if (process.env.NODE_ENV === "production") {
   const staticDir = path.resolve(__dirname, "public");
 
   if (existsSync(staticDir)) {
+    app.use(ogMetaMiddleware);
     app.use(express.static(staticDir));
     app.get("/*splat", (req: Request, res: Response, next: NextFunction) => {
       // Anything under /api is the API surface — let the router 404 it as JSON.

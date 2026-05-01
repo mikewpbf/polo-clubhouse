@@ -165,11 +165,11 @@ export declare const userInvitesTable: import("drizzle-orm/pg-core").PgTableWith
 }>;
 export declare const insertUserInviteSchema: z.ZodObject<{
     email: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    token: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    expiresAt: z.ZodOptional<z.ZodNullable<z.ZodDate>>;
     teamManagerAssignmentId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     clubMembershipUserId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     clubMembershipClubId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
-    token: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    expiresAt: z.ZodOptional<z.ZodNullable<z.ZodDate>>;
     usedAt: z.ZodOptional<z.ZodNullable<z.ZodDate>>;
     sentBy: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
 }, {

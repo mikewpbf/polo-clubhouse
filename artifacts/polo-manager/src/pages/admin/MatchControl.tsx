@@ -3,25 +3,32 @@ import { useState, useEffect, useCallback, useRef, type CSSProperties } from "re
 import { MatchClock } from "@/components/MatchClock";
 import { PageLoading } from "@/components/LoadingBar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Play, Pause, RotateCcw, ChevronLeft, ChevronRight, CheckSquare, ChevronUp, ChevronDown, Plus, AlertTriangle, RefreshCw, Shield, HeartPulse, Copy, Eye, EyeOff, Monitor, Crosshair, Trash2, Link, Moon, Sun, Video, Timer } from "lucide-react";
+import { ArrowLeft, Play, Pause, RotateCcw, ChevronLeft, ChevronRight, CheckSquare, ChevronUp, ChevronDown, Plus, AlertTriangle, RefreshCw, Shield, HeartPulse, Copy, Eye, EyeOff, Monitor, Crosshair, Trash2, Link, Moon, Sun, Video, Timer, Share2 } from "lucide-react";
 import { getStoredToken } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
+import { GamePicker } from "@/components/GamePicker";
+import { ShareLinksManager } from "@/components/ShareLinksManager";
 
-async function apiFetch(path: string, options: RequestInit = {}) {
-  const token = getStoredToken();
-  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-  const res = await fetch(`${base}/api${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Request failed");
-  return data;
+export type ControlMode = "score" | "stats" | "gfx" | "full";
+
+function makeApiFetch(shareToken?: string | null) {
+  return async function apiFetch(path: string, options: RequestInit = {}) {
+    const token = getStoredToken();
+    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+    const res = await fetch(`${base}/api${path}`, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(shareToken ? { "x-share-token": shareToken } : {}),
+        ...options.headers,
+      },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Request failed");
+    return data;
+  };
 }
 
 interface Player {
@@ -61,10 +68,13 @@ interface MatchData {
   broadcastOffsetSeconds?: number;
 }
 
-export function MatchControl() {
+export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, hideHeader = false }: { mode?: ControlMode; shareToken?: string | null; matchId?: string; hideHeader?: boolean } = {}) {
   const [, params] = useRoute("/admin/match/:id/control");
   const [, navigate] = useLocation();
-  const matchId = params?.id;
+  const matchId = matchIdProp || params?.id;
+  const isShareMode = !!shareToken;
+  const apiFetch = useCallback(makeApiFetch(shareToken), [shareToken]);
+  const showSection = (s: ControlMode) => mode === "full" || mode === s;
 
   const [match, setMatch] = useState<MatchData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -376,19 +386,25 @@ export function MatchControl() {
   const btnMutedHover = dk ? "rgba(255,255,255,0.14)" : undefined;
   const btnMutedText = dk ? "#ccc" : undefined;
 
+  const containerWidthClass = mode === "stats" ? "max-w-6xl" : "max-w-xl";
+  const headerTitle = mode === "stats" ? "Stats Control" : mode === "gfx" ? "GFX Control" : "Score Control";
+
   return (
     <div className={`min-h-screen ${dk ? "" : "bg-bg"}`} style={dk ? { background: bgPage } : undefined}>
-      <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
+      <div className={`${containerWidthClass} mx-auto px-4 py-6 space-y-6`}>
+        {!hideHeader && (
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
+              if (isShareMode) return;
               if (match.tournament?.id) {
                 navigate(`/tournaments/${match.tournament.id}`);
               } else {
                 window.history.back();
               }
             }}
-            className={`w-9 h-9 rounded-[8px] flex items-center justify-center transition-colors ${dk ? "" : "bg-white border border-g200 hover:border-g300 card-shadow"}`}
+            disabled={isShareMode}
+            className={`w-9 h-9 rounded-[8px] flex items-center justify-center transition-colors ${isShareMode ? "opacity-30 cursor-not-allowed" : ""} ${dk ? "" : "bg-white border border-g200 hover:border-g300 card-shadow"}`}
             style={dk ? { background: bgCard, border: borderCard } : undefined}
           >
             <ArrowLeft className="w-4 h-4" style={dk ? { color: textPrimary } : undefined} />
@@ -402,11 +418,18 @@ export function MatchControl() {
             {dk ? <Sun className="w-4 h-4" style={{ color: "#f5c542" }} /> : <Moon className="w-4 h-4 text-ink2" />}
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className={`font-display text-xl font-bold truncate ${dk ? "" : "text-ink"}`} style={dk ? { color: textPrimary } : undefined}>Match Control</h1>
+            {isShareMode ? (
+              <h1 className={`font-display text-xl font-bold truncate ${dk ? "" : "text-ink"}`} style={dk ? { color: textPrimary } : undefined}>{headerTitle}</h1>
+            ) : (
+              <GamePicker mode={mode} currentMatchId={matchId || ""} dark={dk} fallbackTitle={headerTitle} />
+            )}
             <p className={`text-[13px] truncate ${dk ? "" : "text-ink2"}`} style={dk ? { color: textSecondary } : undefined}>
               {match.tournament?.name} {match.round ? `- ${match.round}` : ""} {match.field?.name ? `- ${match.field.name}` : ""}
             </p>
           </div>
+          {!isShareMode && (
+            <ShareLinksManager matchId={match.id} mode={mode === "full" ? "score" : mode} dark={dk} apiFetch={apiFetch} />
+          )}
           {match.status === "live" && (
             <div className="flex items-center gap-1.5 bg-live/10 px-2.5 py-1 rounded-[6px]">
               <div className="w-2 h-2 rounded-full bg-live animate-live-dot" />
@@ -414,6 +437,8 @@ export function MatchControl() {
             </div>
           )}
         </div>
+        )}
+        {showSection("score") && (<>
 
         <div className={`rounded-[12px] p-6 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <div className="flex justify-between items-stretch">
@@ -493,7 +518,9 @@ export function MatchControl() {
             </Button>
           </div>
         </div>
+        </>)}
 
+        {showSection("stats") && (<>
         {match.homeTeam && match.homeTeamId && (
           <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
             <span className="text-[12px] font-sans font-medium uppercase tracking-wider block mb-3" style={dk ? { color: textMuted } : undefined}>{match.homeTeam.name}</span>
@@ -552,7 +579,9 @@ export function MatchControl() {
             </div>
           </div>
         )}
+        </>)}
 
+        {showSection("stats") && (<>
         {match.awayTeam && match.awayTeamId && (
           <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
             <span className="text-[12px] font-sans font-medium uppercase tracking-wider block mb-3" style={dk ? { color: textMuted } : undefined}>{match.awayTeam.name}</span>
@@ -611,7 +640,9 @@ export function MatchControl() {
             </div>
           </div>
         )}
+        </>)}
 
+        {showSection("score") && (<>
         <div className={`rounded-[12px] p-6 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 flex-1 mr-3">
@@ -653,7 +684,9 @@ export function MatchControl() {
             </Button>
           </div>
         </div>
+        </>)}
 
+        {showSection("gfx") && (<>
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <div className="flex items-center gap-2 mb-3">
             <Monitor className="w-4 h-4" style={dk ? { color: textMuted } : undefined} />
@@ -720,7 +753,9 @@ export function MatchControl() {
             </div>
           </div>
         </div>
+        </>)}
 
+        {showSection("score") && (<>
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <span className="text-[12px] font-sans font-medium uppercase tracking-wider block mb-3" style={dk ? { color: textMuted } : undefined}>Match Status</span>
           <div className="flex gap-2">
@@ -743,7 +778,9 @@ export function MatchControl() {
             ))}
           </div>
         </div>
+        </>)}
 
+        {showSection("gfx") && (<>
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <button
             onClick={() => setStreamOpen(prev => !prev)}
@@ -852,7 +889,9 @@ export function MatchControl() {
             </div>
           )}
         </div>
+        </>)}
 
+        {showSection("stats") && (<>
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <button
             onClick={() => setPossessionOpen(prev => !prev)}
@@ -963,7 +1002,9 @@ export function MatchControl() {
             </div>
           )}
         </div>
+        </>)}
 
+        {showSection("gfx") && (<>
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <button
             onClick={() => setOutputResOpen(prev => !prev)}
@@ -1023,7 +1064,9 @@ export function MatchControl() {
             </div>
           )}
         </div>
+        </>)}
 
+        {showSection("gfx") && (<>
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <button
             onClick={() => setTimingOpen(prev => !prev)}
@@ -1274,9 +1317,12 @@ export function MatchControl() {
             </div>
           )}
         </div>
+        </>)}
       </div>
 
-      <BroadcastPreview matchId={match.id} dark={dk} broadcastStyle={match.broadcastStyle} broadcastVisible={match.broadcastVisible} broadcastResolution={match.broadcastResolution} broadcast4kScale={match.broadcast4kScale} broadcast4kOffsetX={match.broadcast4kOffsetX} broadcast4kOffsetY={match.broadcast4kOffsetY} open={previewOpen} onClose={() => setPreviewOpen(false)} />
+      {showSection("gfx") && (
+        <BroadcastPreview matchId={match.id} dark={dk} broadcastStyle={match.broadcastStyle} broadcastVisible={match.broadcastVisible} broadcastResolution={match.broadcastResolution} broadcast4kScale={match.broadcast4kScale} broadcast4kOffsetX={match.broadcast4kOffsetX} broadcast4kOffsetY={match.broadcast4kOffsetY} open={previewOpen} onClose={() => setPreviewOpen(false)} />
+      )}
     </div>
   );
 }

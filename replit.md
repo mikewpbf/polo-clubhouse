@@ -37,7 +37,7 @@ artifacts-monorepo/
 │   │       └── lib/        # auth.ts (JWT middleware), scheduler.ts (round-robin schedule generator)
 │   ├── polo-manager/       # React + Vite frontend (spectator, admin, team manager)
 │   │   └── src/
-│   │       ├── pages/      # spectator/Home, admin/Tournaments, admin/MatchControl, admin/MatchGraphics, my-team/OutDates
+│   │       ├── pages/      # spectator/Home, admin/Tournaments, admin/{MatchControl,ScoreControl,StatsControl,GFXControl}, admin/MatchGraphics, share/ShareControl, my-team/OutDates
 │   │       ├── components/ # UI components, MatchClock, LoadingBar, MatchGraphicTemplates, layout components
 │   │       └── hooks/      # use-auth (JWT auth context)
 │   └── mockup-sandbox/     # Component preview server

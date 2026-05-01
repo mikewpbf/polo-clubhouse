@@ -4,7 +4,7 @@ import { matchesTable, matchEventsTable, teamsTable, fieldsTable, tournamentsTab
 import crypto from "crypto";
 import { eq, and, gte, lte, gt, desc, asc, isNull, inArray, sql } from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
-import { requireAuth, optionalAuth, isSuperAdmin } from "../lib/auth";
+import { requireAuth, optionalAuth, isSuperAdmin, requireMatchWrite } from "../lib/auth";
 import { addSSEClient, emitMatchUpdate, emitMatchEnded } from "../lib/sse";
 
 const router: IRouter = Router();
@@ -142,6 +142,56 @@ router.get("/tournaments/:tournamentId/matches", async (req, res) => {
     }
     const result = await Promise.all(filtered.map(enrichMatch));
     res.json(result);
+  } catch (e: any) {
+    res.status(500).json({ message: e.message });
+  }
+});
+
+router.get("/matches/manageable", requireAuth, async (req, res) => {
+  try {
+    const userIsSuper = isSuperAdmin(req.user);
+    const memberships = userIsSuper
+      ? null
+      : await db.select().from(adminClubMembershipsTable).where(eq(adminClubMembershipsTable.userId, req.user!.id));
+    const allowedClubIds = userIsSuper ? null : new Set((memberships || []).map(m => m.clubId));
+
+    const since = new Date();
+    since.setDate(since.getDate() - 1);
+    const matchRows = await db.select().from(matchesTable).where(gte(matchesTable.scheduledAt, since));
+    const tournaments = await db.select().from(tournamentsTable);
+    const tournamentMap = new Map(tournaments.map(t => [t.id, t]));
+
+    const filtered = matchRows
+      .filter(m => {
+        const t = tournamentMap.get(m.tournamentId);
+        if (!t) return false;
+        if (userIsSuper) return true;
+        return t.clubId ? allowedClubIds!.has(t.clubId) : false;
+      })
+      .sort((a, b) => {
+        const aLive = a.status === "live" ? 0 : 1;
+        const bLive = b.status === "live" ? 0 : 1;
+        if (aLive !== bLive) return aLive - bLive;
+        const aTs = a.scheduledAt ? new Date(a.scheduledAt).getTime() : 0;
+        const bTs = b.scheduledAt ? new Date(b.scheduledAt).getTime() : 0;
+        return aTs - bTs;
+      })
+      .slice(0, 50);
+
+    const homeTeamIds = filtered.map(m => m.homeTeamId).filter(Boolean) as string[];
+    const awayTeamIds = filtered.map(m => m.awayTeamId).filter(Boolean) as string[];
+    const teamIds = Array.from(new Set([...homeTeamIds, ...awayTeamIds]));
+    const teams = teamIds.length > 0 ? await db.select().from(teamsTable).where(inArray(teamsTable.id, teamIds)) : [];
+    const teamMap = new Map(teams.map(t => [t.id, t]));
+
+    res.json(filtered.map(m => ({
+      id: m.id,
+      homeName: m.homeTeamId ? (teamMap.get(m.homeTeamId)?.name || "TBD") : "TBD",
+      awayName: m.awayTeamId ? (teamMap.get(m.awayTeamId)?.name || "TBD") : "TBD",
+      scheduledAt: m.scheduledAt,
+      status: m.status,
+      tournamentName: tournamentMap.get(m.tournamentId)?.name || "",
+    })));
   } catch (e: any) {
     res.status(500).json({ message: e.message });
   }
@@ -290,22 +340,37 @@ router.get("/matches/:matchId", async (req, res) => {
   }
 });
 
-router.put("/matches/:matchId", requireAuth, requireMatchAdmin, async (req, res) => {
+router.put("/matches/:matchId", requireMatchWrite("score", "gfx"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { homeTeamId, awayTeamId, fieldId, scheduledAt, round, isLocked, notes, streamUrl, streamStartedAt, scoringLocation, broadcastOffsetSeconds } = req.body;
     const updates: Record<string, any> = {};
-    if (homeTeamId !== undefined) updates.homeTeamId = homeTeamId;
-    if (awayTeamId !== undefined) updates.awayTeamId = awayTeamId;
-    if (fieldId !== undefined) updates.fieldId = fieldId;
-    if (scheduledAt !== undefined) updates.scheduledAt = new Date(scheduledAt);
-    if (round !== undefined) updates.round = round;
-    if (isLocked !== undefined) updates.isLocked = isLocked;
-    if (notes !== undefined) updates.notes = notes;
-    if (streamUrl !== undefined) updates.streamUrl = streamUrl || null;
-    if (streamStartedAt !== undefined) updates.streamStartedAt = streamStartedAt ? new Date(streamStartedAt) : null;
-    if (scoringLocation !== undefined && ["studio", "field"].includes(scoringLocation)) updates.scoringLocation = scoringLocation;
-    if (broadcastOffsetSeconds !== undefined && typeof broadcastOffsetSeconds === "number") updates.broadcastOffsetSeconds = String(broadcastOffsetSeconds);
+
+    // Field-level allowlist by share-token page type. Admins (no share token)
+    // may update any field; share-mode operators may only touch fields owned
+    // by their page type.
+    const sharePage = (req as any).share?.pageType as ("score" | "stats" | "gfx" | undefined);
+    const canScoreFields = !sharePage || sharePage === "score";
+    const canGfxFields   = !sharePage || sharePage === "gfx";
+    const canAdminFields = !sharePage; // teams/field/schedule/round/lock/notes are admin-only
+
+    if (canAdminFields) {
+      if (homeTeamId !== undefined) updates.homeTeamId = homeTeamId;
+      if (awayTeamId !== undefined) updates.awayTeamId = awayTeamId;
+      if (fieldId !== undefined) updates.fieldId = fieldId;
+      if (scheduledAt !== undefined) updates.scheduledAt = new Date(scheduledAt);
+      if (round !== undefined) updates.round = round;
+      if (isLocked !== undefined) updates.isLocked = isLocked;
+      if (notes !== undefined) updates.notes = notes;
+    }
+    if (canGfxFields) {
+      if (streamUrl !== undefined) updates.streamUrl = streamUrl || null;
+      if (streamStartedAt !== undefined) updates.streamStartedAt = streamStartedAt ? new Date(streamStartedAt) : null;
+      if (broadcastOffsetSeconds !== undefined && typeof broadcastOffsetSeconds === "number") updates.broadcastOffsetSeconds = String(broadcastOffsetSeconds);
+    }
+    if (canScoreFields) {
+      if (scoringLocation !== undefined && ["studio", "field"].includes(scoringLocation)) updates.scoringLocation = scoringLocation;
+    }
     const [match] = await db.update(matchesTable).set(updates).where(eq(matchesTable.id, matchId)).returning();
     emitMatchUpdate(matchId);
     const enriched = await enrichMatch(match);
@@ -315,7 +380,7 @@ router.put("/matches/:matchId", requireAuth, requireMatchAdmin, async (req, res)
   }
 });
 
-router.post("/matches/:matchId/score", requireAuth, requireMatchAdmin, async (req, res) => {
+router.post("/matches/:matchId/score", requireMatchWrite("score"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { homeScore, awayScore } = req.body;
@@ -327,7 +392,7 @@ router.post("/matches/:matchId/score", requireAuth, requireMatchAdmin, async (re
         chukker: match.currentChukker,
         clockSeconds: match.clockElapsedSeconds,
         scoreSnapshot: { home: homeScore, away: awayScore },
-        createdBy: req.user!.id,
+        createdBy: req.user?.id ?? null,
       });
     }
     const enriched = await enrichMatch(match, true);
@@ -338,7 +403,7 @@ router.post("/matches/:matchId/score", requireAuth, requireMatchAdmin, async (re
   }
 });
 
-router.post("/matches/:matchId/clock", requireAuth, requireMatchAdmin, async (req, res) => {
+router.post("/matches/:matchId/clock", requireMatchWrite("score"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { action } = req.body;
@@ -371,7 +436,7 @@ router.post("/matches/:matchId/clock", requireAuth, requireMatchAdmin, async (re
         matchId: match.id, eventType: eventType as any,
         chukker: match.currentChukker, clockSeconds: match.clockElapsedSeconds,
         scoreSnapshot: { home: match.homeScore, away: match.awayScore },
-        createdBy: req.user!.id,
+        createdBy: req.user?.id ?? null,
       });
     }
     const enriched = await enrichMatch(match, true);
@@ -382,7 +447,7 @@ router.post("/matches/:matchId/clock", requireAuth, requireMatchAdmin, async (re
   }
 });
 
-router.post("/matches/:matchId/status", requireAuth, requireMatchAdmin, async (req, res) => {
+router.post("/matches/:matchId/status", requireMatchWrite("score"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { status } = req.body;
@@ -407,7 +472,7 @@ router.post("/matches/:matchId/status", requireAuth, requireMatchAdmin, async (r
         matchId: match.id, eventType: eventType as any,
         chukker: match.currentChukker, clockSeconds: match.clockElapsedSeconds,
         scoreSnapshot: { home: match.homeScore, away: match.awayScore },
-        createdBy: req.user!.id,
+        createdBy: req.user?.id ?? null,
       });
     }
     const enriched = await enrichMatch(match, true);
@@ -422,7 +487,7 @@ router.post("/matches/:matchId/status", requireAuth, requireMatchAdmin, async (r
   }
 });
 
-router.post("/matches/:matchId/chukker", requireAuth, requireMatchAdmin, async (req, res) => {
+router.post("/matches/:matchId/chukker", requireMatchWrite("score"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const direction = req.body?.direction === "back" ? -1 : 1;
@@ -447,7 +512,7 @@ router.post("/matches/:matchId/chukker", requireAuth, requireMatchAdmin, async (
         matchId: current.id, eventType: "chukker_end",
         chukker: current.currentChukker, clockSeconds: current.clockElapsedSeconds,
         scoreSnapshot: { home: current.homeScore, away: current.awayScore },
-        createdBy: req.user!.id,
+        createdBy: req.user?.id ?? null,
       });
     }
 
@@ -461,7 +526,7 @@ router.post("/matches/:matchId/chukker", requireAuth, requireMatchAdmin, async (
         matchId: match.id, eventType: "chukker_start",
         chukker: match.currentChukker, clockSeconds: 0,
         scoreSnapshot: { home: match.homeScore, away: match.awayScore },
-        createdBy: req.user!.id,
+        createdBy: req.user?.id ?? null,
       });
     }
 
@@ -473,7 +538,7 @@ router.post("/matches/:matchId/chukker", requireAuth, requireMatchAdmin, async (
   }
 });
 
-router.post("/matches/:matchId/goal", requireAuth, requireMatchAdmin, async (req, res) => {
+router.post("/matches/:matchId/goal", requireMatchWrite("score"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { teamId, playerId } = req.body;
@@ -519,7 +584,7 @@ router.post("/matches/:matchId/goal", requireAuth, requireMatchAdmin, async (req
       chukker: match.currentChukker,
       clockSeconds: match.clockElapsedSeconds,
       scoreSnapshot: { home: newHome, away: newAway },
-      createdBy: req.user!.id,
+      createdBy: req.user?.id ?? null,
     });
 
     const enriched = await enrichMatch(match, true);
@@ -530,7 +595,7 @@ router.post("/matches/:matchId/goal", requireAuth, requireMatchAdmin, async (req
   }
 });
 
-router.post("/matches/:matchId/undo-goal", requireAuth, requireMatchAdmin, async (req, res) => {
+router.post("/matches/:matchId/undo-goal", requireMatchWrite("score"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { teamId } = req.body;
@@ -566,7 +631,7 @@ router.post("/matches/:matchId/undo-goal", requireAuth, requireMatchAdmin, async
           chukker: match.currentChukker,
           clockSeconds: match.clockElapsedSeconds,
           scoreSnapshot: { home: newHome, away: newAway },
-          createdBy: req.user!.id,
+          createdBy: req.user?.id ?? null,
         });
       }
     }
@@ -579,7 +644,7 @@ router.post("/matches/:matchId/undo-goal", requireAuth, requireMatchAdmin, async
   }
 });
 
-router.delete("/matches/:matchId/events/:eventId", requireAuth, requireMatchAdmin, async (req, res) => {
+router.delete("/matches/:matchId/events/:eventId", requireMatchWrite("score", "stats"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const eventId = String(req.params.eventId);
@@ -590,10 +655,19 @@ router.delete("/matches/:matchId/events/:eventId", requireAuth, requireMatchAdmi
     const [evt] = await db.select().from(matchEventsTable).where(eq(matchEventsTable.id, eventId));
     if (!evt || evt.matchId !== matchId) { res.status(404).json({ message: "Event not found" }); return; }
 
+    // Score-affecting events may only be deleted by an admin or a "score" share token.
+    // Stats share tokens may only delete non-score events.
+    const isScoreAffecting = (evt.eventType === "goal" || evt.eventType === "penalty_goal");
+    const sharePage = (req as any).share?.pageType as ("score" | "stats" | "gfx" | undefined);
+    if (isScoreAffecting && sharePage === "stats") {
+      res.status(403).json({ message: "Stats share link cannot delete score-affecting events" });
+      return;
+    }
+
     let newHome = current.homeScore || 0;
     let newAway = current.awayScore || 0;
 
-    if ((evt.eventType === "goal" || evt.eventType === "penalty_goal") && evt.teamId) {
+    if (isScoreAffecting && evt.teamId) {
       if (evt.teamId === current.homeTeamId) newHome = Math.max(0, newHome - 1);
       else if (evt.teamId === current.awayTeamId) newAway = Math.max(0, newAway - 1);
     }
@@ -613,7 +687,7 @@ router.delete("/matches/:matchId/events/:eventId", requireAuth, requireMatchAdmi
   }
 });
 
-router.post("/matches/:matchId/clock/adjust", requireAuth, requireMatchAdmin, async (req, res) => {
+router.post("/matches/:matchId/clock/adjust", requireMatchWrite("score"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { seconds } = req.body;
@@ -637,12 +711,38 @@ router.post("/matches/:matchId/clock/adjust", requireAuth, requireMatchAdmin, as
   }
 });
 
-router.post("/matches/:matchId/event", requireAuth, requireMatchAdmin, async (req, res) => {
+router.post("/matches/:matchId/event", requireMatchWrite("score", "stats"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
-    const { eventType, description, teamId } = req.body;
-    const allowedTypes = ["penalty", "horse_change", "safety", "injury_timeout"];
+    const { eventType, description, teamId, playerId, distance, severity } = req.body;
+    // Stoppage events (pause clock) and per-player stat events (do not pause).
+    const stoppageTypes = ["penalty", "horse_change", "safety", "injury_timeout"];
+    const playerStatTypes = ["penalty_in", "penalty_out", "throw_in_won", "foul_committed", "fouls_won"];
+    const allowedTypes = [...stoppageTypes, ...playerStatTypes];
     if (!allowedTypes.includes(eventType)) { res.status(400).json({ message: "Invalid event type" }); return; }
+    const isStoppage = stoppageTypes.includes(eventType);
+
+    // Sub-attribute validation: distance only valid on penalty_in; severity only on foul_committed.
+    let normDistance: string | null = null;
+    let normSeverity: string | null = null;
+    if (eventType === "penalty_in") {
+      if (distance != null) {
+        const d = String(distance);
+        if (!["20", "30", "40", "60"].includes(d)) { res.status(400).json({ message: "distance must be 20, 30, 40 or 60" }); return; }
+        normDistance = d;
+      }
+    } else if (distance != null) {
+      res.status(400).json({ message: "distance only allowed on penalty_in events" }); return;
+    }
+    if (eventType === "foul_committed") {
+      if (severity != null) {
+        const s = String(severity);
+        if (!["1", "2", "3", "4", "5a", "5b"].includes(s)) { res.status(400).json({ message: "severity must be 1, 2, 3, 4, 5a or 5b" }); return; }
+        normSeverity = s;
+      }
+    } else if (severity != null) {
+      res.status(400).json({ message: "severity only allowed on foul_committed events" }); return;
+    }
 
     const [current] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
     if (!current) { res.status(404).json({ message: "Match not found" }); return; }
@@ -651,16 +751,28 @@ router.post("/matches/:matchId/event", requireAuth, requireMatchAdmin, async (re
       res.status(400).json({ message: "Team not in this match" }); return;
     }
 
+    // Resolve player name when a playerId is provided (for per-player stat events).
+    let playerName: string | null = null;
+    if (playerId) {
+      const [player] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
+      if (!player) { res.status(400).json({ message: "Player not found" }); return; }
+      playerName = player.name;
+    }
+
     let elapsed = current.clockElapsedSeconds || 0;
     if (current.clockIsRunning && current.clockStartedAt) {
       elapsed += Math.floor((Date.now() - new Date(current.clockStartedAt).getTime()) / 1000);
     }
 
-    const [match] = await db.update(matchesTable).set({
-      clockIsRunning: false,
-      clockStartedAt: null,
-      clockElapsedSeconds: elapsed,
-    }).where(eq(matchesTable.id, matchId)).returning();
+    let match = current;
+    if (isStoppage) {
+      const [updated] = await db.update(matchesTable).set({
+        clockIsRunning: false,
+        clockStartedAt: null,
+        clockElapsedSeconds: elapsed,
+      }).where(eq(matchesTable.id, matchId)).returning();
+      match = updated;
+    }
 
     if (eventType === "penalty" && teamId) {
       const opposingTeamId = teamId === current.homeTeamId ? current.awayTeamId : current.homeTeamId;
@@ -674,7 +786,7 @@ router.post("/matches/:matchId/event", requireAuth, requireMatchAdmin, async (re
         clockSeconds: elapsed,
         description: description || null,
         scoreSnapshot: { home: match.homeScore || 0, away: match.awayScore || 0 },
-        createdBy: req.user!.id,
+        createdBy: req.user?.id ?? null,
         createdAt: penaltyTime,
       });
       if (opposingTeamId) {
@@ -686,7 +798,7 @@ router.post("/matches/:matchId/event", requireAuth, requireMatchAdmin, async (re
           clockSeconds: elapsed,
           description: `Auto-recorded from ${description || "penalty"}`,
           scoreSnapshot: { home: match.homeScore || 0, away: match.awayScore || 0 },
-          createdBy: req.user!.id,
+          createdBy: req.user?.id ?? null,
           createdAt: foulTime,
         });
       }
@@ -695,11 +807,15 @@ router.post("/matches/:matchId/event", requireAuth, requireMatchAdmin, async (re
         matchId: match.id,
         eventType,
         teamId: teamId || null,
+        playerId: playerId || null,
+        playerName,
         chukker: match.currentChukker,
         clockSeconds: elapsed,
         description: description || null,
+        distance: normDistance,
+        severity: normSeverity,
         scoreSnapshot: { home: match.homeScore || 0, away: match.awayScore || 0 },
-        createdBy: req.user!.id,
+        createdBy: req.user?.id ?? null,
       });
     }
 
@@ -748,7 +864,7 @@ router.get("/matches/:matchId/stats", async (req, res) => {
   }
 });
 
-router.post("/matches/:matchId/stat", requireAuth, requireMatchAdmin, async (req, res) => {
+router.post("/matches/:matchId/stat", requireMatchWrite("score", "stats"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { eventType, teamId, description } = req.body;
@@ -778,7 +894,7 @@ router.post("/matches/:matchId/stat", requireAuth, requireMatchAdmin, async (req
           clockSeconds: elapsed,
           description: "Auto-recorded from knock in",
           scoreSnapshot: { home: current.homeScore || 0, away: current.awayScore || 0 },
-          createdBy: req.user!.id,
+          createdBy: req.user?.id ?? null,
         });
       }
     }
@@ -791,7 +907,7 @@ router.post("/matches/:matchId/stat", requireAuth, requireMatchAdmin, async (req
       clockSeconds: elapsed,
       description: description || null,
       scoreSnapshot: { home: current.homeScore || 0, away: current.awayScore || 0 },
-      createdBy: req.user!.id,
+      createdBy: req.user?.id ?? null,
     });
 
     const enriched = await enrichMatch(current, true);
@@ -1055,7 +1171,7 @@ router.get("/clubs/:clubId/broadcast/channel/:channel", async (req, res) => {
   }
 });
 
-router.put("/matches/:matchId/broadcast", requireAuth, requireMatchAdmin, async (req, res) => {
+router.put("/matches/:matchId/broadcast", requireMatchWrite("gfx"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { broadcastVisible, broadcastStyle, broadcastResolution, broadcast4kScale, broadcast4kOffsetX, broadcast4kOffsetY, broadcastChannel } = req.body;
@@ -1257,7 +1373,7 @@ router.post("/matches/:matchId/possession", optionalAuth, async (req, res) => {
   }
 });
 
-router.delete("/matches/:matchId/possession", requireAuth, requireMatchAdmin, async (req, res) => {
+router.delete("/matches/:matchId/possession", requireMatchWrite("stats"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     await db.delete(possessionSegmentsTable).where(eq(possessionSegmentsTable.matchId, matchId));

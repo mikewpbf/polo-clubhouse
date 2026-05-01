@@ -24,6 +24,10 @@ import { AdminTournaments } from "@/pages/admin/Tournaments";
 import { AdminTeams } from "@/pages/admin/Teams";
 import { MatchDay } from "@/pages/admin/MatchDay";
 import { MatchControl } from "@/pages/admin/MatchControl";
+import { ScoreControl } from "@/pages/admin/ScoreControl";
+import { StatsControl } from "@/pages/admin/StatsControl";
+import { GFXControl } from "@/pages/admin/GFXControl";
+import { ShareControl } from "@/pages/share/ShareControl";
 import { AdminUsers } from "@/pages/admin/Users";
 import { AdminClubs } from "@/pages/admin/Clubs";
 import { AdminPlayers } from "@/pages/admin/Players";
@@ -62,7 +66,13 @@ function Router() {
       <Route path="/admin/tournaments" component={AdminTournaments} />
       <Route path="/admin/teams" component={AdminTeams} />
       <Route path="/admin/matchday" component={MatchDay} />
-      <Route path="/admin/match/:id/control" component={MatchControl} />
+      <Route path="/admin/match/:id/control">{() => <MatchControl />}</Route>
+      <Route path="/admin/score-control/:id" component={ScoreControl} />
+      <Route path="/admin/stats-control/:id" component={StatsControl} />
+      <Route path="/admin/gfx-control/:id" component={GFXControl} />
+      <Route path="/share/score/:token">{() => <ShareControl pageType="score" />}</Route>
+      <Route path="/share/stats/:token">{() => <ShareControl pageType="stats" />}</Route>
+      <Route path="/share/gfx/:token">{() => <ShareControl pageType="gfx" />}</Route>
       <Route path="/admin/match/:id/graphics" component={MatchGraphics} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/clubs" component={AdminClubs} />

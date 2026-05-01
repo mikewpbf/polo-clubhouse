@@ -42,14 +42,14 @@ export declare const matchEventsTable: import("drizzle-orm/pg-core").PgTableWith
             tableName: "match_events";
             dataType: "string";
             columnType: "PgEnumColumn";
-            data: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause" | "penalty" | "horse_change" | "safety" | "injury_timeout" | "bowl_in" | "knock_in" | "foul" | "penalty_goal" | "shot_on_goal";
+            data: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause" | "penalty" | "horse_change" | "safety" | "injury_timeout" | "bowl_in" | "knock_in" | "foul" | "penalty_goal" | "shot_on_goal" | "penalty_in" | "penalty_out" | "throw_in_won" | "foul_committed" | "fouls_won";
             driverParam: string;
             notNull: true;
             hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: ["goal", "score_correction", "chukker_start", "chukker_end", "match_start", "match_end", "clock_start", "clock_pause", "penalty", "horse_change", "safety", "injury_timeout", "bowl_in", "knock_in", "foul", "penalty_goal", "shot_on_goal"];
+            enumValues: ["goal", "score_correction", "chukker_start", "chukker_end", "match_start", "match_end", "clock_start", "clock_pause", "penalty", "horse_change", "safety", "injury_timeout", "bowl_in", "knock_in", "foul", "penalty_goal", "shot_on_goal", "penalty_in", "penalty_out", "throw_in_won", "foul_committed", "fouls_won"];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
@@ -160,6 +160,44 @@ export declare const matchEventsTable: import("drizzle-orm/pg-core").PgTableWith
         }, {}, {
             length: 255;
         }>;
+        distance: import("drizzle-orm/pg-core").PgColumn<{
+            name: "distance";
+            tableName: "match_events";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 32;
+        }>;
+        severity: import("drizzle-orm/pg-core").PgColumn<{
+            name: "severity";
+            tableName: "match_events";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 32;
+        }>;
         scoreSnapshot: import("drizzle-orm/pg-core").PgColumn<{
             name: "score_snapshot";
             tableName: "match_events";
@@ -236,11 +274,18 @@ export declare const insertMatchEventSchema: z.ZodObject<{
         foul: "foul";
         penalty_goal: "penalty_goal";
         shot_on_goal: "shot_on_goal";
+        penalty_in: "penalty_in";
+        penalty_out: "penalty_out";
+        throw_in_won: "throw_in_won";
+        foul_committed: "foul_committed";
+        fouls_won: "fouls_won";
     }>;
     playerId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     playerName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     chukker: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     clockSeconds: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
+    distance: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    severity: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     scoreSnapshot: z.ZodOptional<z.ZodNullable<z.ZodType<import("drizzle-zod").Json, unknown, z.core.$ZodTypeInternals<import("drizzle-zod").Json, unknown>>>>;
     createdBy: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
 }, {

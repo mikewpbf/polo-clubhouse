@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { db } from "@workspace/db";
-import { usersTable, adminClubMembershipsTable, teamManagerAssignmentsTable, clubsTable, teamsTable } from "@workspace/db/schema";
+import { usersTable, adminClubMembershipsTable, teamManagerAssignmentsTable, clubsTable, teamsTable, matchesTable, tournamentsTable, matchShareLinksTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 
 const JWT_SECRET = process.env.JWT_SECRET || (() => {
@@ -18,10 +18,17 @@ export interface AuthUser {
   role: string;
 }
 
+export interface ShareAuth {
+  shareLinkId: string;
+  matchId: string;
+  pageType: "score" | "stats" | "gfx";
+}
+
 declare global {
   namespace Express {
     interface Request {
       user?: AuthUser;
+      share?: ShareAuth;
     }
   }
 }
@@ -122,6 +129,72 @@ export async function requireClubAdmin(req: Request, res: Response, next: NextFu
     return;
   }
   next();
+}
+
+// Resolve and validate a share token from header or query string.
+// Returns the share-link metadata if active, not revoked, not expired; otherwise null.
+export async function resolveShareToken(req: Request): Promise<ShareAuth | null> {
+  const raw = (req.header("x-share-token") || req.query.shareToken || "").toString().trim();
+  if (!raw) return null;
+  const [link] = await db.select().from(matchShareLinksTable).where(eq(matchShareLinksTable.token, raw));
+  if (!link) return null;
+  if (!link.active || link.revokedAt) return null;
+  if (link.expiresAt && new Date(link.expiresAt).getTime() < Date.now()) return null;
+  return {
+    shareLinkId: link.id,
+    matchId: link.matchId,
+    pageType: link.pageType as "score" | "stats" | "gfx",
+  };
+}
+
+// True if user is a club admin for the match's tournament club, or super admin.
+async function userCanAdminMatch(userId: string, matchId: string): Promise<boolean> {
+  const [match] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
+  if (!match) return false;
+  const [tournament] = await db.select().from(tournamentsTable).where(eq(tournamentsTable.id, match.tournamentId));
+  if (!tournament) return false;
+  const memberships = await db.select().from(adminClubMembershipsTable).where(eq(adminClubMembershipsTable.userId, userId));
+  return memberships.some(m => m.clubId === tournament.clubId);
+}
+
+// Match-write middleware: allows EITHER an authenticated club-admin (or super-admin)
+// for the match in :matchId, OR a valid share token bound to that match.
+// The share token must belong to one of `allowedPages` (default: all three).
+export function requireMatchWrite(...allowedPages: Array<"score" | "stats" | "gfx">) {
+  const allow = allowedPages.length ? new Set(allowedPages) : new Set(["score", "stats", "gfx"]);
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const matchId = String(req.params.matchId);
+    if (!matchId) { res.status(400).json({ message: "matchId required" }); return; }
+
+    // Try a share token first (for share-mode operators).
+    const share = await resolveShareToken(req);
+    if (share) {
+      if (share.matchId !== matchId) {
+        res.status(403).json({ message: "Share token does not authorize this match" }); return;
+      }
+      if (!allow.has(share.pageType)) {
+        res.status(403).json({ message: "Share link cannot perform this action" }); return;
+      }
+      req.share = share;
+      next();
+      return;
+    }
+
+    // Fall back to standard authenticated path.
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      res.status(401).json({ message: "Authentication required" }); return;
+    }
+    const token = authHeader.substring(7);
+    const user = verifyToken(token);
+    if (!user) { res.status(401).json({ message: "Invalid or expired token" }); return; }
+    req.user = user;
+
+    if (isSuperAdmin(user)) { next(); return; }
+    const ok = await userCanAdminMatch(user.id, matchId);
+    if (!ok) { res.status(403).json({ message: "Club admin access required to modify match" }); return; }
+    next();
+  };
 }
 
 export async function getUserWithRoles(userId: string) {

@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { MatchClock } from "@/components/MatchClock";
 import { Link } from "wouter";
 import { formatDate } from "@/lib/utils";
-import { Tv, MapPin, ChevronLeft, ChevronRight, Image as ImageIcon } from "lucide-react";
+import { Tv, MapPin, ChevronLeft, ChevronRight, Image as ImageIcon, BarChart3, Sliders } from "lucide-react";
 import { getStoredToken } from "@/hooks/use-auth";
 
 interface MatchItem {
@@ -141,20 +141,32 @@ export function MatchDay() {
                       <div className="font-display font-bold text-3xl mt-1" style={{ color: m.awayTeam?.primaryColor || "var(--ink)" }}>{m.awayScore}</div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="secondary" className="flex-1 gap-2" asChild>
-                      <Link href={`/admin/match/${m.id}/control`}>
-                        <Tv className="w-3.5 h-3.5" /> Control Panel
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button variant="secondary" className="gap-1.5" asChild>
+                      <Link href={`/admin/score-control/${m.id}`}>
+                        <Tv className="w-3.5 h-3.5" /> Score
                       </Link>
                     </Button>
-                    {canAccessGraphics && (
-                      <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                    <Button variant="secondary" className="gap-1.5" asChild>
+                      <Link href={`/admin/stats-control/${m.id}`}>
+                        <BarChart3 className="w-3.5 h-3.5" /> Stats
+                      </Link>
+                    </Button>
+                    <Button variant="secondary" className="gap-1.5" asChild>
+                      <Link href={`/admin/gfx-control/${m.id}`}>
+                        <Sliders className="w-3.5 h-3.5" /> GFX
+                      </Link>
+                    </Button>
+                  </div>
+                  {canAccessGraphics && (
+                    <div className="mt-2">
+                      <Button variant="outline" size="sm" className="w-full gap-1.5" asChild>
                         <Link href={`/admin/match/${m.id}/graphics`}>
                           <ImageIcon className="w-3.5 h-3.5" /> Graphics
                         </Link>
                       </Button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </Card>
               ))}
             </div>
@@ -190,7 +202,7 @@ export function MatchDay() {
                       </Button>
                     )}
                     <Button variant="secondary" size="sm" asChild>
-                      <Link href={`/admin/match/${m.id}/control`}>Control</Link>
+                      <Link href={`/admin/score-control/${m.id}`}>Control</Link>
                     </Button>
                   </div>
                 </Card>
@@ -257,7 +269,7 @@ export function MatchDay() {
                       </Button>
                     )}
                     <Button variant="secondary" size="sm" asChild>
-                      <Link href={`/admin/match/${m.id}/control`}>Control</Link>
+                      <Link href={`/admin/score-control/${m.id}`}>Control</Link>
                     </Button>
                   </div>
                 </Card>

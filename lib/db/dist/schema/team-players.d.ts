@@ -88,6 +88,23 @@ export declare const teamPlayersTable: import("drizzle-orm/pg-core").PgTableWith
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        isActive: import("drizzle-orm/pg-core").PgColumn<{
+            name: "is_active";
+            tableName: "team_players";
+            dataType: "boolean";
+            columnType: "PgBoolean";
+            data: boolean;
+            driverParam: boolean;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         createdAt: import("drizzle-orm/pg-core").PgColumn<{
             name: "created_at";
             tableName: "team_players";
@@ -109,10 +126,11 @@ export declare const teamPlayersTable: import("drizzle-orm/pg-core").PgTableWith
     dialect: "pg";
 }>;
 export declare const insertTeamPlayerSchema: z.ZodObject<{
+    isActive: z.ZodOptional<z.ZodBoolean>;
     teamId: z.ZodUUID;
-    position: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     playerId: z.ZodUUID;
     seasonYear: z.ZodInt;
+    position: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
 }, {
     out: {};
     in: {};

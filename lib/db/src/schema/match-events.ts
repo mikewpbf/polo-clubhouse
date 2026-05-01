@@ -17,6 +17,8 @@ export const matchEventsTable = pgTable("match_events", {
   chukker: integer("chukker"),
   clockSeconds: integer("clock_seconds"),
   description: varchar("description", { length: 255 }),
+  distance: varchar("distance", { length: 32 }),
+  severity: varchar("severity", { length: 32 }),
   scoreSnapshot: jsonb("score_snapshot"),
   createdBy: uuid("created_by").references(() => usersTable.id),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),

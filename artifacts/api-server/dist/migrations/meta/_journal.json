@@ -15,6 +15,13 @@
       "when": 1777636684315,
       "tag": "0001_stream_anchor",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777636684316,
+      "tag": "0002_match_event_player_stats_and_share_links",
+      "breakpoints": true
     }
   ]
 }

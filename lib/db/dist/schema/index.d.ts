@@ -9,6 +9,7 @@ export * from "./team-out-dates";
 export * from "./play-dates";
 export * from "./matches";
 export * from "./match-events";
+export * from "./match-share-links";
 export * from "./admin-club-memberships";
 export * from "./team-manager-assignments";
 export * from "./spectator-follows";

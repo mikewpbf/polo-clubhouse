@@ -136,7 +136,7 @@ export function ScoreboardShare() {
             <span className="text-[12px] font-medium tracking-widest uppercase" style={{ color: "rgba(255,255,255,0.4)" }}>
               {match.status === "final" ? "Final" : match.status === "halftime" ? "Halftime" : match.status === "live" ? "Live" : "Upcoming"}
             </span>
-            {isLive && (
+            {match.currentChukker > 0 && (
               <span className="text-[11px]" style={{ color: "rgba(255,255,255,0.3)" }}>· Ch.{match.currentChukker}</span>
             )}
           </div>

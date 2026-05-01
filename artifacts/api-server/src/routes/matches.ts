@@ -373,7 +373,8 @@ router.put("/matches/:matchId", requireMatchWrite("gfx", "full_control"), async 
     // may update any field; share-mode operators may only touch fields owned
     // by their page type. Only "gfx" share tokens reach this route.
     const sharePage = req.share?.pageType;
-    const canGfxFields    = !sharePage || sharePage === "gfx";
+    // full_control tokens can update all score-operator-owned fields (broadcast url, offset, stream)
+    const canGfxFields    = !sharePage || sharePage === "gfx" || sharePage === "full_control";
     const canAdminFields  = !sharePage; // teams/field/schedule/round/lock/notes/scoringLocation are admin-only
 
     if (canAdminFields) {

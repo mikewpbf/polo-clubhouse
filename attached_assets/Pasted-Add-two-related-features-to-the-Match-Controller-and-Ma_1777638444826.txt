@@ -1,0 +1,152 @@
+Add two related features to the Match Controller and Match Detail pages: 
+(1) click any timeline event to jump to that moment in the YouTube embed, 
+and (2) configurable broadcast offset for field-side scoring.
+
+PART 1 — JUMP-TO-VIDEO
+
+DATA CHANGE
+Add to matches table: stream_started_at (timestamp with time zone, nullable). 
+This is the wall-clock moment the match was set Live, which in our workflow 
+is the same moment the YouTube broadcast goes live.
+
+WHEN TO SET IT
+In the match status update handler in artifacts/api-server/src/routes/matches.ts: 
+when status transitions from anything → "live", if stream_started_at is null, 
+set it to NOW(). If already set, leave it alone.
+
+ADMIN OVERRIDE
+PATCH /matches/:id accepts streamStartedAt (datetime or null) for super_admin 
+and the match's club admin. Allow null to clear it.
+
+API RESPONSE
+Include streamStartedAt in GET /matches/:id.
+
+FRONTEND — SPECTATOR MATCH DETAIL
+In artifacts/polo-manager/src/pages/spectator/MatchDetail.tsx:
+
+1. Replace the static YouTube iframe with the YouTube IFrame Player API. 
+   Load https://www.youtube.com/iframe_api once per page, instantiate 
+   YT.Player on mount, hold a ref. Keep the existing autoplay-muted while 
+   live behavior.
+
+2. For EVERY event in the Match Timeline (goals, fouls, horse changes, all 
+   event_types): if streamStartedAt is set AND event.createdAt > 
+   streamStartedAt, render the row as a clickable button. Otherwise render 
+   it as the current static row.
+
+3. On click: offsetSeconds = (event.createdAt - streamStartedAt) / 1000, 
+   then call player.seekTo(offsetSeconds, true) and player.playVideo().
+
+4. Show the computed offset on the right of each clickable event in mm:ss 
+   format (e.g., "→ 12:42").
+
+5. Auto-scroll to the embed on jump. The live embed and replay embed 
+   should share a single ref or stable id (#match-video). After seekTo, 
+   scroll into view: 
+   embedRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+   Same behavior regardless of which embed is currently mounted.
+
+6. Events with createdAt before streamStartedAt: non-clickable, muted 
+   "(before stream)" label.
+
+7. If streamStartedAt is null, render the timeline exactly as today.
+
+8. Footer note where timeline is clickable: "Jump-to works best on replays. 
+   Live streams may seek to the live edge."
+
+PART 2 — BROADCAST OFFSET (FIELD-SIDE SCORING)
+
+PROBLEM
+When the stats person is at the field, they see plays in real time. The 
+broadcast feed is ~1 second behind (transmitter latency). Without an offset, 
+the broadcast graphic updates BEFORE viewers see the play happen on screen.
+
+SOLUTION
+A configurable per-match offset that delays score-bug-affecting events by N 
+seconds before they reach the broadcast graphic overlay. Only affects the 
+broadcast graphic feed — does not affect spectator pages, match controller, 
+event timestamps, or any other UI.
+
+DATA CHANGE
+Add to matches table:
+- scoring_location enum ('studio' | 'field'), default 'studio'
+- broadcast_offset_seconds numeric (decimal allowed), default 0
+
+When scoring_location = 'studio', broadcast_offset_seconds is ignored 
+(treated as 0).
+
+WHAT IS DELAYED
+Any controller input that changes the broadcast graphic's visible state: 
+goals, fouls, horse changes, score corrections — all events written via 
+match controller endpoints. The delay is applied between the event being 
+recorded and the broadcast graphic receiving the state update.
+
+WHAT IS NOT DELAYED
+- The match clock (just runs)
+- The match controller UI (admin sees changes instantly)
+- The spectator match detail page
+- Event createdAt timestamps in the database
+- Stream Anchor calculations for jump-to-video
+
+WHERE THE DELAY IS APPLIED
+Client-side, in the broadcast graphic page (the OBS browser source). The 
+broadcast graphic component receives events via the existing channel, then 
+holds them in a setTimeout queue for broadcast_offset_seconds before 
+applying them to rendered state. On disconnect/reconnect, queued events 
+that are still pending are re-evaluated against current time.
+
+API RESPONSE
+Include scoringLocation and broadcastOffsetSeconds in GET /matches/:id and 
+the broadcast endpoint response.
+
+ADMIN UI — MATCH CONTROL PAGE
+On artifacts/polo-manager/src/pages/admin/MatchControl.tsx, add a new 
+collapsible section at the bottom of the page (matching the existing 
+Broadcast URL collapsible pattern) titled "Timing Offset".
+
+Inside the collapsible, two sub-sections:
+
+1. "Stream Anchor"
+   - When stream_started_at is set: show "Stream live since [time] · Edit"
+   - Edit opens a small modal allowing super_admin or club admin to:
+     • Shift the anchor by N seconds (+ or −)
+     • Set a specific datetime
+     • Reset (clear) the anchor
+   - When stream_started_at is null: show "Anchor not set. Set match status 
+     to Live to capture automatically."
+
+2. "Broadcast Timing"
+   - Toggle: Studio (default) | Field
+   - When Studio is selected: no further inputs.
+   - When Field is selected: a numeric input labeled "Broadcast delay 
+     (seconds)", accepting decimals, default 1.0. Save on change.
+   - Brief help text: "Delays score, goal, foul, and horse-change graphics 
+     by this amount to match field-to-broadcast transmission latency. 
+     Studio scoring should leave this off."
+
+CONSTRAINTS
+- Match existing visual conventions on both pages.
+- The IFrame API loads asynchronously; if a user clicks an event before the 
+  player is ready, queue the seek and fire on onReady.
+- Update the OpenAPI spec at lib/api-spec for streamStartedAt, 
+  scoringLocation, and broadcastOffsetSeconds, then run 
+  pnpm --filter @workspace/api-spec run codegen.
+- Run pnpm run typecheck and existing tests after.
+- Add tests for:
+  - Event before streamStartedAt renders non-clickable, regardless of type.
+  - Setting scoring_location to 'field' with offset 1.0 results in the 
+    broadcast graphic receiving state updates 1.0s after they're recorded.
+  - Switching scoring_location back to 'studio' resumes immediate updates.
+
+EXECUTION ORDER
+1. Migration for stream_started_at, scoring_location, broadcast_offset_seconds.
+2. Update match status handler to set stream_started_at.
+3. Add the new fields to PATCH /matches/:id whitelist (super_admin / club admin).
+4. Update the OpenAPI spec and regenerate the client.
+5. Refactor MatchDetail to use the IFrame API.
+6. Add click-to-jump on all timeline events with auto-scroll.
+7. Add the broadcast graphic delay queue logic.
+8. Add the "Timing Offset" collapsible to MatchControl with both sub-sections.
+
+START WITH a written plan listing the migration SQL and the file changes 
+in order. Wait for approval before running migrations.

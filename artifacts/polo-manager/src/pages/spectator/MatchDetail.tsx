@@ -593,17 +593,6 @@ export function MatchDetail() {
                                       {(() => { const remaining = Math.max(0, 450 - (evt.clockSeconds || 0)); return `${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, "0")}`; })()}
                                     </span>
                                   )}
-                                  {streamAnchorMs !== null && (
-                                    <span className="ml-2">
-                                      {isBeforeStream ? (
-                                        <span className="text-[11px] text-ink3">(before stream)</span>
-                                      ) : isClickable ? (
-                                        <span className="text-[11px] text-g600 font-medium">
-                                          → {formatStreamOffset(streamOffsetSeconds!)}
-                                        </span>
-                                      ) : null}
-                                    </span>
-                                  )}
                                 </div>
                                 {evt.scoreSnapshot && (
                                   <span className="text-[12px] font-mono text-ink2">

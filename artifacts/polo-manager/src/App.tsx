@@ -28,7 +28,6 @@ import { ScoreControl } from "@/pages/admin/ScoreControl";
 import { StatsControl } from "@/pages/admin/StatsControl";
 import { GFXControl } from "@/pages/admin/GFXControl";
 import { ShareControl } from "@/pages/share/ShareControl";
-import { ScoreboardShare } from "@/pages/share/ScoreboardShare";
 import { AdminUsers } from "@/pages/admin/Users";
 import { AdminClubs } from "@/pages/admin/Clubs";
 import { AdminPlayers } from "@/pages/admin/Players";
@@ -78,7 +77,7 @@ function Router() {
       <Route path="/share/stats/:token">{() => <ShareControl pageType="stats" />}</Route>
       <Route path="/share/gfx/:token">{() => <ShareControl pageType="gfx" />}</Route>
       <Route path="/share/full_control/:token">{() => <ShareControl pageType="full_control" />}</Route>
-      <Route path="/share/scoreboard/:token" component={ScoreboardShare} />
+      <Route path="/share/scoreboard/:token">{() => <ShareControl pageType="scoreboard" />}</Route>
       <Route path="/admin/match/:id/graphics" component={MatchGraphics} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin/clubs" component={AdminClubs} />

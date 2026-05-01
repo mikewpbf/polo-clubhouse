@@ -68,11 +68,12 @@ interface MatchData {
   broadcastOffsetSeconds?: number;
 }
 
-export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, hideHeader = false }: { mode?: ControlMode; shareToken?: string | null; matchId?: string; hideHeader?: boolean } = {}) {
+export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, hideHeader = false, sharePageType }: { mode?: ControlMode; shareToken?: string | null; matchId?: string; hideHeader?: boolean; sharePageType?: string } = {}) {
   const [, params] = useRoute("/admin/match/:id/control");
   const [, navigate] = useLocation();
   const matchId = matchIdProp || params?.id;
   const isShareMode = !!shareToken;
+  const isScoreboardShare = sharePageType === "scoreboard";
   const apiFetch = useCallback(makeApiFetch(shareToken), [shareToken]);
   const showSection = (s: ControlMode) => mode === "full" || mode === s;
 
@@ -82,6 +83,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
   const [previewOpen, setPreviewOpen] = useState(true);
   const [streamOpen, setStreamOpen] = useState(false);
   const [outputResOpen, setOutputResOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [streamUrlLocal, setStreamUrlLocal] = useState<string | null>(null);
   const mutatingRef = useRef(0);
   const seqRef = useRef(0);
@@ -798,12 +800,6 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                         <button key={d} onClick={() => handlePlayerStat({ eventType: "penalty_in", teamId, playerId: p.id, distance: d })} disabled={isFinal} className={penInBtnCls} style={dk ? { background: "rgba(16,185,129,0.15)", color: "#34d399" } : undefined}>{d}y</button>
                       ))}
                     </div>
-                    <div className="flex gap-1 items-center">
-                      <span className="text-[8px] uppercase tracking-wider shrink-0 mr-0.5" style={{ color: dk ? textMuted : "#aaa" }}>Foul</span>
-                      {(["1","2","3","4","5a","5b"] as const).map(sev => (
-                        <button key={sev} onClick={() => handlePlayerStat({ eventType: "foul_committed", teamId, playerId: p.id, severity: sev })} disabled={isFinal} className={`flex-1 h-6 rounded-[5px] font-sans font-bold text-[9px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-rose-50 text-rose-800 hover:bg-rose-100"}`} style={dk ? { background: "rgba(239,68,68,0.15)", color: "#f87171" } : undefined}>{sev.toUpperCase()}</button>
-                      ))}
-                    </div>
                   </div>
                 ))}
               </div>
@@ -1107,6 +1103,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
             </div>
           </div>
         </div>
+        {!isScoreboardShare && (
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <span className="text-[12px] font-sans font-medium uppercase tracking-wider block mb-3" style={dk ? { color: textMuted } : undefined}>Match Status</span>
           <div className="flex gap-2">
@@ -1129,6 +1126,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
             ))}
           </div>
         </div>
+        )}
         </>)}
 
         {(showSection("gfx") || mode === "score") && (<>
@@ -1242,72 +1240,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
         </div>
         </>)}
 
-        {mode === "score" && (
-        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[12px] font-sans font-medium uppercase tracking-wider" style={dk ? { color: textMuted } : undefined}>Possession Tracker</span>
-            <button
-              onClick={async () => {
-                if (!confirm("Reset all possession data for this match?")) return;
-                try {
-                  await apiFetch(`/matches/${match.id}/possession`, { method: "DELETE" });
-                  setPossessionStats(null);
-                  setPossessionState(null);
-                } catch {}
-              }}
-              className="text-[11px] px-2 py-0.5 rounded text-red-500 hover:bg-red-50 transition-colors"
-            >Reset</button>
-          </div>
-          {(() => {
-            const homeColor = match.homeTeam?.primaryColor || "#1B5E20";
-            const awayColor = match.awayTeam?.primaryColor || "#6A1B1A";
-            return (
-              <div className="flex gap-2 mb-3">
-                {([
-                  { state: "home" as const, label: match.homeTeam?.name || "Home", color: homeColor },
-                  { state: "loose" as const, label: "50/50", color: dk ? "#555" : "#999" },
-                  { state: "away" as const, label: match.awayTeam?.name || "Away", color: awayColor },
-                ]).map(({ state, label, color }) => {
-                  const isActive = possessionState === state;
-                  return (
-                    <button
-                      key={state}
-                      onClick={() => handleSetPossession(state)}
-                      disabled={isFinal}
-                      className="flex-1 h-11 rounded-[8px] font-sans font-bold text-[12px] transition-all disabled:opacity-30 active:scale-95 leading-tight px-2"
-                      style={{
-                        background: isActive ? color : `${color}28`,
-                        color: isActive ? "#fff" : color,
-                        border: `2px solid ${color}`,
-                        boxShadow: isActive ? `0 0 0 3px ${color}44` : undefined,
-                      }}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })()}
-          {possessionStats ? (
-            <>
-              <div className="flex items-center justify-between text-[13px] font-bold mb-1.5">
-                <span style={{ color: match.homeTeam?.primaryColor || (dk ? "#f0f0f0" : "var(--ink)") }}>{possessionStats.homePercent}%</span>
-                <span className="text-[10px] font-normal uppercase tracking-wider" style={{ color: dk ? textMuted : "#aaa" }}>possession</span>
-                <span style={{ color: match.awayTeam?.primaryColor || (dk ? "#f0f0f0" : "var(--ink)") }}>{possessionStats.awayPercent}%</span>
-              </div>
-              <div className="flex h-3 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.06)" }}>
-                <div style={{ width: `${possessionStats.homePercent}%`, background: match.homeTeam?.primaryColor || "#1B5E20", transition: "width 0.5s", minWidth: possessionStats.homePercent > 0 ? 4 : 0 }} />
-                <div style={{ flex: 1, background: match.awayTeam?.primaryColor || "#6A1B1A", transition: "width 0.5s", minWidth: possessionStats.awayPercent > 0 ? 4 : 0 }} />
-              </div>
-            </>
-          ) : (
-            <div className="text-[12px] text-center py-1" style={{ color: dk ? textMuted : "#aaa" }}>Tap a team to start tracking</div>
-          )}
-        </div>
-        )}
-
-        {(showSection("gfx") || mode === "score") && (<>
+        {(showSection("gfx") || (mode === "score" && !isScoreboardShare)) && (<>
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <button
             onClick={() => setOutputResOpen(prev => !prev)}
@@ -1369,7 +1302,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
         </div>
         </>)}
 
-        {(showSection("gfx") || mode === "score") && (<>
+        {(showSection("gfx") || (mode === "score" && !isScoreboardShare)) && (<>
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <button
             onClick={() => setTimingOpen(prev => !prev)}
@@ -1624,22 +1557,19 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
 
         {mode === "score" && !isShareMode && (
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
-          <div className="flex items-center gap-2 mb-3">
+          <button
+            onClick={() => setShareOpen(prev => !prev)}
+            className="w-full flex items-center gap-2"
+          >
             <Share2 className="w-4 h-4" style={dk ? { color: textMuted } : undefined} />
-            <span className="text-[12px] font-sans font-medium uppercase tracking-wider flex-1" style={dk ? { color: textMuted } : undefined}>Share</span>
-            <button
-              onClick={fetchShareLinks}
-              className="w-7 h-7 flex items-center justify-center rounded-[6px] transition-colors"
-              style={dk ? { background: "rgba(255,255,255,0.06)", color: textMuted } : { background: "rgba(0,0,0,0.04)", color: "#888" }}
-              title="Refresh"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${shareLinksLoading ? "animate-spin" : ""}`} />
-            </button>
-          </div>
+            <span className="text-[12px] font-sans font-medium uppercase tracking-wider flex-1 text-left" style={dk ? { color: textMuted } : undefined}>Share</span>
+            <ChevronRight className={`w-4 h-4 transition-transform ${shareOpen ? "rotate-90" : ""}`} style={dk ? { color: textMuted } : undefined} />
+          </button>
 
+          {shareOpen && (<div className="mt-3">
           {([
             { type: "full_control" as const, label: "Full Control", desc: "Gives full score-entry access" },
-            { type: "scoreboard" as const, label: "Just Scoreboard", desc: "Public read-only scoreboard" },
+            { type: "scoreboard" as const, label: "Just Scoreboard", desc: "Score & clock control without settings" },
           ]).map(({ type, label, desc }) => {
             const active = shareLinks.find(l => l.pageType === type && isTrulyActive(l)) || null;
             const working = shareLinksWorking[type];
@@ -1703,6 +1633,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
               </div>
             );
           })}
+        </div>)}
         </div>
         )}
       </div>

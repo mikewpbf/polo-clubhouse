@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { MatchControl, type ControlMode } from "@/pages/admin/MatchControl";
 import { PageLoading } from "@/components/LoadingBar";
 
-type SharePageType = "stats" | "gfx" | "full_control";
+type SharePageType = "stats" | "gfx" | "full_control" | "scoreboard";
 
 interface Resolved {
   matchId: string;
@@ -27,14 +27,12 @@ function reasonTitle(reason: ErrorState["reason"]): string {
 }
 
 function resolvedModeFor(pageType: SharePageType): ControlMode {
-  if (pageType === "full_control") return "score";
+  if (pageType === "full_control" || pageType === "scoreboard") return "score";
   return pageType as ControlMode;
 }
 
 export function ShareControl({ pageType }: { pageType: SharePageType }) {
-  const routePattern = pageType === "full_control"
-    ? "/share/full_control/:token"
-    : `/share/${pageType}/:token`;
+  const routePattern = `/share/${pageType}/:token`;
   const [, params] = useRoute(routePattern);
   const token = params?.token;
   const [resolved, setResolved] = useState<Resolved | null>(null);
@@ -73,5 +71,5 @@ export function ShareControl({ pageType }: { pageType: SharePageType }) {
     );
   }
   if (!resolved) return <PageLoading />;
-  return <MatchControl mode={resolved.pageType} shareToken={token} matchId={resolved.matchId} />;
+  return <MatchControl mode={resolved.pageType} shareToken={token} matchId={resolved.matchId} sharePageType={pageType} />;
 }

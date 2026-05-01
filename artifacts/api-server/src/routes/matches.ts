@@ -363,7 +363,7 @@ router.get("/matches/:matchId", async (req, res) => {
   }
 });
 
-router.put("/matches/:matchId", requireMatchWrite("gfx", "full_control"), async (req, res) => {
+router.put("/matches/:matchId", requireMatchWrite("gfx", "full_control", "scoreboard"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { homeTeamId, awayTeamId, fieldId, scheduledAt, round, isLocked, notes, streamUrl, streamStartedAt, scoringLocation, broadcastOffsetSeconds } = req.body;
@@ -373,8 +373,7 @@ router.put("/matches/:matchId", requireMatchWrite("gfx", "full_control"), async 
     // may update any field; share-mode operators may only touch fields owned
     // by their page type. Only "gfx" share tokens reach this route.
     const sharePage = req.share?.pageType;
-    // full_control tokens can update all score-operator-owned fields (broadcast url, offset, stream)
-    const canGfxFields    = !sharePage || sharePage === "gfx" || sharePage === "full_control";
+    const canGfxFields    = !sharePage || sharePage === "gfx" || sharePage === "full_control" || sharePage === "scoreboard";
     const canAdminFields  = !sharePage; // teams/field/schedule/round/lock/notes/scoringLocation are admin-only
 
     if (canAdminFields) {
@@ -401,7 +400,7 @@ router.put("/matches/:matchId", requireMatchWrite("gfx", "full_control"), async 
   }
 });
 
-router.post("/matches/:matchId/score", requireMatchWrite("full_control"), async (req, res) => {
+router.post("/matches/:matchId/score", requireMatchWrite("full_control", "scoreboard"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { homeScore, awayScore } = req.body;
@@ -424,7 +423,7 @@ router.post("/matches/:matchId/score", requireMatchWrite("full_control"), async 
   }
 });
 
-router.post("/matches/:matchId/clock", requireMatchWrite("full_control"), async (req, res) => {
+router.post("/matches/:matchId/clock", requireMatchWrite("full_control", "scoreboard"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { action } = req.body;
@@ -508,7 +507,7 @@ router.post("/matches/:matchId/status", requireMatchWrite("full_control"), async
   }
 });
 
-router.post("/matches/:matchId/chukker", requireMatchWrite("full_control"), async (req, res) => {
+router.post("/matches/:matchId/chukker", requireMatchWrite("full_control", "scoreboard"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const direction = req.body?.direction === "back" ? -1 : 1;
@@ -559,7 +558,7 @@ router.post("/matches/:matchId/chukker", requireMatchWrite("full_control"), asyn
   }
 });
 
-router.post("/matches/:matchId/goal", requireMatchWrite("full_control"), async (req, res) => {
+router.post("/matches/:matchId/goal", requireMatchWrite("full_control", "scoreboard"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { teamId, playerId } = req.body;
@@ -616,7 +615,7 @@ router.post("/matches/:matchId/goal", requireMatchWrite("full_control"), async (
   }
 });
 
-router.post("/matches/:matchId/undo-goal", requireMatchWrite("full_control"), async (req, res) => {
+router.post("/matches/:matchId/undo-goal", requireMatchWrite("full_control", "scoreboard"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { teamId } = req.body;
@@ -657,7 +656,7 @@ router.post("/matches/:matchId/undo-goal", requireMatchWrite("full_control"), as
   }
 });
 
-router.delete("/matches/:matchId/events/:eventId", requireMatchWrite("stats", "full_control"), async (req, res) => {
+router.delete("/matches/:matchId/events/:eventId", requireMatchWrite("stats", "full_control", "scoreboard"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const eventId = String(req.params.eventId);
@@ -699,7 +698,7 @@ router.delete("/matches/:matchId/events/:eventId", requireMatchWrite("stats", "f
   }
 });
 
-router.post("/matches/:matchId/clock/adjust", requireMatchWrite("full_control"), async (req, res) => {
+router.post("/matches/:matchId/clock/adjust", requireMatchWrite("full_control", "scoreboard"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { seconds } = req.body;
@@ -723,7 +722,7 @@ router.post("/matches/:matchId/clock/adjust", requireMatchWrite("full_control"),
   }
 });
 
-router.post("/matches/:matchId/event", requireMatchWrite("stats", "full_control"), async (req, res) => {
+router.post("/matches/:matchId/event", requireMatchWrite("stats", "full_control", "scoreboard"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { eventType, description, teamId, playerId, distance, severity } = req.body;
@@ -893,7 +892,7 @@ router.get("/matches/:matchId/stats", async (req, res) => {
   }
 });
 
-router.post("/matches/:matchId/stat", requireMatchWrite("stats", "full_control"), async (req, res) => {
+router.post("/matches/:matchId/stat", requireMatchWrite("stats", "full_control", "scoreboard"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { eventType, teamId, description } = req.body;
@@ -1200,7 +1199,7 @@ router.get("/clubs/:clubId/broadcast/channel/:channel", async (req, res) => {
   }
 });
 
-router.put("/matches/:matchId/broadcast", requireMatchWrite("gfx", "full_control"), async (req, res) => {
+router.put("/matches/:matchId/broadcast", requireMatchWrite("gfx", "full_control", "scoreboard"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { broadcastVisible, broadcastStyle, broadcastResolution, broadcast4kScale, broadcast4kOffsetX, broadcast4kOffsetY, broadcastChannel } = req.body;

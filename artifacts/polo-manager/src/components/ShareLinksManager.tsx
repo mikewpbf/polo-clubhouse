@@ -41,7 +41,27 @@ export function ShareLinksManager({ matchId, mode, dark, apiFetch }: Props) {
   const [working, setWorking] = useState(false);
   const { toast } = useToast();
 
-  const activeLink = links.find((l) => l.pageType === mode && l.active) || null;
+  function isTrulyActive(l: ShareLink): boolean {
+    if (!l.active) return false;
+    if (l.expiresAt && new Date(l.expiresAt).getTime() <= Date.now()) return false;
+    return true;
+  }
+
+  const activeLink = links.find((l) => l.pageType === mode && isTrulyActive(l)) || null;
+
+  const modePastLinks = links.filter((l) => l.pageType === mode && !isTrulyActive(l));
+  const mostRecentPast = modePastLinks.length > 0
+    ? modePastLinks.reduce((a, b) => new Date(a.createdAt) > new Date(b.createdAt) ? a : b)
+    : null;
+
+  function getNoActiveLinkHint(): string | null {
+    if (!mostRecentPast) return null;
+    if (mostRecentPast.revokedAt) return "Your last link was revoked.";
+    if (mostRecentPast.expiresAt && new Date(mostRecentPast.expiresAt).getTime() <= Date.now()) return "Your last link expired.";
+    return null;
+  }
+
+  const noActiveLinkHint = getNoActiveLinkHint();
 
   useEffect(() => {
     if (!open) return;
@@ -179,6 +199,9 @@ export function ShareLinksManager({ matchId, mode, dark, apiFetch }: Props) {
                 ) : (
                   <div className={`text-[13px] mb-3 ${dark ? "" : "text-ink2"}`} style={dark ? { color: "#9ca3af" } : undefined}>
                     No active {mode.toUpperCase()} share link.
+                    {noActiveLinkHint && (
+                      <span className="block mt-0.5 text-[12px]">{noActiveLinkHint}</span>
+                    )}
                   </div>
                 )}
 
@@ -187,13 +210,13 @@ export function ShareLinksManager({ matchId, mode, dark, apiFetch }: Props) {
                   {activeLink ? "Regenerate Link" : "Generate Link"}
                 </Button>
 
-                {links.filter((l) => l.pageType === mode && !l.active).length > 0 && (
+                {modePastLinks.length > 0 && (
                   <details className="mt-4">
                     <summary className={`text-[12px] cursor-pointer ${dark ? "" : "text-ink2"}`} style={dark ? { color: "#9ca3af" } : undefined}>
-                      Past links ({links.filter((l) => l.pageType === mode && !l.active).length})
+                      Past links ({modePastLinks.length})
                     </summary>
                     <div className="space-y-1 mt-2 max-h-[160px] overflow-y-auto">
-                      {links.filter((l) => l.pageType === mode && !l.active).map((l) => (
+                      {modePastLinks.map((l) => (
                         <div key={l.id} className={`text-[11px] font-mono truncate px-2 py-1 rounded ${dark ? "" : "bg-g50"}`} style={dark ? { background: "rgba(255,255,255,0.03)", color: "#9ca3af" } : undefined}>
                           {buildUrl(l)} · {l.revokedAt ? "revoked" : "expired"}
                         </div>

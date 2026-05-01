@@ -18,7 +18,7 @@ export interface AuthUser {
   role: string;
 }
 
-export type SharePageType = "stats" | "gfx";
+export type SharePageType = "stats" | "gfx" | "scoreboard" | "full_control";
 export interface ShareAuth {
   shareLinkId: string;
   matchId: string;

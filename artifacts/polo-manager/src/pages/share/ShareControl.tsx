@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { MatchControl, type ControlMode } from "@/pages/admin/MatchControl";
 import { PageLoading } from "@/components/LoadingBar";
 
-type SharePageType = "stats" | "gfx";
+type SharePageType = "stats" | "gfx" | "full_control";
 
 interface Resolved {
   matchId: string;
@@ -26,8 +26,16 @@ function reasonTitle(reason: ErrorState["reason"]): string {
   }
 }
 
+function resolvedModeFor(pageType: SharePageType): ControlMode {
+  if (pageType === "full_control") return "score";
+  return pageType as ControlMode;
+}
+
 export function ShareControl({ pageType }: { pageType: SharePageType }) {
-  const [, params] = useRoute(`/share/${pageType}/:token`);
+  const routePattern = pageType === "full_control"
+    ? "/share/full_control/:token"
+    : `/share/${pageType}/:token`;
+  const [, params] = useRoute(routePattern);
   const token = params?.token;
   const [resolved, setResolved] = useState<Resolved | null>(null);
   const [error, setError] = useState<ErrorState | null>(null);
@@ -45,7 +53,7 @@ export function ShareControl({ pageType }: { pageType: SharePageType }) {
         if (data.pageType !== pageType) {
           throw { reason: "mismatch", message: `This link opens the ${data.pageType} page, not ${pageType}.` } as ErrorState;
         }
-        setResolved({ matchId: data.matchId, pageType: data.pageType });
+        setResolved({ matchId: data.matchId, pageType: resolvedModeFor(data.pageType) });
       })
       .catch((e: ErrorState | Error) => {
         if ((e as ErrorState).reason) setError(e as ErrorState);

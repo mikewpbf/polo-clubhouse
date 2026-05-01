@@ -189,6 +189,86 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
   const [possessionStats, setPossessionStats] = useState<{ homePercent: number; awayPercent: number; homeSeconds: number; awaySeconds: number } | null>(null);
   const [possessionState, setPossessionState] = useState<string | null>(null);
 
+  interface ShareLink {
+    id: string;
+    token: string;
+    pageType: string;
+    label: string | null;
+    expiresAt: string | null;
+    revokedAt: string | null;
+    createdAt: string;
+    active: boolean;
+  }
+  const [shareLinks, setShareLinks] = useState<ShareLink[]>([]);
+  const [shareLinksLoading, setShareLinksLoading] = useState(false);
+  const [shareLinksWorking, setShareLinksWorking] = useState<Record<string, boolean>>({});
+
+  const fetchShareLinks = useCallback(async () => {
+    if (!matchId || isShareMode) return;
+    setShareLinksLoading(true);
+    try {
+      const data = await apiFetch(`/matches/${matchId}/share-links`);
+      if (Array.isArray(data)) setShareLinks(data);
+    } catch {} finally {
+      setShareLinksLoading(false);
+    }
+  }, [matchId, isShareMode, apiFetch]);
+
+  useEffect(() => {
+    if (mode === "score" && !isShareMode) fetchShareLinks();
+  }, [mode, fetchShareLinks]);
+
+  function isTrulyActive(l: ShareLink): boolean {
+    if (!l.active) return false;
+    if (l.expiresAt && new Date(l.expiresAt).getTime() <= Date.now()) return false;
+    return true;
+  }
+
+  function buildShareUrl(link: ShareLink): string {
+    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+    const origin = window.location.origin;
+    return `${origin}${base}/share/${link.pageType}/${link.token}`;
+  }
+
+  async function generateShareLink(pageType: "full_control" | "scoreboard") {
+    if (!matchId) return;
+    const existing = shareLinks.find(l => l.pageType === pageType && isTrulyActive(l));
+    if (existing) {
+      if (!confirm("An active link already exists. Generating a new one will revoke it. Continue?")) return;
+    }
+    setShareLinksWorking(prev => ({ ...prev, [pageType]: true }));
+    try {
+      const link = await apiFetch(`/matches/${matchId}/share-links`, {
+        method: "POST",
+        body: JSON.stringify({ pageType }),
+      });
+      setShareLinks(prev => [
+        link,
+        ...prev.map(l => l.pageType === pageType && l.active && l.id !== link.id
+          ? { ...l, active: false, revokedAt: new Date().toISOString() }
+          : l),
+      ]);
+      await navigator.clipboard.writeText(buildShareUrl(link)).catch(() => {});
+      toast({ title: "Link created & copied", description: "Share link copied to clipboard" });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message });
+    } finally {
+      setShareLinksWorking(prev => ({ ...prev, [pageType]: false }));
+    }
+  }
+
+  async function revokeShareLink(id: string) {
+    if (!matchId) return;
+    if (!confirm("Revoke this link? It will stop working immediately.")) return;
+    try {
+      await apiFetch(`/matches/${matchId}/share-links/${id}`, { method: "DELETE" });
+      setShareLinks(prev => prev.map(l => l.id === id ? { ...l, active: false, revokedAt: new Date().toISOString() } : l));
+      toast({ title: "Revoked" });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message });
+    }
+  }
+
   const fetchPossessionData = useCallback(async () => {
     if (!matchId) return;
     try {
@@ -207,7 +287,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
   }, [matchId, apiFetch, fetchPossessionData]);
 
   useEffect(() => {
-    if ((!possessionOpen && mode !== "stats") || !matchId) return;
+    if ((!possessionOpen && mode !== "stats" && mode !== "score") || !matchId) return;
     fetchPossessionData();
     const iv = setInterval(fetchPossessionData, 3000);
     return () => clearInterval(iv);
@@ -876,36 +956,121 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
             </Button>
           </div>
         </div>
+
+        {/* Home team stat buttons — full-width card */}
+        {match.homeTeamId && (
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
-          <span className="text-[11px] font-sans font-semibold uppercase tracking-wider block mb-2" style={{ color: dk ? textMuted : "#888" }}>Team Stats</span>
-          <div className="grid grid-cols-2 gap-3">
-            {([{ teamId: match.homeTeamId, name: match.homeTeam?.name || "Home" }, { teamId: match.awayTeamId, name: match.awayTeam?.name || "Away" }]).map(({ teamId, name }) => teamId ? (
-              <div key={teamId}>
-                <div className="text-[10px] font-sans font-semibold mb-1 truncate" style={{ color: dk ? textMuted : "#666" }}>{name}</div>
-                <div className="space-y-1">
-                  <div className="flex gap-1">
-                    {([{ label: "Bowl In", type: "bowl_in" as const }, { label: "Knock In", type: "knock_in" as const }, { label: "Foul", type: "foul" as const }]).map(s => (
-                      <button key={s.type} onClick={() => handleStat(s.type, teamId)} disabled={isFinal} className={`flex-1 h-7 rounded-[6px] font-sans font-bold text-[10px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-g50 text-ink2 hover:bg-g100"}`} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>{s.label}</button>
-                    ))}
-                  </div>
-                  <div className="flex gap-1">
-                    {([{ label: "Pen Goal", type: "penalty_goal" as const }, { label: "Shot on Goal", type: "shot_on_goal" as const }]).map(s => (
-                      <button key={s.type} onClick={() => handleStat(s.type, teamId)} disabled={isFinal} className={`flex-1 h-7 rounded-[6px] font-sans font-bold text-[10px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-g50 text-ink2 hover:bg-g100"}`} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>{s.label}</button>
-                    ))}
-                  </div>
-                  <div className="flex gap-1">
-                    {([{ label: "1", desc: "PENALTY 1" }, { label: "2", desc: "PENALTY 2" }, { label: "3", desc: "PENALTY 3" }, { label: "4", desc: "PENALTY 4" }, { label: "5A", desc: "PENALTY 5A" }, { label: "5B", desc: "PENALTY 5B" }]).map(p => (
-                      <button key={p.desc} onClick={() => handleEvent("penalty", p.desc, teamId)} disabled={isFinal} className={`flex-1 h-7 rounded-[6px] font-sans font-bold text-[10px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-amber-50 text-amber-800 hover:bg-amber-100"}`} style={dk ? { background: "rgba(202,138,4,0.18)", color: "#facc15" } : undefined}>{p.label}</button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : null)}
+          <span className="text-[12px] font-sans font-medium uppercase tracking-wider block mb-3" style={dk ? { color: textMuted } : undefined}>{match.homeTeam?.name || "Home"}</span>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              {([{ label: "Bowl In", type: "bowl_in" as const }, { label: "Knock In", type: "knock_in" as const }, { label: "Foul", type: "foul" as const }]).map(s => (
+                <button key={s.type} onClick={() => handleStat(s.type, match.homeTeamId!)} disabled={isFinal} className={`flex-1 h-9 rounded-[8px] font-sans font-bold text-[12px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-g50 text-ink2 hover:bg-g100 hover:text-ink"}`} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>{s.label}</button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              {([{ label: "Penalty Goal", type: "penalty_goal" as const }, { label: "Shot on Goal", type: "shot_on_goal" as const }]).map(s => (
+                <button key={s.type} onClick={() => handleStat(s.type, match.homeTeamId!)} disabled={isFinal} className={`flex-1 h-9 rounded-[8px] font-sans font-bold text-[12px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-g50 text-ink2 hover:bg-g100 hover:text-ink"}`} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>{s.label}</button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              {([{ label: "Pen 1", desc: "PENALTY 1" }, { label: "Pen 2", desc: "PENALTY 2" }, { label: "Pen 3", desc: "PENALTY 3" }, { label: "Pen 4", desc: "PENALTY 4" }, { label: "5A", desc: "PENALTY 5A" }, { label: "5B", desc: "PENALTY 5B" }]).map(p => (
+                <button key={p.desc} onClick={() => handleEvent("penalty", p.desc, match.homeTeamId!)} disabled={isFinal} className={`flex-1 h-9 rounded-[8px] font-sans font-bold text-[12px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-amber-50 text-amber-800 hover:bg-amber-100"}`} style={dk ? { background: "rgba(202,138,4,0.18)", color: "#facc15" } : undefined}>{p.label}</button>
+              ))}
+            </div>
           </div>
+        </div>
+        )}
+
+        {/* Away team stat buttons — full-width card */}
+        {match.awayTeamId && (
+        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
+          <span className="text-[12px] font-sans font-medium uppercase tracking-wider block mb-3" style={dk ? { color: textMuted } : undefined}>{match.awayTeam?.name || "Away"}</span>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              {([{ label: "Bowl In", type: "bowl_in" as const }, { label: "Knock In", type: "knock_in" as const }, { label: "Foul", type: "foul" as const }]).map(s => (
+                <button key={s.type} onClick={() => handleStat(s.type, match.awayTeamId!)} disabled={isFinal} className={`flex-1 h-9 rounded-[8px] font-sans font-bold text-[12px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-g50 text-ink2 hover:bg-g100 hover:text-ink"}`} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>{s.label}</button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              {([{ label: "Penalty Goal", type: "penalty_goal" as const }, { label: "Shot on Goal", type: "shot_on_goal" as const }]).map(s => (
+                <button key={s.type} onClick={() => handleStat(s.type, match.awayTeamId!)} disabled={isFinal} className={`flex-1 h-9 rounded-[8px] font-sans font-bold text-[12px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-g50 text-ink2 hover:bg-g100 hover:text-ink"}`} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>{s.label}</button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              {([{ label: "Pen 1", desc: "PENALTY 1" }, { label: "Pen 2", desc: "PENALTY 2" }, { label: "Pen 3", desc: "PENALTY 3" }, { label: "Pen 4", desc: "PENALTY 4" }, { label: "5A", desc: "PENALTY 5A" }, { label: "5B", desc: "PENALTY 5B" }]).map(p => (
+                <button key={p.desc} onClick={() => handleEvent("penalty", p.desc, match.awayTeamId!)} disabled={isFinal} className={`flex-1 h-9 rounded-[8px] font-sans font-bold text-[12px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-amber-50 text-amber-800 hover:bg-amber-100"}`} style={dk ? { background: "rgba(202,138,4,0.18)", color: "#facc15" } : undefined}>{p.label}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+        )}
+
+        {/* Possession Tracker */}
+        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[12px] font-sans font-medium uppercase tracking-wider" style={dk ? { color: textMuted } : undefined}>Possession Tracker</span>
+            <button
+              onClick={async () => {
+                if (!confirm("Reset all possession data for this match?")) return;
+                try {
+                  await apiFetch(`/matches/${match.id}/possession`, { method: "DELETE" });
+                  setPossessionStats(null);
+                  setPossessionState(null);
+                } catch {}
+              }}
+              className="text-[11px] px-2 py-0.5 rounded text-red-500 hover:bg-red-50 transition-colors"
+            >Reset</button>
+          </div>
+          {(() => {
+            const homeColor = match.homeTeam?.primaryColor || "#1B5E20";
+            const awayColor = match.awayTeam?.primaryColor || "#6A1B1A";
+            return (
+              <div className="flex gap-2 mb-3">
+                {([
+                  { state: "home" as const, label: match.homeTeam?.name || "Home", color: homeColor },
+                  { state: "loose" as const, label: "50/50", color: dk ? "#555" : "#999" },
+                  { state: "away" as const, label: match.awayTeam?.name || "Away", color: awayColor },
+                ]).map(({ state, label, color }) => {
+                  const isActive = possessionState === state;
+                  return (
+                    <button
+                      key={state}
+                      onClick={() => handleSetPossession(state)}
+                      disabled={isFinal}
+                      className="flex-1 h-11 rounded-[8px] font-sans font-bold text-[12px] transition-all disabled:opacity-30 active:scale-95 leading-tight px-2"
+                      style={{
+                        background: isActive ? color : `${color}28`,
+                        color: isActive ? "#fff" : color,
+                        border: `2px solid ${color}`,
+                        boxShadow: isActive ? `0 0 0 3px ${color}44` : undefined,
+                      }}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
+          {possessionStats ? (
+            <>
+              <div className="flex items-center justify-between text-[13px] font-bold mb-1.5">
+                <span style={{ color: match.homeTeam?.primaryColor || (dk ? "#f0f0f0" : "var(--ink)") }}>{possessionStats.homePercent}%</span>
+                <span className="text-[10px] font-normal uppercase tracking-wider" style={{ color: dk ? textMuted : "#aaa" }}>possession</span>
+                <span style={{ color: match.awayTeam?.primaryColor || (dk ? "#f0f0f0" : "var(--ink)") }}>{possessionStats.awayPercent}%</span>
+              </div>
+              <div className="flex h-3 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.06)" }}>
+                <div style={{ width: `${possessionStats.homePercent}%`, background: match.homeTeam?.primaryColor || "#1B5E20", transition: "width 0.5s", minWidth: possessionStats.homePercent > 0 ? 4 : 0 }} />
+                <div style={{ flex: 1, background: match.awayTeam?.primaryColor || "#6A1B1A", transition: "width 0.5s", minWidth: possessionStats.awayPercent > 0 ? 4 : 0 }} />
+              </div>
+            </>
+          ) : (
+            <div className="text-[12px] text-center py-1" style={{ color: dk ? textMuted : "#aaa" }}>Tap a team to start tracking</div>
+          )}
         </div>
         </>)}
 
-        {showSection("gfx") && (<>
+        {showSection("gfx") && (
         <div className={`rounded-[12px] p-3 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <div className="flex items-center gap-1">
             <div className="flex flex-col items-center flex-1 min-w-0">
@@ -934,6 +1099,9 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
             </div>
           </div>
         </div>
+        )}
+
+        {(showSection("gfx") || mode === "score") && (<>
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <span className="text-[12px] font-sans font-medium uppercase tracking-wider block mb-3" style={dk ? { color: textMuted } : undefined}>Match Status</span>
           <div className="flex gap-2">
@@ -1024,32 +1192,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
         </div>
         </>)}
 
-        {showSection("score") && (<>
-        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
-          <span className="text-[12px] font-sans font-medium uppercase tracking-wider block mb-3" style={dk ? { color: textMuted } : undefined}>Match Status</span>
-          <div className="flex gap-2">
-            {statusOptions.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => handleStatus(opt.value)}
-                className={`flex-1 py-2.5 px-2 rounded-[8px] font-sans font-medium text-[13px] transition-colors ${
-                  match.status === opt.value
-                    ? "bg-g700 text-white"
-                    : dk ? "" : "bg-g50 text-ink2 hover:bg-g100 hover:text-ink"
-                }`}
-                style={match.status !== opt.value && dk ? { background: btnMuted, color: btnMutedText } : undefined}
-              >
-                {opt.value === "live" && match.status === "live" && (
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-white mr-1.5 animate-live-dot align-middle" />
-                )}
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        </>)}
-
-        {showSection("gfx") && (<>
+        {(showSection("gfx") || mode === "score") && (<>
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <button
             onClick={() => setStreamOpen(prev => !prev)}
@@ -1160,7 +1303,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
         </div>
         </>)}
 
-        {showSection("gfx") && (<>
+        {(showSection("gfx") || mode === "score") && (<>
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <button
             onClick={() => setOutputResOpen(prev => !prev)}
@@ -1222,7 +1365,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
         </div>
         </>)}
 
-        {showSection("gfx") && (<>
+        {(showSection("gfx") || mode === "score") && (<>
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <button
             onClick={() => setTimingOpen(prev => !prev)}
@@ -1474,6 +1617,90 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
           )}
         </div>
         </>)}
+
+        {mode === "score" && !isShareMode && (
+        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
+          <div className="flex items-center gap-2 mb-3">
+            <Share2 className="w-4 h-4" style={dk ? { color: textMuted } : undefined} />
+            <span className="text-[12px] font-sans font-medium uppercase tracking-wider flex-1" style={dk ? { color: textMuted } : undefined}>Share</span>
+            <button
+              onClick={fetchShareLinks}
+              className="w-7 h-7 flex items-center justify-center rounded-[6px] transition-colors"
+              style={dk ? { background: "rgba(255,255,255,0.06)", color: textMuted } : { background: "rgba(0,0,0,0.04)", color: "#888" }}
+              title="Refresh"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${shareLinksLoading ? "animate-spin" : ""}`} />
+            </button>
+          </div>
+
+          {([
+            { type: "full_control" as const, label: "Full Control", desc: "Gives full score-entry access" },
+            { type: "scoreboard" as const, label: "Just Scoreboard", desc: "Public read-only scoreboard" },
+          ]).map(({ type, label, desc }) => {
+            const active = shareLinks.find(l => l.pageType === type && isTrulyActive(l)) || null;
+            const working = shareLinksWorking[type];
+            return (
+              <div key={type} className={`rounded-[8px] p-3 mb-2 last:mb-0 ${dk ? "" : "bg-g50 border border-g100"}`} style={dk ? { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" } : undefined}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <div>
+                    <span className="text-[13px] font-semibold" style={dk ? { color: textPrimary } : undefined}>{label}</span>
+                    <span className="text-[11px] ml-2" style={dk ? { color: textMuted } : { color: "#999" }}>{desc}</span>
+                  </div>
+                  {active && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold" style={{ background: "rgba(16,185,129,0.12)", color: "#059669" }}>Active</span>
+                  )}
+                </div>
+                {active ? (
+                  <div className="flex gap-2">
+                    <input
+                      readOnly
+                      value={buildShareUrl(active)}
+                      className="flex-1 h-8 px-2 rounded-[6px] text-[11px] font-mono"
+                      style={dk ? { background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.08)", color: "#e0e0e0" } : { background: "white", border: "1px solid #e0e0e0", color: "#333" }}
+                      onClick={e => (e.target as HTMLInputElement).select()}
+                    />
+                    <button
+                      onClick={() => navigator.clipboard.writeText(buildShareUrl(active)).then(() => toast({ title: "Copied" })).catch(() => {})}
+                      className="w-8 h-8 rounded-[6px] flex items-center justify-center transition-colors"
+                      style={dk ? { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" } : { background: "white", border: "1px solid #e0e0e0" }}
+                      title="Copy"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => revokeShareLink(active.id)}
+                      className="w-8 h-8 rounded-[6px] flex items-center justify-center transition-colors"
+                      style={dk ? { background: "rgba(239,68,68,0.15)", color: "#ef4444" } : { background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", color: "#dc2626" }}
+                      title="Revoke"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => generateShareLink(type)}
+                      disabled={working}
+                      className="w-8 h-8 rounded-[6px] flex items-center justify-center transition-colors disabled:opacity-40"
+                      style={dk ? { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff" } : { background: "white", border: "1px solid #e0e0e0" }}
+                      title="Regenerate"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${working ? "animate-spin" : ""}`} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => generateShareLink(type)}
+                    disabled={working}
+                    className="w-full h-8 rounded-[6px] font-sans font-semibold text-[12px] transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5"
+                    style={dk ? { background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.12)" } : { background: "#f0f0f0", color: "#333" }}
+                  >
+                    {working ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
+                    Generate {label} Link
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        )}
       </div>
 
       {showSection("gfx") && (

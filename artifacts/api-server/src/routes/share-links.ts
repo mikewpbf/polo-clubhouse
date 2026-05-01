@@ -7,8 +7,8 @@ import { requireMatchWrite } from "../lib/auth";
 
 const router: IRouter = Router();
 
-type SharePageType = "stats" | "gfx";
-const ALLOWED_PAGE_TYPES = new Set<SharePageType>(["stats", "gfx"]);
+type SharePageType = "stats" | "gfx" | "scoreboard" | "full_control";
+const ALLOWED_PAGE_TYPES = new Set<SharePageType>(["stats", "gfx", "scoreboard", "full_control"]);
 
 // Compute the natural expiration for a new share link.
 // Spec rule: "scheduled end + 6h, or scheduled start + 4h if no end."
@@ -37,7 +37,7 @@ function isAdminCaller(req: { user?: unknown; share?: unknown }): boolean {
 // List all share links for a match (admin only).
 router.get(
   "/matches/:matchId/share-links",
-  requireMatchWrite("stats", "gfx"),
+  requireMatchWrite("stats", "gfx", "scoreboard", "full_control"),
   async (req, res) => {
     try {
       if (!isAdminCaller(req)) { res.status(403).json({ message: "Admin access required" }); return; }
@@ -66,14 +66,14 @@ router.get(
 // only one link per page type is ever live at a time.
 router.post(
   "/matches/:matchId/share-links",
-  requireMatchWrite("stats", "gfx"),
+  requireMatchWrite("stats", "gfx", "scoreboard", "full_control"),
   async (req, res) => {
     try {
       if (!isAdminCaller(req)) { res.status(403).json({ message: "Admin access required" }); return; }
       const matchId = String(req.params.matchId);
       const { pageType, label } = req.body || {};
       if (!ALLOWED_PAGE_TYPES.has(pageType as SharePageType)) {
-        res.status(400).json({ message: "pageType must be 'stats' or 'gfx'" });
+        res.status(400).json({ message: "pageType must be one of: stats, gfx, scoreboard, full_control" });
         return;
       }
       const [match] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
@@ -119,7 +119,7 @@ router.post(
 // Revoke (soft-delete) a share link.
 router.delete(
   "/matches/:matchId/share-links/:linkId",
-  requireMatchWrite("stats", "gfx"),
+  requireMatchWrite("stats", "gfx", "scoreboard", "full_control"),
   async (req, res) => {
     try {
       if (!isAdminCaller(req)) { res.status(403).json({ message: "Admin access required" }); return; }

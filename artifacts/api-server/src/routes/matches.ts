@@ -363,7 +363,7 @@ router.get("/matches/:matchId", async (req, res) => {
   }
 });
 
-router.put("/matches/:matchId", requireMatchWrite("gfx"), async (req, res) => {
+router.put("/matches/:matchId", requireMatchWrite("gfx", "full_control"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { homeTeamId, awayTeamId, fieldId, scheduledAt, round, isLocked, notes, streamUrl, streamStartedAt, scoringLocation, broadcastOffsetSeconds } = req.body;
@@ -400,7 +400,7 @@ router.put("/matches/:matchId", requireMatchWrite("gfx"), async (req, res) => {
   }
 });
 
-router.post("/matches/:matchId/score", requireMatchAdminFactory(), async (req, res) => {
+router.post("/matches/:matchId/score", requireMatchWrite("full_control"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { homeScore, awayScore } = req.body;
@@ -423,7 +423,7 @@ router.post("/matches/:matchId/score", requireMatchAdminFactory(), async (req, r
   }
 });
 
-router.post("/matches/:matchId/clock", requireMatchAdminFactory(), async (req, res) => {
+router.post("/matches/:matchId/clock", requireMatchWrite("full_control"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { action } = req.body;
@@ -467,7 +467,7 @@ router.post("/matches/:matchId/clock", requireMatchAdminFactory(), async (req, r
   }
 });
 
-router.post("/matches/:matchId/status", requireMatchAdminFactory(), async (req, res) => {
+router.post("/matches/:matchId/status", requireMatchWrite("full_control"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { status } = req.body;
@@ -507,7 +507,7 @@ router.post("/matches/:matchId/status", requireMatchAdminFactory(), async (req, 
   }
 });
 
-router.post("/matches/:matchId/chukker", requireMatchAdminFactory(), async (req, res) => {
+router.post("/matches/:matchId/chukker", requireMatchWrite("full_control"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const direction = req.body?.direction === "back" ? -1 : 1;
@@ -558,7 +558,7 @@ router.post("/matches/:matchId/chukker", requireMatchAdminFactory(), async (req,
   }
 });
 
-router.post("/matches/:matchId/goal", requireMatchAdminFactory(), async (req, res) => {
+router.post("/matches/:matchId/goal", requireMatchWrite("full_control"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { teamId, playerId } = req.body;
@@ -615,7 +615,7 @@ router.post("/matches/:matchId/goal", requireMatchAdminFactory(), async (req, re
   }
 });
 
-router.post("/matches/:matchId/undo-goal", requireMatchAdminFactory(), async (req, res) => {
+router.post("/matches/:matchId/undo-goal", requireMatchWrite("full_control"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { teamId } = req.body;
@@ -656,7 +656,7 @@ router.post("/matches/:matchId/undo-goal", requireMatchAdminFactory(), async (re
   }
 });
 
-router.delete("/matches/:matchId/events/:eventId", requireMatchWrite("stats"), async (req, res) => {
+router.delete("/matches/:matchId/events/:eventId", requireMatchWrite("stats", "full_control"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const eventId = String(req.params.eventId);
@@ -698,7 +698,7 @@ router.delete("/matches/:matchId/events/:eventId", requireMatchWrite("stats"), a
   }
 });
 
-router.post("/matches/:matchId/clock/adjust", requireMatchAdminFactory(), async (req, res) => {
+router.post("/matches/:matchId/clock/adjust", requireMatchWrite("full_control"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { seconds } = req.body;
@@ -722,7 +722,7 @@ router.post("/matches/:matchId/clock/adjust", requireMatchAdminFactory(), async 
   }
 });
 
-router.post("/matches/:matchId/event", requireMatchWrite("stats"), async (req, res) => {
+router.post("/matches/:matchId/event", requireMatchWrite("stats", "full_control"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { eventType, description, teamId, playerId, distance, severity } = req.body;
@@ -892,7 +892,7 @@ router.get("/matches/:matchId/stats", async (req, res) => {
   }
 });
 
-router.post("/matches/:matchId/stat", requireMatchWrite("stats"), async (req, res) => {
+router.post("/matches/:matchId/stat", requireMatchWrite("stats", "full_control"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { eventType, teamId, description } = req.body;
@@ -1199,7 +1199,7 @@ router.get("/clubs/:clubId/broadcast/channel/:channel", async (req, res) => {
   }
 });
 
-router.put("/matches/:matchId/broadcast", requireMatchWrite("gfx"), async (req, res) => {
+router.put("/matches/:matchId/broadcast", requireMatchWrite("gfx", "full_control"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { broadcastVisible, broadcastStyle, broadcastResolution, broadcast4kScale, broadcast4kOffsetX, broadcast4kOffsetY, broadcastChannel } = req.body;
@@ -1401,7 +1401,7 @@ router.post("/matches/:matchId/possession", optionalAuth, async (req, res) => {
   }
 });
 
-router.delete("/matches/:matchId/possession", requireMatchWrite("stats"), async (req, res) => {
+router.delete("/matches/:matchId/possession", requireMatchWrite("stats", "full_control"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     await db.delete(possessionSegmentsTable).where(eq(possessionSegmentsTable.matchId, matchId));

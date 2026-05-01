@@ -386,7 +386,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
   };
 
   type PlayerStatArgs =
-    | { eventType: "penalty_in"; teamId: string; playerId: string; distance: "20" | "30" | "40" }
+    | { eventType: "penalty_in"; teamId: string; playerId: string; distance: "30" | "40" | "60" }
     | { eventType: "foul_committed"; teamId: string; playerId: string; severity: "1" | "2" | "3" | "4" | "5a" | "5b" }
     | { eventType: "penalty_out" | "throw_in_won" | "fouls_won" | "shot_on_goal"; teamId: string; playerId: string };
 
@@ -546,7 +546,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                   Penalty In (yards)
                 </div>
                 <div className="grid grid-cols-3 gap-1.5">
-                  {(["20", "30", "40"] as const).map((d) => (
+                  {(["30", "40", "60"] as const).map((d) => (
                     <button
                       key={d}
                       onClick={() => handlePlayerStat({ eventType: "penalty_in", teamId, playerId: p.id, distance: d })}
@@ -821,7 +821,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                       <button onClick={() => handlePlayerStat({ eventType: "shot_on_goal", teamId, playerId: p.id })} disabled={isFinal} className={playerBtnCls} style={dk ? { background: btnMuted, color: btnMutedText } : undefined} title="Records shot on goal for this player + knock in for opponents">Shot on Goal</button>
                     </div>
                     <div className="flex gap-1 items-center">
-                      {(["20", "30", "40"] as const).map(d => (
+                      {(["30", "40", "60"] as const).map(d => (
                         <button key={d} onClick={() => handlePlayerStat({ eventType: "penalty_in", teamId, playerId: p.id, distance: d })} disabled={isFinal} className={penInBtnCls} style={dk ? { background: "rgba(16,185,129,0.15)", color: "#34d399" } : undefined}>{d}y</button>
                       ))}
                     </div>

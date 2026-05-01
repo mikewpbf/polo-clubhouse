@@ -1338,7 +1338,7 @@ export const GetMatchResponse = zod.object({
         ),
       playerName: zod.string().nullish(),
       distance: zod
-        .enum(["20", "30", "40"])
+        .enum(["30", "40", "60"])
         .nullish()
         .describe("Yardage distance. Only valid on penalty_in events."),
       severity: zod
@@ -1860,7 +1860,7 @@ export const ListMatchEventsResponseItem = zod.object({
     ),
   playerName: zod.string().nullish(),
   distance: zod
-    .enum(["20", "30", "40"])
+    .enum(["30", "40", "60"])
     .nullish()
     .describe("Yardage distance. Only valid on penalty_in events."),
   severity: zod

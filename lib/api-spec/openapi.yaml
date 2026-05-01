@@ -1067,6 +1067,107 @@ paths:
                 items:
                   $ref: "#/components/schemas/MatchEvent"
 
+  /matches/{matchId}/share-links:
+    get:
+      operationId: listMatchShareLinks
+      tags: [shareLinks]
+      summary: List share links for a match (admin only)
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Share links
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MatchShareLink"
+    post:
+      operationId: createMatchShareLink
+      tags: [shareLinks]
+      summary: Create (or regenerate) a share link
+      description: Auto-revokes the previous active link of the same page type before issuing a new one.
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateShareLinkRequest"
+      responses:
+        "200":
+          description: Newly created share link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchShareLink"
+
+  /matches/{matchId}/share-links/{linkId}:
+    delete:
+      operationId: revokeMatchShareLink
+      tags: [shareLinks]
+      summary: Revoke a share link
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: linkId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Revoked
+
+  /share/{token}:
+    get:
+      operationId: resolveShareToken
+      tags: [shareLinks]
+      summary: Resolve a public share token
+      description: Returns matchId and pageType for valid tokens. Returns reason codes (not_found, revoked, expired, match_missing) on failure.
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Resolved share token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolveShareTokenResponse"
+        "404":
+          description: Token not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareTokenError"
+        "410":
+          description: Token revoked or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareTokenError"
+
   /matches/live:
     get:
       operationId: listLiveMatches
@@ -2770,11 +2871,51 @@ components:
           format: uuid
         eventType:
           type: string
-          enum: [goal, score_correction, chukker_start, chukker_end, match_start, match_end, clock_start, clock_pause]
+          enum:
+            - goal
+            - score_correction
+            - chukker_start
+            - chukker_end
+            - match_start
+            - match_end
+            - clock_start
+            - clock_pause
+            - penalty
+            - horse_change
+            - safety
+            - injury_timeout
+            - bowl_in
+            - knock_in
+            - foul
+            - penalty_goal
+            - shot_on_goal
+            - penalty_in
+            - penalty_out
+            - throw_in_won
+            - foul_committed
+            - fouls_won
         teamId:
           type: string
           format: uuid
           nullable: true
+        playerId:
+          type: string
+          format: uuid
+          nullable: true
+          description: For per-player stat events (penalty_in, penalty_out, throw_in_won, foul_committed, fouls_won) the player who triggered the event.
+        playerName:
+          type: string
+          nullable: true
+        distance:
+          type: string
+          enum: ["20", "30", "40"]
+          nullable: true
+          description: Yardage distance. Only valid on penalty_in events.
+        severity:
+          type: string
+          enum: ["1", "2", "3", "4", "5a", "5b"]
+          nullable: true
+          description: Foul severity. Only valid on foul_committed events.
         chukker:
           type: integer
           nullable: true
@@ -2783,6 +2924,9 @@ components:
           nullable: true
         scoreSnapshot:
           type: object
+          nullable: true
+        description:
+          type: string
           nullable: true
         createdBy:
           type: string
@@ -2795,6 +2939,70 @@ components:
         - id
         - matchId
         - eventType
+
+    MatchShareLink:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        matchId:
+          type: string
+          format: uuid
+        pageType:
+          type: string
+          enum: [stats, gfx]
+        token:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        revokedAt:
+          type: string
+          format: date-time
+          nullable: true
+        active:
+          type: boolean
+          description: True when the link is neither revoked nor expired.
+      required: [id, matchId, pageType, token, createdAt, active]
+
+    CreateShareLinkRequest:
+      type: object
+      properties:
+        pageType:
+          type: string
+          enum: [stats, gfx]
+      required: [pageType]
+
+    ResolveShareTokenResponse:
+      type: object
+      description: Public payload returned when resolving a share token.
+      properties:
+        matchId:
+          type: string
+          format: uuid
+        pageType:
+          type: string
+          enum: [stats, gfx]
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+      required: [matchId, pageType]
+
+    ShareTokenError:
+      type: object
+      properties:
+        message:
+          type: string
+        reason:
+          type: string
+          enum: [not_found, revoked, expired, match_missing]
+      required: [message, reason]
 
     GenerateScheduleResponse:
       type: object

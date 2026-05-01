@@ -31,6 +31,7 @@ import type {
   CreateHorseRequest,
   CreatePlayDateRequest,
   CreatePlayerRequest,
+  CreateShareLinkRequest,
   CreateTeamOutDateRequest,
   CreateTeamRequest,
   CreateTournamentRequest,
@@ -54,6 +55,7 @@ import type {
   LoginRequest,
   MatchDetail,
   MatchEvent,
+  MatchShareLink,
   MatchWithTeams,
   MessageResponse,
   MyTeamAssignment,
@@ -63,7 +65,9 @@ import type {
   PlayerSummary,
   RecommendFormatRequest,
   RecommendFormatResponse,
+  ResolveShareTokenResponse,
   SelfEditPlayerRequest,
+  ShareTokenError,
   SignupRequest,
   StandingsEntry,
   Team,
@@ -4123,6 +4127,360 @@ export function useListMatchEvents<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getListMatchEventsQueryOptions(matchId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List share links for a match (admin only)
+ */
+export const getListMatchShareLinksUrl = (matchId: string) => {
+  return `/api/matches/${matchId}/share-links`;
+};
+
+export const listMatchShareLinks = async (
+  matchId: string,
+  options?: RequestInit,
+): Promise<MatchShareLink[]> => {
+  return customFetch<MatchShareLink[]>(getListMatchShareLinksUrl(matchId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMatchShareLinksQueryKey = (matchId: string) => {
+  return [`/api/matches/${matchId}/share-links`] as const;
+};
+
+export const getListMatchShareLinksQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMatchShareLinks>>,
+  TError = ErrorType<unknown>,
+>(
+  matchId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMatchShareLinks>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListMatchShareLinksQueryKey(matchId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listMatchShareLinks>>
+  > = ({ signal }) =>
+    listMatchShareLinks(matchId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!matchId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMatchShareLinks>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMatchShareLinksQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMatchShareLinks>>
+>;
+export type ListMatchShareLinksQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List share links for a match (admin only)
+ */
+
+export function useListMatchShareLinks<
+  TData = Awaited<ReturnType<typeof listMatchShareLinks>>,
+  TError = ErrorType<unknown>,
+>(
+  matchId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMatchShareLinks>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMatchShareLinksQueryOptions(matchId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Auto-revokes the previous active link of the same page type before issuing a new one.
+ * @summary Create (or regenerate) a share link
+ */
+export const getCreateMatchShareLinkUrl = (matchId: string) => {
+  return `/api/matches/${matchId}/share-links`;
+};
+
+export const createMatchShareLink = async (
+  matchId: string,
+  createShareLinkRequest: CreateShareLinkRequest,
+  options?: RequestInit,
+): Promise<MatchShareLink> => {
+  return customFetch<MatchShareLink>(getCreateMatchShareLinkUrl(matchId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createShareLinkRequest),
+  });
+};
+
+export const getCreateMatchShareLinkMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMatchShareLink>>,
+    TError,
+    { matchId: string; data: BodyType<CreateShareLinkRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createMatchShareLink>>,
+  TError,
+  { matchId: string; data: BodyType<CreateShareLinkRequest> },
+  TContext
+> => {
+  const mutationKey = ["createMatchShareLink"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createMatchShareLink>>,
+    { matchId: string; data: BodyType<CreateShareLinkRequest> }
+  > = (props) => {
+    const { matchId, data } = props ?? {};
+
+    return createMatchShareLink(matchId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateMatchShareLinkMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createMatchShareLink>>
+>;
+export type CreateMatchShareLinkMutationBody = BodyType<CreateShareLinkRequest>;
+export type CreateMatchShareLinkMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create (or regenerate) a share link
+ */
+export const useCreateMatchShareLink = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMatchShareLink>>,
+    TError,
+    { matchId: string; data: BodyType<CreateShareLinkRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createMatchShareLink>>,
+  TError,
+  { matchId: string; data: BodyType<CreateShareLinkRequest> },
+  TContext
+> => {
+  return useMutation(getCreateMatchShareLinkMutationOptions(options));
+};
+
+/**
+ * @summary Revoke a share link
+ */
+export const getRevokeMatchShareLinkUrl = (matchId: string, linkId: string) => {
+  return `/api/matches/${matchId}/share-links/${linkId}`;
+};
+
+export const revokeMatchShareLink = async (
+  matchId: string,
+  linkId: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getRevokeMatchShareLinkUrl(matchId, linkId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getRevokeMatchShareLinkMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof revokeMatchShareLink>>,
+    TError,
+    { matchId: string; linkId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof revokeMatchShareLink>>,
+  TError,
+  { matchId: string; linkId: string },
+  TContext
+> => {
+  const mutationKey = ["revokeMatchShareLink"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof revokeMatchShareLink>>,
+    { matchId: string; linkId: string }
+  > = (props) => {
+    const { matchId, linkId } = props ?? {};
+
+    return revokeMatchShareLink(matchId, linkId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RevokeMatchShareLinkMutationResult = NonNullable<
+  Awaited<ReturnType<typeof revokeMatchShareLink>>
+>;
+
+export type RevokeMatchShareLinkMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Revoke a share link
+ */
+export const useRevokeMatchShareLink = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof revokeMatchShareLink>>,
+    TError,
+    { matchId: string; linkId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof revokeMatchShareLink>>,
+  TError,
+  { matchId: string; linkId: string },
+  TContext
+> => {
+  return useMutation(getRevokeMatchShareLinkMutationOptions(options));
+};
+
+/**
+ * Returns matchId and pageType for valid tokens. Returns reason codes (not_found, revoked, expired, match_missing) on failure.
+ * @summary Resolve a public share token
+ */
+export const getResolveShareTokenUrl = (token: string) => {
+  return `/api/share/${token}`;
+};
+
+export const resolveShareToken = async (
+  token: string,
+  options?: RequestInit,
+): Promise<ResolveShareTokenResponse> => {
+  return customFetch<ResolveShareTokenResponse>(
+    getResolveShareTokenUrl(token),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getResolveShareTokenQueryKey = (token: string) => {
+  return [`/api/share/${token}`] as const;
+};
+
+export const getResolveShareTokenQueryOptions = <
+  TData = Awaited<ReturnType<typeof resolveShareToken>>,
+  TError = ErrorType<ShareTokenError>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof resolveShareToken>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getResolveShareTokenQueryKey(token);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof resolveShareToken>>
+  > = ({ signal }) => resolveShareToken(token, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!token,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof resolveShareToken>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ResolveShareTokenQueryResult = NonNullable<
+  Awaited<ReturnType<typeof resolveShareToken>>
+>;
+export type ResolveShareTokenQueryError = ErrorType<ShareTokenError>;
+
+/**
+ * @summary Resolve a public share token
+ */
+
+export function useResolveShareToken<
+  TData = Awaited<ReturnType<typeof resolveShareToken>>,
+  TError = ErrorType<ShareTokenError>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof resolveShareToken>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getResolveShareTokenQueryOptions(token, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -563,6 +563,49 @@ export const MatchEventEventType = {
   match_end: "match_end",
   clock_start: "clock_start",
   clock_pause: "clock_pause",
+  penalty: "penalty",
+  horse_change: "horse_change",
+  safety: "safety",
+  injury_timeout: "injury_timeout",
+  bowl_in: "bowl_in",
+  knock_in: "knock_in",
+  foul: "foul",
+  penalty_goal: "penalty_goal",
+  shot_on_goal: "shot_on_goal",
+  penalty_in: "penalty_in",
+  penalty_out: "penalty_out",
+  throw_in_won: "throw_in_won",
+  foul_committed: "foul_committed",
+  fouls_won: "fouls_won",
+} as const;
+
+/**
+ * Yardage distance. Only valid on penalty_in events.
+ */
+export type MatchEventDistance =
+  | (typeof MatchEventDistance)[keyof typeof MatchEventDistance]
+  | null;
+
+export const MatchEventDistance = {
+  NUMBER_20: "20",
+  NUMBER_30: "30",
+  NUMBER_40: "40",
+} as const;
+
+/**
+ * Foul severity. Only valid on foul_committed events.
+ */
+export type MatchEventSeverity =
+  | (typeof MatchEventSeverity)[keyof typeof MatchEventSeverity]
+  | null;
+
+export const MatchEventSeverity = {
+  NUMBER_1: "1",
+  NUMBER_2: "2",
+  NUMBER_3: "3",
+  NUMBER_4: "4",
+  "5a": "5a",
+  "5b": "5b",
 } as const;
 
 export type MatchEventScoreSnapshot = { [key: string]: unknown } | null;
@@ -572,9 +615,17 @@ export interface MatchEvent {
   matchId: string;
   eventType: MatchEventEventType;
   teamId?: string | null;
+  /** For per-player stat events (penalty_in, penalty_out, throw_in_won, foul_committed, fouls_won) the player who triggered the event. */
+  playerId?: string | null;
+  playerName?: string | null;
+  /** Yardage distance. Only valid on penalty_in events. */
+  distance?: MatchEventDistance;
+  /** Foul severity. Only valid on foul_committed events. */
+  severity?: MatchEventSeverity;
   chukker?: number | null;
   clockSeconds?: number | null;
   scoreSnapshot?: MatchEventScoreSnapshot;
+  description?: string | null;
   createdBy?: string | null;
   createdAt?: string;
 }
@@ -660,6 +711,70 @@ export const UpdateMatchStatusRequestStatus = {
 
 export interface UpdateMatchStatusRequest {
   status: UpdateMatchStatusRequestStatus;
+}
+
+export type MatchShareLinkPageType =
+  (typeof MatchShareLinkPageType)[keyof typeof MatchShareLinkPageType];
+
+export const MatchShareLinkPageType = {
+  stats: "stats",
+  gfx: "gfx",
+} as const;
+
+export interface MatchShareLink {
+  id: string;
+  matchId: string;
+  pageType: MatchShareLinkPageType;
+  token: string;
+  createdAt: string;
+  expiresAt?: string | null;
+  revokedAt?: string | null;
+  /** True when the link is neither revoked nor expired. */
+  active: boolean;
+}
+
+export type CreateShareLinkRequestPageType =
+  (typeof CreateShareLinkRequestPageType)[keyof typeof CreateShareLinkRequestPageType];
+
+export const CreateShareLinkRequestPageType = {
+  stats: "stats",
+  gfx: "gfx",
+} as const;
+
+export interface CreateShareLinkRequest {
+  pageType: CreateShareLinkRequestPageType;
+}
+
+export type ResolveShareTokenResponsePageType =
+  (typeof ResolveShareTokenResponsePageType)[keyof typeof ResolveShareTokenResponsePageType];
+
+export const ResolveShareTokenResponsePageType = {
+  stats: "stats",
+  gfx: "gfx",
+} as const;
+
+/**
+ * Public payload returned when resolving a share token.
+ */
+export interface ResolveShareTokenResponse {
+  matchId: string;
+  pageType: ResolveShareTokenResponsePageType;
+  expiresAt?: string | null;
+}
+
+export type ShareTokenErrorReason =
+  (typeof ShareTokenErrorReason)[keyof typeof ShareTokenErrorReason];
+
+export const ShareTokenErrorReason = {
+  not_found: "not_found",
+  revoked: "revoked",
+  expired: "expired",
+  match_missing: "match_missing",
+} as const;
+
+export interface ShareTokenError {
+  message: string;
+  reason: ShareTokenErrorReason;
 }
 
 export type ScheduleWarningType =

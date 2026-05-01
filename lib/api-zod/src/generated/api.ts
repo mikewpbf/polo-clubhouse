@@ -1313,11 +1313,42 @@ export const GetMatchResponse = zod.object({
         "match_end",
         "clock_start",
         "clock_pause",
+        "penalty",
+        "horse_change",
+        "safety",
+        "injury_timeout",
+        "bowl_in",
+        "knock_in",
+        "foul",
+        "penalty_goal",
+        "shot_on_goal",
+        "penalty_in",
+        "penalty_out",
+        "throw_in_won",
+        "foul_committed",
+        "fouls_won",
       ]),
       teamId: zod.string().uuid().nullish(),
+      playerId: zod
+        .string()
+        .uuid()
+        .nullish()
+        .describe(
+          "For per-player stat events (penalty_in, penalty_out, throw_in_won, foul_committed, fouls_won) the player who triggered the event.",
+        ),
+      playerName: zod.string().nullish(),
+      distance: zod
+        .enum(["20", "30", "40"])
+        .nullish()
+        .describe("Yardage distance. Only valid on penalty_in events."),
+      severity: zod
+        .enum(["1", "2", "3", "4", "5a", "5b"])
+        .nullish()
+        .describe("Foul severity. Only valid on foul_committed events."),
       chukker: zod.number().nullish(),
       clockSeconds: zod.number().nullish(),
       scoreSnapshot: zod.object({}).passthrough().nullish(),
+      description: zod.string().nullish(),
       createdBy: zod.string().uuid().nullish(),
       createdAt: zod.date().optional(),
     }),
@@ -1804,15 +1835,118 @@ export const ListMatchEventsResponseItem = zod.object({
     "match_end",
     "clock_start",
     "clock_pause",
+    "penalty",
+    "horse_change",
+    "safety",
+    "injury_timeout",
+    "bowl_in",
+    "knock_in",
+    "foul",
+    "penalty_goal",
+    "shot_on_goal",
+    "penalty_in",
+    "penalty_out",
+    "throw_in_won",
+    "foul_committed",
+    "fouls_won",
   ]),
   teamId: zod.string().uuid().nullish(),
+  playerId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "For per-player stat events (penalty_in, penalty_out, throw_in_won, foul_committed, fouls_won) the player who triggered the event.",
+    ),
+  playerName: zod.string().nullish(),
+  distance: zod
+    .enum(["20", "30", "40"])
+    .nullish()
+    .describe("Yardage distance. Only valid on penalty_in events."),
+  severity: zod
+    .enum(["1", "2", "3", "4", "5a", "5b"])
+    .nullish()
+    .describe("Foul severity. Only valid on foul_committed events."),
   chukker: zod.number().nullish(),
   clockSeconds: zod.number().nullish(),
   scoreSnapshot: zod.object({}).passthrough().nullish(),
+  description: zod.string().nullish(),
   createdBy: zod.string().uuid().nullish(),
   createdAt: zod.date().optional(),
 });
 export const ListMatchEventsResponse = zod.array(ListMatchEventsResponseItem);
+
+/**
+ * @summary List share links for a match (admin only)
+ */
+export const ListMatchShareLinksParams = zod.object({
+  matchId: zod.coerce.string().uuid(),
+});
+
+export const ListMatchShareLinksResponseItem = zod.object({
+  id: zod.string().uuid(),
+  matchId: zod.string().uuid(),
+  pageType: zod.enum(["stats", "gfx"]),
+  token: zod.string(),
+  createdAt: zod.date(),
+  expiresAt: zod.date().nullish(),
+  revokedAt: zod.date().nullish(),
+  active: zod
+    .boolean()
+    .describe("True when the link is neither revoked nor expired."),
+});
+export const ListMatchShareLinksResponse = zod.array(
+  ListMatchShareLinksResponseItem,
+);
+
+/**
+ * Auto-revokes the previous active link of the same page type before issuing a new one.
+ * @summary Create (or regenerate) a share link
+ */
+export const CreateMatchShareLinkParams = zod.object({
+  matchId: zod.coerce.string().uuid(),
+});
+
+export const CreateMatchShareLinkBody = zod.object({
+  pageType: zod.enum(["stats", "gfx"]),
+});
+
+export const CreateMatchShareLinkResponse = zod.object({
+  id: zod.string().uuid(),
+  matchId: zod.string().uuid(),
+  pageType: zod.enum(["stats", "gfx"]),
+  token: zod.string(),
+  createdAt: zod.date(),
+  expiresAt: zod.date().nullish(),
+  revokedAt: zod.date().nullish(),
+  active: zod
+    .boolean()
+    .describe("True when the link is neither revoked nor expired."),
+});
+
+/**
+ * @summary Revoke a share link
+ */
+export const RevokeMatchShareLinkParams = zod.object({
+  matchId: zod.coerce.string().uuid(),
+  linkId: zod.coerce.string().uuid(),
+});
+
+/**
+ * Returns matchId and pageType for valid tokens. Returns reason codes (not_found, revoked, expired, match_missing) on failure.
+ * @summary Resolve a public share token
+ */
+export const ResolveShareTokenParams = zod.object({
+  token: zod.coerce.string(),
+});
+
+export const ResolveShareTokenResponse = zod
+  .object({
+    matchId: zod.string().uuid(),
+    pageType: zod.enum(["stats", "gfx"]),
+    expiresAt: zod.date().nullish(),
+  })
+  .describe("Public payload returned when resolving a share token.");
 
 /**
  * @summary List all live matches

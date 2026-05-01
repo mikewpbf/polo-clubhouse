@@ -5,17 +5,27 @@
  * Polo Manager API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { MatchEventDistance } from "./matchEventDistance";
 import type { MatchEventEventType } from "./matchEventEventType";
 import type { MatchEventScoreSnapshot } from "./matchEventScoreSnapshot";
+import type { MatchEventSeverity } from "./matchEventSeverity";
 
 export interface MatchEvent {
   id: string;
   matchId: string;
   eventType: MatchEventEventType;
   teamId?: string | null;
+  /** For per-player stat events (penalty_in, penalty_out, throw_in_won, foul_committed, fouls_won) the player who triggered the event. */
+  playerId?: string | null;
+  playerName?: string | null;
+  /** Yardage distance. Only valid on penalty_in events. */
+  distance?: MatchEventDistance;
+  /** Foul severity. Only valid on foul_committed events. */
+  severity?: MatchEventSeverity;
   chukker?: number | null;
   clockSeconds?: number | null;
   scoreSnapshot?: MatchEventScoreSnapshot;
+  description?: string | null;
   createdBy?: string | null;
   createdAt?: Date;
 }

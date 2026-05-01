@@ -64,7 +64,9 @@ async function buildOg(req: Request): Promise<OgData | null> {
     const id = m[1];
     const [t] = await db.select().from(tournamentsTable).where(eq(tournamentsTable.id, id));
     if (!t) return null;
-    const [club] = t.clubId ? await db.select().from(clubsTable).where(eq(clubsTable.id, t.clubId)) : [null as any];
+    const club = t.clubId
+      ? (await db.select().from(clubsTable).where(eq(clubsTable.id, t.clubId)))[0] ?? null
+      : null;
     return {
       title: `${t.name} — Polo Clubhouse`,
       description: `${t.name}${club ? ` at ${club.name}` : ""}. View matches, scores, and standings.`,
@@ -80,12 +82,12 @@ async function buildOg(req: Request): Promise<OgData | null> {
     const id = m[1];
     const [match] = await db.select().from(matchesTable).where(eq(matchesTable.id, id));
     if (!match) return null;
-    const [home] = match.homeTeamId
-      ? await db.select().from(teamsTable).where(eq(teamsTable.id, match.homeTeamId))
-      : [null as any];
-    const [away] = match.awayTeamId
-      ? await db.select().from(teamsTable).where(eq(teamsTable.id, match.awayTeamId))
-      : [null as any];
+    const home = match.homeTeamId
+      ? (await db.select().from(teamsTable).where(eq(teamsTable.id, match.homeTeamId)))[0] ?? null
+      : null;
+    const away = match.awayTeamId
+      ? (await db.select().from(teamsTable).where(eq(teamsTable.id, match.awayTeamId)))[0] ?? null
+      : null;
     const [tour] = await db.select().from(tournamentsTable).where(eq(tournamentsTable.id, match.tournamentId));
     const homeName = home?.name || "TBD";
     const awayName = away?.name || "TBD";

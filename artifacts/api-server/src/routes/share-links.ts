@@ -10,16 +10,17 @@ const router: IRouter = Router();
 type SharePageType = "stats" | "gfx";
 const ALLOWED_PAGE_TYPES = new Set<SharePageType>(["stats", "gfx"]);
 
-// Compute the natural expiration for a new share link based on the match's
-// schedule. Floor-clamped to (now + 6h) so links are never born already
-// expired for past-scheduled matches.
-function computeExpiry(match: { scheduledAt: Date | null }): Date {
-  const now = Date.now();
-  const minExpiry = now + 6 * 3600_000;
-  const candidate = match.scheduledAt
-    ? new Date(match.scheduledAt).getTime() + 4 * 3600_000
-    : minExpiry;
-  return new Date(Math.max(candidate, minExpiry));
+// Compute the natural expiration for a new share link.
+// Spec rule: "scheduled end + 6h, or scheduled start + 4h if no end."
+// The match schema currently has no scheduled_end column, so we read it
+// defensively in case it is added later. If neither end nor start is set,
+// fall back to (now + 6h) to allow ad-hoc/unscheduled matches.
+function computeExpiry(match: { scheduledAt: Date | null; scheduledEndAt?: Date | null }): Date {
+  const end = match.scheduledEndAt ? new Date(match.scheduledEndAt).getTime() : null;
+  if (end != null) return new Date(end + 6 * 3600_000);
+  const start = match.scheduledAt ? new Date(match.scheduledAt).getTime() : null;
+  if (start != null) return new Date(start + 4 * 3600_000);
+  return new Date(Date.now() + 6 * 3600_000);
 }
 
 function newToken(): string {

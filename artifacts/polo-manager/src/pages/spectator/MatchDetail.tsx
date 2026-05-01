@@ -30,11 +30,7 @@ const VISIBLE_EVENT_TYPES = new Set(["goal", "chukker_start", "chukker_end", "ma
 
 function renderEventLabel(evt: MatchEvent, style?: React.CSSProperties, className?: string): React.ReactNode {
   if (evt.eventType === "goal") {
-    const playerPart = evt.playerName
-      ? (evt.playerId
-          ? <Link href={`/players/${evt.playerId}`} className="hover:underline">{evt.playerName}</Link>
-          : <span>{evt.playerName}</span>)
-      : null;
+    const playerPart = evt.playerName ? <span>{evt.playerName}</span> : null;
     return (
       <span className={className} style={style}>
         Goal{evt.teamName ? ` \u2014 ${evt.teamName}` : ""}{playerPart ? <span>{" \u2014 "}</span> : null}{playerPart}
@@ -547,10 +543,36 @@ export function MatchDetail() {
 
                             const isClickable = streamOffsetSeconds !== null && hasVideo;
 
+                            const handleRowActivate = () => {
+                              if (isClickable) seekTo(streamOffsetSeconds!);
+                            };
+
                             return (
                               <div
                                 key={evt.id}
-                                className="relative flex items-start gap-3 py-2.5 pl-3 pr-1 border-b border-line2 last:border-0"
+                                onClick={isClickable ? handleRowActivate : undefined}
+                                onKeyDown={
+                                  isClickable
+                                    ? (e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                          e.preventDefault();
+                                          handleRowActivate();
+                                        }
+                                      }
+                                    : undefined
+                                }
+                                role={isClickable ? "button" : undefined}
+                                tabIndex={isClickable ? 0 : undefined}
+                                title={
+                                  isClickable
+                                    ? `Jump to ${formatStreamOffset(streamOffsetSeconds!)} in video`
+                                    : undefined
+                                }
+                                className={`relative flex items-start gap-3 py-2.5 pl-3 pr-1 border-b border-line2 last:border-0 ${
+                                  isClickable
+                                    ? "cursor-pointer hover:bg-g50 focus:bg-g50 focus:outline-none transition-colors"
+                                    : ""
+                                }`}
                               >
                                 {positiveTeamEvent && teamColor ? (
                                   <div
@@ -576,13 +598,9 @@ export function MatchDetail() {
                                       {isBeforeStream ? (
                                         <span className="text-[11px] text-ink3">(before stream)</span>
                                       ) : isClickable ? (
-                                        <button
-                                          onClick={() => seekTo(streamOffsetSeconds!)}
-                                          className="text-[11px] text-g600 hover:text-g800 hover:underline font-medium transition-colors"
-                                          title={`Jump to ${formatStreamOffset(streamOffsetSeconds!)} in video`}
-                                        >
+                                        <span className="text-[11px] text-g600 font-medium">
                                           → {formatStreamOffset(streamOffsetSeconds!)}
-                                        </button>
+                                        </span>
                                       ) : null}
                                     </span>
                                   )}
@@ -594,7 +612,7 @@ export function MatchDetail() {
                                 )}
                                 {canManage && (
                                   <button
-                                    onClick={() => handleDeleteEvent(evt.id)}
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteEvent(evt.id); }}
                                     className="ml-2 p-1 rounded hover:bg-red-50 text-ink3 hover:text-red-600 transition-colors shrink-0"
                                     title="Remove event"
                                     aria-label="Remove event"

@@ -198,6 +198,14 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
     } catch {}
   }, [matchId]);
 
+  const handleSetPossession = useCallback(async (state: "home" | "away" | "loose") => {
+    if (!matchId) return;
+    try {
+      await apiFetch(`/matches/${matchId}/possession`, { method: "POST", body: JSON.stringify({ state }) });
+      fetchPossessionData();
+    } catch {}
+  }, [matchId, apiFetch, fetchPossessionData]);
+
   useEffect(() => {
     if ((!possessionOpen && mode !== "stats") || !matchId) return;
     fetchPossessionData();
@@ -499,11 +507,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
           <button
             onClick={() => {
               if (isShareMode) return;
-              if (match.tournament?.id) {
-                navigate(`/tournaments/${match.tournament.id}`);
-              } else {
-                window.history.back();
-              }
+              navigate("/admin/matchday");
             }}
             disabled={isShareMode}
             className={`w-9 h-9 rounded-[8px] flex items-center justify-center transition-colors ${isShareMode ? "opacity-30 cursor-not-allowed" : ""} ${dk ? "" : "bg-white border border-g200 hover:border-g300 card-shadow"}`}
@@ -668,16 +672,16 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                       {p.handicap != null && <span className="text-[9px] font-mono px-1 rounded shrink-0 ml-1" style={dk ? { background: "rgba(255,255,255,0.08)", color: textMuted } : { background: "rgba(0,0,0,0.06)", color: "#666" }}>{p.handicap}</span>}
                     </div>
                     <div className="flex gap-1">
-                      <button onClick={() => handlePlayerStat({ eventType: "throw_in_won", teamId, playerId: p.id })} disabled={isFinal} className={playerBtnCls} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>T-In</button>
-                      <button onClick={() => handlePlayerStat({ eventType: "penalty_out", teamId, playerId: p.id })} disabled={isFinal} className={playerBtnCls} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>Pen Out</button>
-                      <button onClick={() => handlePlayerStat({ eventType: "fouls_won", teamId, playerId: p.id })} disabled={isFinal} className={playerBtnCls} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>Foul Won</button>
-                    </div>
-                    <div className="flex gap-1">
+                      <button onClick={() => handlePlayerStat({ eventType: "throw_in_won", teamId, playerId: p.id })} disabled={isFinal} className={playerBtnCls} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>Bowl In Won</button>
                       {(["20", "30", "40"] as const).map(d => (
                         <button key={d} onClick={() => handlePlayerStat({ eventType: "penalty_in", teamId, playerId: p.id, distance: d })} disabled={isFinal} className={penInBtnCls} style={dk ? { background: "rgba(16,185,129,0.15)", color: "#34d399" } : undefined}>{d}y</button>
                       ))}
+                      <button onClick={() => handlePlayerStat({ eventType: "penalty_out", teamId, playerId: p.id })} disabled={isFinal} className={playerBtnCls} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>Pen Out</button>
+                    </div>
+                    <div className="flex gap-1 items-center">
+                      <span className="text-[8px] font-sans font-bold uppercase shrink-0" style={{ color: dk ? "#facc15" : "#92400e" }}>Foul:</span>
                       {(["1", "2", "3", "4", "5a", "5b"] as const).map(s => (
-                        <button key={s} onClick={() => handlePlayerStat({ eventType: "foul_committed", teamId, playerId: p.id, severity: s })} disabled={isFinal} className={foulBtnCls} style={dk ? { background: "rgba(202,138,4,0.18)", color: "#facc15" } : undefined}>{s.toUpperCase()}</button>
+                        <button key={s} onClick={() => handlePlayerStat({ eventType: "foul_committed", teamId, playerId: p.id, severity: s })} disabled={isFinal} className={foulBtnCls} style={dk ? { background: "rgba(202,138,4,0.18)", color: "#facc15" } : undefined} title={`Record foul committed — severity ${s.toUpperCase()}`}>{s.toUpperCase()}</button>
                       ))}
                     </div>
                   </div>
@@ -752,20 +756,30 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                         <div style={{ width: `${possessionStats.homePercent}%`, background: match.homeTeam?.primaryColor || "#1B5E20", borderRadius: 4, transition: "width 0.5s", minWidth: possessionStats.homePercent > 0 ? 4 : 0 }} />
                         <div style={{ flex: 1, background: match.awayTeam?.primaryColor || "#6A1B1A", borderRadius: 4, transition: "width 0.5s", minWidth: possessionStats.awayPercent > 0 ? 4 : 0 }} />
                       </div>
-                      {possessionState && (
-                        <div className="mt-1 text-[10px] text-center" style={{ color: dk ? textMuted : "#888" }}>
-                          Active: <span className="font-semibold" style={dk ? { color: textSecondary } : undefined}>{possessionState === "home" ? (match.homeTeam?.name || "Home") : possessionState === "away" ? (match.awayTeam?.name || "Away") : "Loose / 50-50"}</span>
-                        </div>
-                      )}
                     </>
                   ) : (
-                    <div className="text-[11px] text-center py-1" style={{ color: dk ? textMuted : "#aaa" }}>No data yet</div>
+                    <div className="text-[11px] text-center py-1" style={{ color: dk ? textMuted : "#aaa" }}>No data yet — tap a team below</div>
                   )}
-                  <button
-                    onClick={() => { const base = import.meta.env.BASE_URL.replace(/\/$/, ""); window.open(`${base}/possession/${match.id}`, "_blank"); }}
-                    className="mt-1.5 w-full h-6 rounded-[6px] font-sans font-semibold text-[10px] transition-colors"
-                    style={dk ? { background: btnMuted, color: btnMutedText } : { background: "rgba(0,0,0,0.04)", color: "#555" }}
-                  >Open Tracker ↗</button>
+                  <div className="mt-2 flex gap-1.5">
+                    {(["home", "loose", "away"] as const).map((state) => {
+                      const label = state === "home" ? (match.homeTeam?.shortName || "Home") : state === "away" ? (match.awayTeam?.shortName || "Away") : "50/50";
+                      const isActive = possessionState === state;
+                      const activeColor = state === "home" ? (match.homeTeam?.primaryColor || "#1B5E20") : state === "away" ? (match.awayTeam?.primaryColor || "#6A1B1A") : (dk ? "#555" : "#888");
+                      return (
+                        <button
+                          key={state}
+                          onClick={() => handleSetPossession(state)}
+                          disabled={isFinal}
+                          className="flex-1 h-7 rounded-[6px] font-sans font-semibold text-[10px] transition-colors disabled:opacity-30 active:scale-95"
+                          style={isActive
+                            ? { background: activeColor, color: "#fff", border: `1px solid ${activeColor}` }
+                            : (dk ? { background: btnMuted, color: btnMutedText } : { background: "rgba(0,0,0,0.04)", color: "#555", border: "1px solid rgba(0,0,0,0.06)" })}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
@@ -846,9 +860,64 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
             </Button>
           </div>
         </div>
+        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
+          <span className="text-[11px] font-sans font-semibold uppercase tracking-wider block mb-2" style={{ color: dk ? textMuted : "#888" }}>Team Stats</span>
+          <div className="grid grid-cols-2 gap-3">
+            {([{ teamId: match.homeTeamId, name: match.homeTeam?.name || "Home" }, { teamId: match.awayTeamId, name: match.awayTeam?.name || "Away" }]).map(({ teamId, name }) => teamId ? (
+              <div key={teamId}>
+                <div className="text-[10px] font-sans font-semibold mb-1 truncate" style={{ color: dk ? textMuted : "#666" }}>{name}</div>
+                <div className="space-y-1">
+                  <div className="flex gap-1">
+                    {([{ label: "Bowl In", type: "bowl_in" as const }, { label: "Knock In", type: "knock_in" as const }, { label: "Foul", type: "foul" as const }]).map(s => (
+                      <button key={s.type} onClick={() => handleStat(s.type, teamId)} disabled={isFinal} className={`flex-1 h-7 rounded-[6px] font-sans font-bold text-[10px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-g50 text-ink2 hover:bg-g100"}`} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>{s.label}</button>
+                    ))}
+                  </div>
+                  <div className="flex gap-1">
+                    {([{ label: "Pen Goal", type: "penalty_goal" as const }, { label: "Shot on Goal", type: "shot_on_goal" as const }]).map(s => (
+                      <button key={s.type} onClick={() => handleStat(s.type, teamId)} disabled={isFinal} className={`flex-1 h-7 rounded-[6px] font-sans font-bold text-[10px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-g50 text-ink2 hover:bg-g100"}`} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>{s.label}</button>
+                    ))}
+                  </div>
+                  <div className="flex gap-1">
+                    {([{ label: "1", desc: "PENALTY 1" }, { label: "2", desc: "PENALTY 2" }, { label: "3", desc: "PENALTY 3" }, { label: "4", desc: "PENALTY 4" }, { label: "5A", desc: "PENALTY 5A" }, { label: "5B", desc: "PENALTY 5B" }]).map(p => (
+                      <button key={p.desc} onClick={() => handleEvent("penalty", p.desc, teamId)} disabled={isFinal} className={`flex-1 h-7 rounded-[6px] font-sans font-bold text-[10px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-amber-50 text-amber-800 hover:bg-amber-100"}`} style={dk ? { background: "rgba(202,138,4,0.18)", color: "#facc15" } : undefined}>{p.label}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null)}
+          </div>
+        </div>
         </>)}
 
         {showSection("gfx") && (<>
+        <div className={`rounded-[12px] p-3 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
+          <div className="flex items-center gap-1">
+            <div className="flex flex-col items-center flex-1 min-w-0">
+              <div className="w-7 h-7 rounded-full border bg-g50 flex items-center justify-center overflow-hidden shrink-0" style={{ borderColor: match.homeTeam?.primaryColor || "var(--g100)" }}>
+                {match.homeTeam?.logoUrl ? <img src={match.homeTeam.logoUrl} alt="" className="w-full h-full object-cover" /> : <span className="font-display font-bold text-g700 text-[9px]">{match.homeTeam?.shortName || match.homeTeam?.name?.substring(0,2) || "H"}</span>}
+              </div>
+              <span className="text-[10px] font-medium text-center mt-0.5 truncate w-full" style={dk ? { color: textSecondary } : undefined}>{match.homeTeam?.name || "Home"}</span>
+              <span className="font-display font-bold text-[28px] leading-none mt-0.5" style={{ color: match.homeTeam?.primaryColor || (dk ? textPrimary : "var(--ink)") }}>{Number(match.homeScore || 0)}</span>
+            </div>
+            <div className="flex flex-col items-center justify-center px-2 shrink-0">
+              {(match.status === "live" || match.status === "halftime") ? (
+                <>
+                  <MatchClock clockStartedAt={match.clockStartedAt} clockElapsedSeconds={match.clockElapsedSeconds} clockIsRunning={match.clockIsRunning} status={match.status} size="sm" />
+                  <span className="text-[9px] mt-0.5" style={{ color: dk ? textMuted : "#999" }}>Ch.{match.currentChukker}</span>
+                </>
+              ) : (
+                <span className="text-[11px] font-display font-bold" style={{ color: dk ? textMuted : "var(--g300)" }}>{match.status === "final" ? "Final" : "vs"}</span>
+              )}
+            </div>
+            <div className="flex flex-col items-center flex-1 min-w-0">
+              <div className="w-7 h-7 rounded-full border bg-g50 flex items-center justify-center overflow-hidden shrink-0" style={{ borderColor: match.awayTeam?.primaryColor || "var(--g100)" }}>
+                {match.awayTeam?.logoUrl ? <img src={match.awayTeam.logoUrl} alt="" className="w-full h-full object-cover" /> : <span className="font-display font-bold text-g700 text-[9px]">{match.awayTeam?.shortName || match.awayTeam?.name?.substring(0,2) || "A"}</span>}
+              </div>
+              <span className="text-[10px] font-medium text-center mt-0.5 truncate w-full" style={dk ? { color: textSecondary } : undefined}>{match.awayTeam?.name || "Away"}</span>
+              <span className="font-display font-bold text-[28px] leading-none mt-0.5" style={{ color: match.awayTeam?.primaryColor || (dk ? textPrimary : "var(--ink)") }}>{Number(match.awayScore || 0)}</span>
+            </div>
+          </div>
+        </div>
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <div className="flex items-center gap-2 mb-3">
             <Monitor className="w-4 h-4" style={dk ? { color: textMuted } : undefined} />

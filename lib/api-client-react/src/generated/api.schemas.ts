@@ -1147,6 +1147,10 @@ export type ListMatchesParams = {
   teamId?: string;
 };
 
+export type RevokeMatchShareLink200 = {
+  message?: string;
+};
+
 export type ListTodayMatchesParams = {
   clubId?: string;
   tz?: string;

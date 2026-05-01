@@ -66,6 +66,7 @@ import type {
   RecommendFormatRequest,
   RecommendFormatResponse,
   ResolveShareTokenResponse,
+  RevokeMatchShareLink200,
   SelfEditPlayerRequest,
   ShareTokenError,
   SignupRequest,
@@ -4323,11 +4324,14 @@ export const revokeMatchShareLink = async (
   matchId: string,
   linkId: string,
   options?: RequestInit,
-): Promise<void> => {
-  return customFetch<void>(getRevokeMatchShareLinkUrl(matchId, linkId), {
-    ...options,
-    method: "DELETE",
-  });
+): Promise<RevokeMatchShareLink200> => {
+  return customFetch<RevokeMatchShareLink200>(
+    getRevokeMatchShareLinkUrl(matchId, linkId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
 };
 
 export const getRevokeMatchShareLinkMutationOptions = <

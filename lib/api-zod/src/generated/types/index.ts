@@ -81,6 +81,7 @@ export * from "./recommendFormatRequestTeamConstraints";
 export * from "./recommendFormatResponse";
 export * from "./resolveShareTokenResponse";
 export * from "./resolveShareTokenResponsePageType";
+export * from "./revokeMatchShareLink200";
 export * from "./scheduleWarning";
 export * from "./scheduleWarningType";
 export * from "./selfEditPlayerRequest";

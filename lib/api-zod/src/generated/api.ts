@@ -1911,25 +1911,16 @@ export const CreateMatchShareLinkBody = zod.object({
   pageType: zod.enum(["stats", "gfx"]),
 });
 
-export const CreateMatchShareLinkResponse = zod.object({
-  id: zod.string().uuid(),
-  matchId: zod.string().uuid(),
-  pageType: zod.enum(["stats", "gfx"]),
-  token: zod.string(),
-  createdAt: zod.date(),
-  expiresAt: zod.date().nullish(),
-  revokedAt: zod.date().nullish(),
-  active: zod
-    .boolean()
-    .describe("True when the link is neither revoked nor expired."),
-});
-
 /**
  * @summary Revoke a share link
  */
 export const RevokeMatchShareLinkParams = zod.object({
   matchId: zod.coerce.string().uuid(),
   linkId: zod.coerce.string().uuid(),
+});
+
+export const RevokeMatchShareLinkResponse = zod.object({
+  message: zod.string().optional(),
 });
 
 /**

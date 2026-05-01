@@ -521,7 +521,9 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
           </button>
           <div className="flex-1 min-w-0">
             {isShareMode ? (
-              <h1 className={`font-display text-xl font-bold truncate ${dk ? "" : "text-ink"}`} style={dk ? { color: textPrimary } : undefined}>{headerTitle}</h1>
+              <h1 className={`font-display text-xl font-bold truncate ${dk ? "" : "text-ink"}`} style={dk ? { color: textPrimary } : undefined}>
+                {match.homeTeam?.name || "Home"} vs {match.awayTeam?.name || "Away"}
+              </h1>
             ) : (
               <GamePicker mode={mode} currentMatchId={matchId || ""} dark={dk} fallbackTitle={headerTitle} />
             )}

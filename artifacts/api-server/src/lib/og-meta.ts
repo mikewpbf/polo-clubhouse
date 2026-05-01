@@ -50,7 +50,13 @@ ${img ? `<meta name="twitter:image" content="${img}">` : ""}
 
 function defaultOgImage(req: Request): string {
   const origin = `${req.protocol}://${req.get("host")}`;
-  return `${origin}/polo-manager/opengraph.jpg`;
+  // Honor the SPA's deployment base path. In the pnpm monorepo / Replit
+  // workspace artifacts each web artifact is served under its own prefix
+  // (e.g. `/polo-manager`), but a standalone deploy mounts the SPA at `/`.
+  // PUBLIC_BASE_PATH lets the deploy target override; otherwise default to
+  // the polo-manager prefix when present and fall back to root.
+  const base = (process.env.PUBLIC_BASE_PATH || "/polo-manager").replace(/\/+$/, "");
+  return `${origin}${base}/opengraph.jpg`;
 }
 
 async function buildOg(req: Request): Promise<OgData | null> {

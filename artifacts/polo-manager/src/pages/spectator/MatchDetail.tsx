@@ -169,6 +169,8 @@ export function MatchDetail() {
       container.innerHTML = `<div id="${divId}"></div>`;
 
       playerRef.current = new window.YT.Player(divId, {
+        width: "100%",
+        height: "100%",
         videoId,
         playerVars: {
           autoplay: autoplay ? 1 : 0,
@@ -250,7 +252,11 @@ export function MatchDetail() {
 
         {hasVideo && (
           <div className="rounded-[12px] overflow-hidden" style={{ aspectRatio: "16/9" }}>
-            <div ref={embedRef} className="w-full h-full" style={{ background: "#000" }} />
+            <div
+              ref={embedRef}
+              className="w-full h-full [&_iframe]:w-full [&_iframe]:h-full [&_iframe]:block"
+              style={{ background: "#000" }}
+            />
           </div>
         )}
 

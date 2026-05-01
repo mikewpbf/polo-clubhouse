@@ -739,7 +739,7 @@ router.post("/matches/:matchId/event", requireMatchWrite("stats", "full_control"
     if (eventType === "penalty_in") {
       if (distance != null) {
         const d = String(distance);
-        if (!["30", "40", "60"].includes(d)) { res.status(400).json({ message: "distance must be 30, 40 or 60" }); return; }
+        if (!["30", "40", "60", "5A", "5B"].includes(d)) { res.status(400).json({ message: "distance must be 30, 40, 60, 5A or 5B" }); return; }
         normDistance = d;
       }
     } else if (distance != null) {

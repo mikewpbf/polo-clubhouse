@@ -829,6 +829,22 @@ router.post("/matches/:matchId/event", requireMatchWrite("stats", "full_control"
         createdBy: req.user?.id ?? null,
       });
 
+      // When a player records a penalty_in, auto-record a penalty_goal for their team.
+      if (eventType === "penalty_in" && teamId) {
+        await db.insert(matchEventsTable).values({
+          matchId: match.id,
+          eventType: "penalty_goal",
+          teamId,
+          playerId: playerId || null,
+          playerName,
+          chukker: match.currentChukker,
+          clockSeconds: elapsed,
+          description: normDistance ? `${normDistance}y penalty` : null,
+          scoreSnapshot: { home: match.homeScore || 0, away: match.awayScore || 0 },
+          createdBy: req.user?.id ?? null,
+        });
+      }
+
       // When a player records a shot on goal, auto-record a knock_in for the opposing team.
       if (eventType === "shot_on_goal" && teamId) {
         const opposingTeamId = teamId === current.homeTeamId ? current.awayTeamId : current.homeTeamId;

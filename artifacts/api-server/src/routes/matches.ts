@@ -728,7 +728,7 @@ router.post("/matches/:matchId/event", requireMatchWrite("stats"), async (req, r
     const { eventType, description, teamId, playerId, distance, severity } = req.body;
     // Stoppage events (pause clock) and per-player stat events (do not pause).
     const stoppageTypes = ["penalty", "horse_change", "safety", "injury_timeout"];
-    const playerStatTypes = ["penalty_in", "penalty_out", "throw_in_won", "foul_committed", "fouls_won"];
+    const playerStatTypes = ["penalty_in", "penalty_out", "throw_in_won", "foul_committed", "fouls_won", "shot_on_goal"];
     const allowedTypes = [...stoppageTypes, ...playerStatTypes];
     if (!allowedTypes.includes(eventType)) { res.status(400).json({ message: "Invalid event type" }); return; }
     const isStoppage = stoppageTypes.includes(eventType);
@@ -828,6 +828,23 @@ router.post("/matches/:matchId/event", requireMatchWrite("stats"), async (req, r
         scoreSnapshot: { home: match.homeScore || 0, away: match.awayScore || 0 },
         createdBy: req.user?.id ?? null,
       });
+
+      // When a player records a shot on goal, auto-record a knock_in for the opposing team.
+      if (eventType === "shot_on_goal" && teamId) {
+        const opposingTeamId = teamId === current.homeTeamId ? current.awayTeamId : current.homeTeamId;
+        if (opposingTeamId) {
+          await db.insert(matchEventsTable).values({
+            matchId: match.id,
+            eventType: "knock_in",
+            teamId: opposingTeamId,
+            chukker: match.currentChukker,
+            clockSeconds: elapsed,
+            description: "Auto-recorded from shot on goal",
+            scoreSnapshot: { home: match.homeScore || 0, away: match.awayScore || 0 },
+            createdBy: req.user?.id ?? null,
+          });
+        }
+      }
     }
 
     const enriched = await enrichMatch(match, true);

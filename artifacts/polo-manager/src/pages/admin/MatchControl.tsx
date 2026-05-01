@@ -281,7 +281,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
   type PlayerStatArgs =
     | { eventType: "penalty_in"; teamId: string; playerId: string; distance: "20" | "30" | "40" }
     | { eventType: "foul_committed"; teamId: string; playerId: string; severity: "1" | "2" | "3" | "4" | "5a" | "5b" }
-    | { eventType: "penalty_out" | "throw_in_won" | "fouls_won"; teamId: string; playerId: string };
+    | { eventType: "penalty_out" | "throw_in_won" | "fouls_won" | "shot_on_goal"; teamId: string; playerId: string };
 
   const handlePlayerStat = (args: PlayerStatArgs) => {
     const body: Record<string, unknown> = {
@@ -672,16 +672,17 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                       {p.handicap != null && <span className="text-[9px] font-mono px-1 rounded shrink-0 ml-1" style={dk ? { background: "rgba(255,255,255,0.08)", color: textMuted } : { background: "rgba(0,0,0,0.06)", color: "#666" }}>{p.handicap}</span>}
                     </div>
                     <div className="flex gap-1">
-                      <button onClick={() => handlePlayerStat({ eventType: "throw_in_won", teamId, playerId: p.id })} disabled={isFinal} className={playerBtnCls} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>Bowl In Won</button>
+                      <button onClick={() => handlePlayerStat({ eventType: "throw_in_won", teamId, playerId: p.id })} disabled={isFinal} className={playerBtnCls} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>Throw In Won</button>
+                      <button onClick={() => handlePlayerStat({ eventType: "penalty_out", teamId, playerId: p.id })} disabled={isFinal} className={playerBtnCls} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>Pen Out</button>
+                      <button onClick={() => handlePlayerStat({ eventType: "shot_on_goal", teamId, playerId: p.id })} disabled={isFinal} className={playerBtnCls} style={dk ? { background: btnMuted, color: btnMutedText } : undefined} title="Records shot on goal for this player + knock in for opponents">Shot on Goal</button>
+                    </div>
+                    <div className="flex gap-1 items-center">
                       {(["20", "30", "40"] as const).map(d => (
                         <button key={d} onClick={() => handlePlayerStat({ eventType: "penalty_in", teamId, playerId: p.id, distance: d })} disabled={isFinal} className={penInBtnCls} style={dk ? { background: "rgba(16,185,129,0.15)", color: "#34d399" } : undefined}>{d}y</button>
                       ))}
-                      <button onClick={() => handlePlayerStat({ eventType: "penalty_out", teamId, playerId: p.id })} disabled={isFinal} className={playerBtnCls} style={dk ? { background: btnMuted, color: btnMutedText } : undefined}>Pen Out</button>
-                    </div>
-                    <div className="flex gap-1 items-center">
-                      <span className="text-[8px] font-sans font-bold uppercase shrink-0" style={{ color: dk ? "#facc15" : "#92400e" }}>Foul:</span>
+                      <span className="text-[8px] font-sans font-bold uppercase shrink-0 ml-0.5" style={{ color: dk ? "#facc15" : "#92400e" }}>Foul:</span>
                       {(["1", "2", "3", "4", "5a", "5b"] as const).map(s => (
-                        <button key={s} onClick={() => handlePlayerStat({ eventType: "foul_committed", teamId, playerId: p.id, severity: s })} disabled={isFinal} className={foulBtnCls} style={dk ? { background: "rgba(202,138,4,0.18)", color: "#facc15" } : undefined} title={`Record foul committed — severity ${s.toUpperCase()}`}>{s.toUpperCase()}</button>
+                        <button key={s} onClick={() => handlePlayerStat({ eventType: "foul_committed", teamId, playerId: p.id, severity: s })} disabled={isFinal} className={foulBtnCls} style={dk ? { background: "rgba(202,138,4,0.18)", color: "#facc15" } : undefined} title={`Foul committed — severity ${s.toUpperCase()}`}>{s.toUpperCase()}</button>
                       ))}
                     </div>
                   </div>

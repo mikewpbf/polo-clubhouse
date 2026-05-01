@@ -45,6 +45,11 @@ export function getR2Client(): S3Client {
       secretAccessKey: cfg.secretAccessKey,
     },
     forcePathStyle: true,
+    // R2 doesn't tolerate the SDK v3 default of pre-signing a placeholder
+    // x-amz-checksum-crc32 into PutObject URLs — browser uploads can't satisfy
+    // it and R2 rejects with a signature/digest mismatch.
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
   });
   return _client;
 }

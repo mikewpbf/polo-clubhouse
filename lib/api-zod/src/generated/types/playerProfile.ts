@@ -15,6 +15,8 @@ export interface PlayerProfile {
   name: string;
   handicap?: string | null;
   headshotUrl?: string | null;
+  /** Aux image used only by broadcast graphics. Present only when caller is super_admin or admin of the player's home club; absent on public reads. */
+  broadcastImageUrl?: string | null;
   dateOfBirth?: Date | null;
   bio?: string | null;
   homeClubId?: string | null;

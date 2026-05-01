@@ -56,6 +56,7 @@ export function PlayerManage() {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [bio, setBio] = useState("");
   const [headshotUrl, setHeadshotUrl] = useState<string | null>(null);
+  const [broadcastImageUrl, setBroadcastImageUrl] = useState<string | null>(null);
   const [managedByUserId, setManagedByUserId] = useState<string | null>(null);
   const [linkedUserLabel, setLinkedUserLabel] = useState<string | null>(null);
 
@@ -71,6 +72,7 @@ export function PlayerManage() {
       setDateOfBirth(data.dateOfBirth ?? "");
       setBio(data.bio ?? "");
       setHeadshotUrl(data.headshotUrl ?? null);
+      setBroadcastImageUrl(data.broadcastImageUrl ?? null);
       const muid = data?.managedByUserId ?? null;
       setManagedByUserId(muid);
       const linkedUser = data?.managedByUser;
@@ -95,6 +97,7 @@ export function PlayerManage() {
         dateOfBirth: dateOfBirth || null,
         bio: bio || null,
         headshotUrl,
+        broadcastImageUrl,
       };
       // Only super_admins or this player's home club admins may mutate the link.
       if (canManageLink) payload.managedByUserId = managedByUserId || null;
@@ -128,8 +131,16 @@ export function PlayerManage() {
           <div className="flex items-start gap-5 mb-5">
             <div className="flex flex-col items-center gap-2">
               <ImageCropUpload value={headshotUrl} onChange={setHeadshotUrl} name={name || data.name} size={96} />
+              <div className="text-[11px] text-ink3">Profile photo</div>
               {headshotUrl && (
                 <button className="text-[11px] text-red-600 hover:underline" onClick={() => setHeadshotUrl(null)}>Remove</button>
+              )}
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <ImageCropUpload value={broadcastImageUrl} onChange={setBroadcastImageUrl} name={name || data.name} size={96} />
+              <div className="text-[11px] text-ink3 text-center">Broadcast image<br /><span className="text-[10px]">(not publicly visible)</span></div>
+              {broadcastImageUrl && (
+                <button className="text-[11px] text-red-600 hover:underline" onClick={() => setBroadcastImageUrl(null)}>Remove</button>
               )}
             </div>
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">

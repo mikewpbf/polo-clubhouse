@@ -2860,6 +2860,12 @@ export const CreatePlayerBody = zod.object({
   handicap: zod.string().nullish(),
   homeClubId: zod.string().uuid().nullish(),
   headshotUrl: zod.string().nullish(),
+  broadcastImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Aux image used only by broadcast graphics; admin\/producer-only.",
+    ),
   dateOfBirth: zod.date().nullish(),
   bio: zod.string().nullish(),
   managedByUserId: zod.string().uuid().nullish(),
@@ -2910,6 +2916,12 @@ export const GetPlayerProfileResponse = zod.object({
   name: zod.string(),
   handicap: zod.string().nullish(),
   headshotUrl: zod.string().nullish(),
+  broadcastImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Aux image used only by broadcast graphics. Present only when caller is super_admin or admin of the player's home club; absent on public reads.",
+    ),
   dateOfBirth: zod.date().nullish(),
   bio: zod.string().nullish(),
   homeClubId: zod.string().uuid().nullish(),
@@ -3002,6 +3014,12 @@ export const UpdatePlayerBody = zod.object({
   handicap: zod.string().nullish(),
   homeClubId: zod.string().uuid().nullish(),
   headshotUrl: zod.string().nullish(),
+  broadcastImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Aux image used only by broadcast graphics; admin\/producer-only.",
+    ),
   dateOfBirth: zod.date().nullish(),
   bio: zod.string().nullish(),
   managedByUserId: zod.string().uuid().nullish(),
@@ -3013,6 +3031,12 @@ export const UpdatePlayerResponse = zod.object({
   name: zod.string(),
   handicap: zod.string().nullish(),
   headshotUrl: zod.string().nullish(),
+  broadcastImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Aux image used only by broadcast graphics. Returned to admins\/producers; never on public reads.",
+    ),
   dateOfBirth: zod.date().nullish(),
   homeClubId: zod.string().uuid().nullish(),
   bio: zod.string().nullish(),
@@ -3053,6 +3077,12 @@ export const UpdateMyProfileResponse = zod.object({
   name: zod.string(),
   handicap: zod.string().nullish(),
   headshotUrl: zod.string().nullish(),
+  broadcastImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Aux image used only by broadcast graphics. Returned to admins\/producers; never on public reads.",
+    ),
   dateOfBirth: zod.date().nullish(),
   homeClubId: zod.string().uuid().nullish(),
   bio: zod.string().nullish(),
@@ -3104,6 +3134,12 @@ export const GetMyLinkedPlayerResponse = zod.union([
     name: zod.string(),
     handicap: zod.string().nullish(),
     headshotUrl: zod.string().nullish(),
+    broadcastImageUrl: zod
+      .string()
+      .nullish()
+      .describe(
+        "Aux image used only by broadcast graphics. Returned to admins\/producers; never on public reads.",
+      ),
     dateOfBirth: zod.date().nullish(),
     homeClubId: zod.string().uuid().nullish(),
     bio: zod.string().nullish(),

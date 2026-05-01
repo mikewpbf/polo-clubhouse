@@ -819,6 +819,8 @@ export interface Player {
   name: string;
   handicap?: string | null;
   headshotUrl?: string | null;
+  /** Aux image used only by broadcast graphics. Returned to admins/producers; never on public reads. */
+  broadcastImageUrl?: string | null;
   dateOfBirth?: string | null;
   homeClubId?: string | null;
   bio?: string | null;
@@ -930,6 +932,8 @@ export interface PlayerProfile {
   name: string;
   handicap?: string | null;
   headshotUrl?: string | null;
+  /** Aux image used only by broadcast graphics. Present only when caller is super_admin or admin of the player's home club; absent on public reads. */
+  broadcastImageUrl?: string | null;
   dateOfBirth?: string | null;
   bio?: string | null;
   homeClubId?: string | null;
@@ -951,6 +955,8 @@ export interface CreatePlayerRequest {
   handicap?: string | null;
   homeClubId?: string | null;
   headshotUrl?: string | null;
+  /** Aux image used only by broadcast graphics; admin/producer-only. */
+  broadcastImageUrl?: string | null;
   dateOfBirth?: string | null;
   bio?: string | null;
   managedByUserId?: string | null;
@@ -961,6 +967,8 @@ export interface UpdatePlayerRequest {
   handicap?: string | null;
   homeClubId?: string | null;
   headshotUrl?: string | null;
+  /** Aux image used only by broadcast graphics; admin/producer-only. */
+  broadcastImageUrl?: string | null;
   dateOfBirth?: string | null;
   bio?: string | null;
   managedByUserId?: string | null;

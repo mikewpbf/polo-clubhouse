@@ -11,6 +11,8 @@ export interface Player {
   name: string;
   handicap?: string | null;
   headshotUrl?: string | null;
+  /** Aux image used only by broadcast graphics. Returned to admins/producers; never on public reads. */
+  broadcastImageUrl?: string | null;
   dateOfBirth?: Date | null;
   homeClubId?: string | null;
   bio?: string | null;

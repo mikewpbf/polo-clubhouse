@@ -253,7 +253,7 @@ router.get("/players/top", async (req, res) => {
 
 router.post("/players", requireAuth, async (req, res) => {
   try {
-    const { name, handicap, homeClubId, headshotUrl, dateOfBirth, bio, managedByUserId } = req.body;
+    const { name, handicap, homeClubId, headshotUrl, broadcastImageUrl, dateOfBirth, bio, managedByUserId } = req.body;
     if (!name || !String(name).trim()) { res.status(400).json({ message: "Name is required" }); return; }
 
     // Permission: super_admin OR club admin of homeClubId (if provided)
@@ -272,6 +272,7 @@ router.post("/players", requireAuth, async (req, res) => {
       handicap: handicap != null ? String(handicap) : null,
       homeClubId: homeClubId || null,
       headshotUrl: headshotUrl || null,
+      broadcastImageUrl: broadcastImageUrl || null,
       dateOfBirth: dateOfBirth || null,
       bio: bio || null,
       managedByUserId: managedByUserId || null,
@@ -384,6 +385,20 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
       if (u) managedByUser = { id: u.id, email: u.email, displayName: u.displayName };
     }
 
+    // Broadcast aux image is admin/producer-only — never returned on public reads.
+    let broadcastImageUrl: string | null = null;
+    if (req.user) {
+      if (isSuperAdmin(req.user)) {
+        broadcastImageUrl = player.broadcastImageUrl ?? null;
+      } else if (player.homeClubId) {
+        const memberships = await db.select().from(adminClubMembershipsTable).where(and(
+          eq(adminClubMembershipsTable.userId, req.user.id),
+          eq(adminClubMembershipsTable.clubId, player.homeClubId),
+        ));
+        if (memberships.length > 0) broadcastImageUrl = player.broadcastImageUrl ?? null;
+      }
+    }
+
     // Recent matches: pick the most recent matches the player participated in
     // (by team_players OR by event), newest first. Includes tournament + opponent
     // info so the spectator profile can deep-link into a match or its tournament.
@@ -457,6 +472,7 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
       name: player.name,
       handicap: player.handicap,
       headshotUrl: player.headshotUrl,
+      broadcastImageUrl,
       dateOfBirth: player.dateOfBirth,
       bio: player.bio,
       homeClubId: player.homeClubId,
@@ -479,12 +495,13 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
 router.put("/players/:playerId", requireAuth, requireSelfOrEditor(false), async (req, res) => {
   try {
     const playerId = String(req.params.playerId);
-    const { name, handicap, homeClubId, headshotUrl, dateOfBirth, bio, managedByUserId, isActive } = req.body;
+    const { name, handicap, homeClubId, headshotUrl, broadcastImageUrl, dateOfBirth, bio, managedByUserId, isActive } = req.body;
     const updates: Record<string, any> = { updatedAt: new Date() };
     if (name !== undefined) updates.name = String(name).trim();
     if (handicap !== undefined) updates.handicap = handicap != null ? String(handicap) : null;
     if (homeClubId !== undefined) updates.homeClubId = homeClubId || null;
     if (headshotUrl !== undefined) updates.headshotUrl = headshotUrl || null;
+    if (broadcastImageUrl !== undefined) updates.broadcastImageUrl = broadcastImageUrl || null;
     if (dateOfBirth !== undefined) updates.dateOfBirth = dateOfBirth || null;
     if (bio !== undefined) updates.bio = bio || null;
     if (managedByUserId !== undefined) updates.managedByUserId = managedByUserId || null;

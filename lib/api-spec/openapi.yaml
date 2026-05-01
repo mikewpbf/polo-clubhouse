@@ -3186,6 +3186,10 @@ components:
         headshotUrl:
           type: string
           nullable: true
+        broadcastImageUrl:
+          type: string
+          nullable: true
+          description: Aux image used only by broadcast graphics. Returned to admins/producers; never on public reads.
         dateOfBirth:
           type: string
           format: date
@@ -3315,6 +3319,10 @@ components:
         headshotUrl:
           type: string
           nullable: true
+        broadcastImageUrl:
+          type: string
+          nullable: true
+          description: Aux image used only by broadcast graphics. Present only when caller is super_admin or admin of the player's home club; absent on public reads.
         dateOfBirth:
           type: string
           format: date
@@ -3433,6 +3441,10 @@ components:
         headshotUrl:
           type: string
           nullable: true
+        broadcastImageUrl:
+          type: string
+          nullable: true
+          description: Aux image used only by broadcast graphics; admin/producer-only.
         dateOfBirth:
           type: string
           format: date
@@ -3462,6 +3474,10 @@ components:
         headshotUrl:
           type: string
           nullable: true
+        broadcastImageUrl:
+          type: string
+          nullable: true
+          description: Aux image used only by broadcast graphics; admin/producer-only.
         dateOfBirth:
           type: string
           format: date

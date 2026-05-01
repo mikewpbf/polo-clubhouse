@@ -201,8 +201,20 @@ export function MatchDay() {
                         </Link>
                       </Button>
                     )}
-                    <Button variant="secondary" size="sm" asChild>
-                      <Link href={`/admin/score-control/${m.id}`}>Control</Link>
+                    <Button variant="secondary" size="sm" className="gap-1" asChild>
+                      <Link href={`/admin/score-control/${m.id}`}>
+                        <Tv className="w-3.5 h-3.5" /> Score
+                      </Link>
+                    </Button>
+                    <Button variant="secondary" size="sm" className="gap-1" asChild>
+                      <Link href={`/admin/stats-control/${m.id}`}>
+                        <BarChart3 className="w-3.5 h-3.5" /> Stats
+                      </Link>
+                    </Button>
+                    <Button variant="secondary" size="sm" className="gap-1" asChild>
+                      <Link href={`/admin/gfx-control/${m.id}`}>
+                        <Sliders className="w-3.5 h-3.5" /> GFX
+                      </Link>
                     </Button>
                   </div>
                 </Card>
@@ -268,8 +280,20 @@ export function MatchDay() {
                         </Link>
                       </Button>
                     )}
-                    <Button variant="secondary" size="sm" asChild>
-                      <Link href={`/admin/score-control/${m.id}`}>Control</Link>
+                    <Button variant="secondary" size="sm" className="gap-1" asChild>
+                      <Link href={`/admin/score-control/${m.id}`}>
+                        <Tv className="w-3.5 h-3.5" /> Score
+                      </Link>
+                    </Button>
+                    <Button variant="secondary" size="sm" className="gap-1" asChild>
+                      <Link href={`/admin/stats-control/${m.id}`}>
+                        <BarChart3 className="w-3.5 h-3.5" /> Stats
+                      </Link>
+                    </Button>
+                    <Button variant="secondary" size="sm" className="gap-1" asChild>
+                      <Link href={`/admin/gfx-control/${m.id}`}>
+                        <Sliders className="w-3.5 h-3.5" /> GFX
+                      </Link>
                     </Button>
                   </div>
                 </Card>

@@ -74,7 +74,6 @@ export const matchEventTypeEnum = pgEnum("match_event_type", [
 ]);
 
 export const sharePageTypeEnum = pgEnum("share_page_type", [
-  "score",
   "stats",
   "gfx",
 ]);

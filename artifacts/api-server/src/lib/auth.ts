@@ -18,10 +18,11 @@ export interface AuthUser {
   role: string;
 }
 
+export type SharePageType = "stats" | "gfx";
 export interface ShareAuth {
   shareLinkId: string;
   matchId: string;
-  pageType: "score" | "stats" | "gfx";
+  pageType: SharePageType;
 }
 
 declare global {
@@ -143,7 +144,7 @@ export async function resolveShareToken(req: Request): Promise<ShareAuth | null>
   return {
     shareLinkId: link.id,
     matchId: link.matchId,
-    pageType: link.pageType as "score" | "stats" | "gfx",
+    pageType: link.pageType as SharePageType,
   };
 }
 
@@ -157,11 +158,35 @@ async function userCanAdminMatch(userId: string, matchId: string): Promise<boole
   return memberships.some(m => m.clubId === tournament.clubId);
 }
 
+// Match-admin middleware: requires a real authenticated admin (no share token).
+// Use this for routes whose semantics are admin-only (e.g. score/clock/chukker/
+// goal/undo-goal/clock-adjust, match config, etc.).
+export function requireMatchAdmin() {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const matchId = String(req.params.matchId);
+    if (!matchId) { res.status(400).json({ message: "matchId required" }); return; }
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      res.status(401).json({ message: "Authentication required" }); return;
+    }
+    const token = authHeader.substring(7);
+    const user = verifyToken(token);
+    if (!user) { res.status(401).json({ message: "Invalid or expired token" }); return; }
+    req.user = user;
+    if (isSuperAdmin(user)) { next(); return; }
+    const ok = await userCanAdminMatch(user.id, matchId);
+    if (!ok) { res.status(403).json({ message: "Club admin access required to modify match" }); return; }
+    next();
+  };
+}
+
 // Match-write middleware: allows EITHER an authenticated club-admin (or super-admin)
 // for the match in :matchId, OR a valid share token bound to that match.
-// The share token must belong to one of `allowedPages` (default: all three).
-export function requireMatchWrite(...allowedPages: Array<"score" | "stats" | "gfx">) {
-  const allow = allowedPages.length ? new Set(allowedPages) : new Set(["score", "stats", "gfx"]);
+// The share token must belong to one of `allowedPages` (default: stats+gfx).
+export function requireMatchWrite(...allowedPages: SharePageType[]) {
+  const allow: Set<SharePageType> = allowedPages.length
+    ? new Set(allowedPages)
+    : new Set<SharePageType>(["stats", "gfx"]);
   return async (req: Request, res: Response, next: NextFunction) => {
     const matchId = String(req.params.matchId);
     if (!matchId) { res.status(400).json({ message: "matchId required" }); return; }

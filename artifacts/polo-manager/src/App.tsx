@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -40,7 +40,6 @@ import { OutDates } from "@/pages/my-team/OutDates";
 import { TeamSchedule } from "@/pages/my-team/Schedule";
 import { ScoreBugOverlay } from "@/pages/broadcast/ScoreBugOverlay";
 import { ScoreBugOverlay2 } from "@/pages/broadcast/ScoreBugOverlay2";
-import { PossessionTracker } from "@/pages/possession/PossessionTracker";
 
 const queryClient = new QueryClient();
 
@@ -66,11 +65,15 @@ function Router() {
       <Route path="/admin/tournaments" component={AdminTournaments} />
       <Route path="/admin/teams" component={AdminTeams} />
       <Route path="/admin/matchday" component={MatchDay} />
-      <Route path="/admin/match/:id/control">{() => <MatchControl />}</Route>
+      <Route path="/admin/match/:id/control">
+        {(params) => <Redirect to={`/admin/score-control/${params.id}`} />}
+      </Route>
       <Route path="/admin/score-control/:id" component={ScoreControl} />
       <Route path="/admin/stats-control/:id" component={StatsControl} />
       <Route path="/admin/gfx-control/:id" component={GFXControl} />
-      <Route path="/share/score/:token">{() => <ShareControl pageType="score" />}</Route>
+      <Route path="/possession/:matchId">
+        {(params) => <Redirect to={`/admin/stats-control/${params.matchId}`} />}
+      </Route>
       <Route path="/share/stats/:token">{() => <ShareControl pageType="stats" />}</Route>
       <Route path="/share/gfx/:token">{() => <ShareControl pageType="gfx" />}</Route>
       <Route path="/admin/match/:id/graphics" component={MatchGraphics} />
@@ -97,7 +100,6 @@ function BroadcastRouter() {
       <Route path="/broadcast/scorebug/:matchId" component={ScoreBugOverlay} />
       <Route path="/broadcast/channel/:clubId/:channel" component={ScoreBugOverlay} />
       <Route path="/broadcast/scorebug2/:matchId" component={ScoreBugOverlay2} />
-      <Route path="/possession/:matchId" component={PossessionTracker} />
     </Switch>
   );
 }
@@ -107,7 +109,7 @@ function AppContent() {
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
   const relativePath = basePath ? path.replace(basePath, "") : path;
   
-  if (relativePath.startsWith("/broadcast/") || relativePath.startsWith("/possession/")) {
+  if (relativePath.startsWith("/broadcast/")) {
     return <BroadcastRouter />;
   }
 

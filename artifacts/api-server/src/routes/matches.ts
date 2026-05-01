@@ -4,7 +4,7 @@ import { matchesTable, matchEventsTable, teamsTable, fieldsTable, tournamentsTab
 import crypto from "crypto";
 import { eq, and, gte, lte, gt, desc, asc, isNull, inArray, sql } from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
-import { requireAuth, optionalAuth, isSuperAdmin, requireMatchWrite } from "../lib/auth";
+import { requireAuth, optionalAuth, isSuperAdmin, requireMatchWrite, requireMatchAdmin as requireMatchAdminFactory } from "../lib/auth";
 import { addSSEClient, emitMatchUpdate, emitMatchEnded } from "../lib/sse";
 
 const router: IRouter = Router();
@@ -340,7 +340,7 @@ router.get("/matches/:matchId", async (req, res) => {
   }
 });
 
-router.put("/matches/:matchId", requireMatchWrite("score", "gfx"), async (req, res) => {
+router.put("/matches/:matchId", requireMatchWrite("gfx"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { homeTeamId, awayTeamId, fieldId, scheduledAt, round, isLocked, notes, streamUrl, streamStartedAt, scoringLocation, broadcastOffsetSeconds } = req.body;
@@ -348,11 +348,10 @@ router.put("/matches/:matchId", requireMatchWrite("score", "gfx"), async (req, r
 
     // Field-level allowlist by share-token page type. Admins (no share token)
     // may update any field; share-mode operators may only touch fields owned
-    // by their page type.
-    const sharePage = (req as any).share?.pageType as ("score" | "stats" | "gfx" | undefined);
-    const canScoreFields = !sharePage || sharePage === "score";
-    const canGfxFields   = !sharePage || sharePage === "gfx";
-    const canAdminFields = !sharePage; // teams/field/schedule/round/lock/notes are admin-only
+    // by their page type. Only "gfx" share tokens reach this route.
+    const sharePage = req.share?.pageType;
+    const canGfxFields    = !sharePage || sharePage === "gfx";
+    const canAdminFields  = !sharePage; // teams/field/schedule/round/lock/notes/scoringLocation are admin-only
 
     if (canAdminFields) {
       if (homeTeamId !== undefined) updates.homeTeamId = homeTeamId;
@@ -362,14 +361,12 @@ router.put("/matches/:matchId", requireMatchWrite("score", "gfx"), async (req, r
       if (round !== undefined) updates.round = round;
       if (isLocked !== undefined) updates.isLocked = isLocked;
       if (notes !== undefined) updates.notes = notes;
+      if (scoringLocation !== undefined && ["studio", "field"].includes(scoringLocation)) updates.scoringLocation = scoringLocation;
     }
     if (canGfxFields) {
       if (streamUrl !== undefined) updates.streamUrl = streamUrl || null;
       if (streamStartedAt !== undefined) updates.streamStartedAt = streamStartedAt ? new Date(streamStartedAt) : null;
       if (broadcastOffsetSeconds !== undefined && typeof broadcastOffsetSeconds === "number") updates.broadcastOffsetSeconds = String(broadcastOffsetSeconds);
-    }
-    if (canScoreFields) {
-      if (scoringLocation !== undefined && ["studio", "field"].includes(scoringLocation)) updates.scoringLocation = scoringLocation;
     }
     const [match] = await db.update(matchesTable).set(updates).where(eq(matchesTable.id, matchId)).returning();
     emitMatchUpdate(matchId);
@@ -380,7 +377,7 @@ router.put("/matches/:matchId", requireMatchWrite("score", "gfx"), async (req, r
   }
 });
 
-router.post("/matches/:matchId/score", requireMatchWrite("score"), async (req, res) => {
+router.post("/matches/:matchId/score", requireMatchAdminFactory(), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { homeScore, awayScore } = req.body;
@@ -403,7 +400,7 @@ router.post("/matches/:matchId/score", requireMatchWrite("score"), async (req, r
   }
 });
 
-router.post("/matches/:matchId/clock", requireMatchWrite("score"), async (req, res) => {
+router.post("/matches/:matchId/clock", requireMatchAdminFactory(), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { action } = req.body;
@@ -447,7 +444,7 @@ router.post("/matches/:matchId/clock", requireMatchWrite("score"), async (req, r
   }
 });
 
-router.post("/matches/:matchId/status", requireMatchWrite("score"), async (req, res) => {
+router.post("/matches/:matchId/status", requireMatchAdminFactory(), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { status } = req.body;
@@ -487,7 +484,7 @@ router.post("/matches/:matchId/status", requireMatchWrite("score"), async (req, 
   }
 });
 
-router.post("/matches/:matchId/chukker", requireMatchWrite("score"), async (req, res) => {
+router.post("/matches/:matchId/chukker", requireMatchAdminFactory(), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const direction = req.body?.direction === "back" ? -1 : 1;
@@ -538,7 +535,7 @@ router.post("/matches/:matchId/chukker", requireMatchWrite("score"), async (req,
   }
 });
 
-router.post("/matches/:matchId/goal", requireMatchWrite("score"), async (req, res) => {
+router.post("/matches/:matchId/goal", requireMatchAdminFactory(), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { teamId, playerId } = req.body;
@@ -595,7 +592,7 @@ router.post("/matches/:matchId/goal", requireMatchWrite("score"), async (req, re
   }
 });
 
-router.post("/matches/:matchId/undo-goal", requireMatchWrite("score"), async (req, res) => {
+router.post("/matches/:matchId/undo-goal", requireMatchAdminFactory(), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { teamId } = req.body;
@@ -644,7 +641,7 @@ router.post("/matches/:matchId/undo-goal", requireMatchWrite("score"), async (re
   }
 });
 
-router.delete("/matches/:matchId/events/:eventId", requireMatchWrite("score", "stats"), async (req, res) => {
+router.delete("/matches/:matchId/events/:eventId", requireMatchWrite("stats"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const eventId = String(req.params.eventId);
@@ -655,12 +652,11 @@ router.delete("/matches/:matchId/events/:eventId", requireMatchWrite("score", "s
     const [evt] = await db.select().from(matchEventsTable).where(eq(matchEventsTable.id, eventId));
     if (!evt || evt.matchId !== matchId) { res.status(404).json({ message: "Event not found" }); return; }
 
-    // Score-affecting events may only be deleted by an admin or a "score" share token.
-    // Stats share tokens may only delete non-score events.
+    // Score-affecting events may only be deleted by an authenticated admin —
+    // a stats share token must not be able to mutate the score.
     const isScoreAffecting = (evt.eventType === "goal" || evt.eventType === "penalty_goal");
-    const sharePage = (req as any).share?.pageType as ("score" | "stats" | "gfx" | undefined);
-    if (isScoreAffecting && sharePage === "stats") {
-      res.status(403).json({ message: "Stats share link cannot delete score-affecting events" });
+    if (isScoreAffecting && req.share) {
+      res.status(403).json({ message: "Share link cannot delete score-affecting events" });
       return;
     }
 
@@ -687,7 +683,7 @@ router.delete("/matches/:matchId/events/:eventId", requireMatchWrite("score", "s
   }
 });
 
-router.post("/matches/:matchId/clock/adjust", requireMatchWrite("score"), async (req, res) => {
+router.post("/matches/:matchId/clock/adjust", requireMatchAdminFactory(), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { seconds } = req.body;
@@ -711,7 +707,7 @@ router.post("/matches/:matchId/clock/adjust", requireMatchWrite("score"), async 
   }
 });
 
-router.post("/matches/:matchId/event", requireMatchWrite("score", "stats"), async (req, res) => {
+router.post("/matches/:matchId/event", requireMatchWrite("stats"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { eventType, description, teamId, playerId, distance, severity } = req.body;
@@ -728,7 +724,7 @@ router.post("/matches/:matchId/event", requireMatchWrite("score", "stats"), asyn
     if (eventType === "penalty_in") {
       if (distance != null) {
         const d = String(distance);
-        if (!["20", "30", "40", "60"].includes(d)) { res.status(400).json({ message: "distance must be 20, 30, 40 or 60" }); return; }
+        if (!["20", "30", "40"].includes(d)) { res.status(400).json({ message: "distance must be 20, 30 or 40" }); return; }
         normDistance = d;
       }
     } else if (distance != null) {
@@ -864,7 +860,7 @@ router.get("/matches/:matchId/stats", async (req, res) => {
   }
 });
 
-router.post("/matches/:matchId/stat", requireMatchWrite("score", "stats"), async (req, res) => {
+router.post("/matches/:matchId/stat", requireMatchWrite("stats"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const { eventType, teamId, description } = req.body;

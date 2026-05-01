@@ -48,9 +48,15 @@ ${img ? `<meta name="twitter:image" content="${img}">` : ""}
 </html>`;
 }
 
+function defaultOgImage(req: Request): string {
+  const origin = `${req.protocol}://${req.get("host")}`;
+  return `${origin}/polo-manager/opengraph.jpg`;
+}
+
 async function buildOg(req: Request): Promise<OgData | null> {
   const fullUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
   const path = req.path;
+  const fallbackImage = defaultOgImage(req);
 
   // /tournaments/:id
   let m = path.match(/^\/tournaments\/([^/]+)\/?$/);
@@ -63,6 +69,7 @@ async function buildOg(req: Request): Promise<OgData | null> {
       title: `${t.name} — Polo Clubhouse`,
       description: `${t.name}${club ? ` at ${club.name}` : ""}. View matches, scores, and standings.`,
       url: fullUrl,
+      image: club?.logoUrl || fallbackImage,
       type: "website",
     };
   }
@@ -87,6 +94,7 @@ async function buildOg(req: Request): Promise<OgData | null> {
       title: `${homeName} vs ${awayName} — ${status}`,
       description: `${tour?.name || ""} ${status} ${homeName} ${match.homeScore || 0} – ${match.awayScore || 0} ${awayName}`.trim(),
       url: fullUrl,
+      image: home?.logoUrl || away?.logoUrl || fallbackImage,
       type: "article",
     };
   }
@@ -101,7 +109,7 @@ async function buildOg(req: Request): Promise<OgData | null> {
       title: `${club.name} — Polo Clubhouse`,
       description: `${club.name}. Tournaments, matches, and players.`,
       url: fullUrl,
-      image: club.logoUrl || undefined,
+      image: club.logoUrl || fallbackImage,
       type: "website",
     };
   }
@@ -116,7 +124,7 @@ async function buildOg(req: Request): Promise<OgData | null> {
       title: `${p.name} — Polo Clubhouse`,
       description: `${p.name}${p.handicap ? ` · Handicap ${p.handicap}` : ""}. Career stats and matches.`,
       url: fullUrl,
-      image: p.headshotUrl || undefined,
+      image: p.headshotUrl || fallbackImage,
       type: "profile",
     };
   }
@@ -131,7 +139,7 @@ async function buildOg(req: Request): Promise<OgData | null> {
       title: `${t.name} — Polo Clubhouse`,
       description: `${t.name} team profile, roster, and matches.`,
       url: fullUrl,
-      image: t.logoUrl || undefined,
+      image: t.logoUrl || fallbackImage,
       type: "website",
     };
   }
@@ -142,6 +150,7 @@ async function buildOg(req: Request): Promise<OgData | null> {
       title: "Polo Clubhouse",
       description: "Live polo scores, tournaments, players and clubs.",
       url: fullUrl,
+      image: fallbackImage,
       type: "website",
     };
   }

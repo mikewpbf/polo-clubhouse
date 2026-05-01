@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jumbotron Mockup V2 — Top Banner</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --home: #1B5E20;
+        --away: #B71C1C;
+        --neutral: #0a0e12;
+        --ink: #ffffff;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0; padding: 0;
+        height: 100%;
+        background: #000;
+        font-family: "Instrument Sans", system-ui, sans-serif;
+        color: var(--ink);
+        overflow: hidden;
+      }
+      .stage {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background: var(--neutral);
+      }
+
+      /* Top banner — event logo dominant */
+      .banner {
+        height: 16vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 3vw;
+        padding: 0 4vw;
+        background: linear-gradient(180deg, #050709 0%, #0f1419 100%);
+        border-bottom: 2px solid rgba(255,255,255,0.08);
+        position: relative;
+      }
+      .banner::after {
+        content: "";
+        position: absolute;
+        bottom: 0; left: 50%;
+        transform: translateX(-50%);
+        width: 38%;
+        height: 3px;
+        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%);
+      }
+      .event-logo {
+        width: 12vh; height: 12vh;
+        border-radius: 50%;
+        background:
+          radial-gradient(circle at 30% 30%, #f4d35e 0%, #c19920 60%, #6b4f0a 100%);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 1.9vh;
+        color: #2a1a00;
+        text-align: center;
+        line-height: 1.05;
+        border: 3px solid rgba(255,255,255,0.5);
+        box-shadow: 0 0 0 1px rgba(0,0,0,0.6), 0 0.6vh 1.6vh rgba(0,0,0,0.5);
+      }
+      .event-meta { display: flex; flex-direction: column; align-items: flex-start; }
+      .event-name {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 5.5vh;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        line-height: 1;
+      }
+      .event-sub {
+        font-family: "Instrument Sans", sans-serif;
+        font-weight: 500;
+        font-size: 2.2vh;
+        color: rgba(255,255,255,0.6);
+        margin-top: 0.6vh;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .chukker-pill {
+        position: absolute;
+        right: 4vw;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.18);
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 3vh;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        padding: 1vh 1.6vw;
+        border-radius: 1vh;
+      }
+
+      /* Two team panels */
+      .arena {
+        flex: 1;
+        display: flex;
+        position: relative;
+      }
+      .panel {
+        flex: 1;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0 6vw;
+      }
+      .panel.home { background: linear-gradient(135deg, var(--home) 0%, color-mix(in srgb, var(--home), #000 35%) 100%); }
+      .panel.away { background: linear-gradient(225deg, var(--away) 0%, color-mix(in srgb, var(--away), #000 35%) 100%); }
+
+      .team-id {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5vh;
+        margin-bottom: 2vh;
+      }
+      .team-logo {
+        width: 16vh; height: 16vh;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.35);
+        display: flex; align-items: center; justify-content: center;
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 5.2vh;
+        color: var(--ink);
+        border: 4px solid rgba(255,255,255,0.18);
+      }
+      .team-name {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 3.6vh;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        text-align: center;
+        line-height: 1;
+      }
+      .score {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 26vh;
+        line-height: 0.9;
+        letter-spacing: -0.03em;
+        text-shadow: 0 0.6vh 2vh rgba(0,0,0,0.45);
+      }
+
+      /* Bottom — clock */
+      .bottombar {
+        height: 12vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, #0f1419 0%, #050709 100%);
+        border-top: 2px solid rgba(255,255,255,0.08);
+      }
+      .clock {
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 700;
+        font-size: 8vh;
+        letter-spacing: 0.04em;
+        color: var(--ink);
+      }
+
+      .label {
+        position: fixed;
+        top: 1vh; right: 1vh;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 1.8vh;
+        color: rgba(255,255,255,0.6);
+        letter-spacing: 0.1em;
+        background: rgba(0,0,0,0.7);
+        padding: 0.4vh 1vw;
+        border-radius: 0.4vh;
+        z-index: 100;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage">
+      <div class="banner">
+        <div class="event-logo">SUMMER<br />CUP</div>
+        <div class="event-meta">
+          <div class="event-name">Summer Cup 2026</div>
+          <div class="event-sub">Sage Polo Club · Final Round</div>
+        </div>
+        <div class="chukker-pill">Chukker 4</div>
+      </div>
+
+      <div class="arena">
+        <div class="panel home">
+          <div class="team-id">
+            <div class="team-logo">SS</div>
+            <div class="team-name">Sage Stables</div>
+          </div>
+          <div class="score">7</div>
+        </div>
+        <div class="panel away">
+          <div class="team-id">
+            <div class="team-logo">RP</div>
+            <div class="team-name">Red Polo</div>
+          </div>
+          <div class="score">5</div>
+        </div>
+      </div>
+
+      <div class="bottombar">
+        <div class="clock">3:42</div>
+      </div>
+    </div>
+    <div class="label">V2 — TOP BANNER</div>
+  </body>
+</html>

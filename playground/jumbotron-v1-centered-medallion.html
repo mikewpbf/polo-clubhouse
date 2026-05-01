@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jumbotron Mockup V1 — Centered Medallion</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --home: #1B5E20;
+        --away: #B71C1C;
+        --neutral: #0a0e12;
+        --ink: #ffffff;
+        --ink-dim: rgba(255, 255, 255, 0.78);
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0; padding: 0;
+        height: 100%;
+        background: #000;
+        font-family: "Instrument Sans", system-ui, sans-serif;
+        color: var(--ink);
+        overflow: hidden;
+      }
+      .stage {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        display: flex;
+        background: var(--neutral);
+      }
+      /* Two team panels */
+      .panel {
+        flex: 1;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 0 6vw;
+      }
+      .panel.home { background: linear-gradient(135deg, var(--home) 0%, color-mix(in srgb, var(--home), #000 35%) 100%); }
+      .panel.away { background: linear-gradient(225deg, var(--away) 0%, color-mix(in srgb, var(--away), #000 35%) 100%); }
+
+      /* Team logo block */
+      .team-id {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5vh;
+        margin-bottom: 2vh;
+      }
+      .team-logo {
+        width: 18vh; height: 18vh;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.35);
+        display: flex; align-items: center; justify-content: center;
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 6vh;
+        color: var(--ink);
+        border: 4px solid rgba(255,255,255,0.18);
+      }
+      .team-name {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 4.2vh;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        text-align: center;
+        line-height: 1;
+      }
+
+      /* Score */
+      .score {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 28vh;
+        line-height: 0.9;
+        letter-spacing: -0.03em;
+        text-shadow: 0 0.6vh 2vh rgba(0,0,0,0.45);
+      }
+
+      /* Top bar — chukker */
+      .topbar {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 7vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 100%);
+        pointer-events: none;
+      }
+      .chukker {
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 3.4vh;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        background: rgba(0,0,0,0.55);
+        padding: 0.7vh 2vw;
+        border-radius: 1vh;
+        border: 1px solid rgba(255,255,255,0.12);
+      }
+
+      /* Center event-logo medallion — V1: modest, sits on the divider */
+      .medallion {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 22vh; height: 22vh;
+        border-radius: 50%;
+        background: var(--neutral);
+        border: 4px solid rgba(255,255,255,0.85);
+        box-shadow:
+          0 0 0 1px rgba(0,0,0,0.4),
+          0 1.5vh 4vh rgba(0,0,0,0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        overflow: hidden;
+      }
+      .medallion .event-logo {
+        width: 70%; height: 70%;
+        background:
+          radial-gradient(circle at 30% 30%, #f4d35e 0%, #c19920 60%, #6b4f0a 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Syne", sans-serif;
+        font-weight: 800;
+        font-size: 3.2vh;
+        color: #2a1a00;
+        text-align: center;
+        line-height: 1.05;
+      }
+
+      /* Bottom bar — clock */
+      .bottombar {
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        height: 11vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(0deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0) 100%);
+        pointer-events: none;
+      }
+      .clock {
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 700;
+        font-size: 8.5vh;
+        letter-spacing: 0.04em;
+        background: rgba(0,0,0,0.65);
+        padding: 1vh 4vw;
+        border-radius: 1.4vh;
+        border: 1px solid rgba(255,255,255,0.12);
+      }
+
+      .label {
+        position: fixed;
+        top: 1vh; right: 1vh;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 1.8vh;
+        color: rgba(255,255,255,0.4);
+        letter-spacing: 0.1em;
+        background: rgba(0,0,0,0.5);
+        padding: 0.4vh 1vw;
+        border-radius: 0.4vh;
+        z-index: 100;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="stage">
+      <div class="panel home">
+        <div class="team-id">
+          <div class="team-logo">SS</div>
+          <div class="team-name">Sage Stables</div>
+        </div>
+        <div class="score">7</div>
+      </div>
+      <div class="panel away">
+        <div class="team-id">
+          <div class="team-logo">RP</div>
+          <div class="team-name">Red Polo</div>
+        </div>
+        <div class="score">5</div>
+      </div>
+
+      <div class="topbar">
+        <div class="chukker">Chukker 4</div>
+      </div>
+
+      <div class="medallion">
+        <div class="event-logo">SUMMER<br />CUP<br />2026</div>
+      </div>
+
+      <div class="bottombar">
+        <div class="clock">3:42</div>
+      </div>
+    </div>
+    <div class="label">V1 — CENTERED MEDALLION</div>
+  </body>
+</html>

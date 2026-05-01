@@ -633,6 +633,11 @@ router.post("/matches/:matchId/undo-goal", requireMatchAdminFactory(), async (re
       .orderBy(desc(matchEventsTable.createdAt))
       .limit(1);
 
+    if (!lastGoal) {
+      res.status(409).json({ message: "No goal event found for this team to undo" });
+      return;
+    }
+
     const newHome = isHome ? Math.max(0, (current.homeScore || 0) - 1) : (current.homeScore || 0);
     const newAway = isAway ? Math.max(0, (current.awayScore || 0) - 1) : (current.awayScore || 0);
 
@@ -641,20 +646,7 @@ router.post("/matches/:matchId/undo-goal", requireMatchAdminFactory(), async (re
       awayScore: newAway,
     }).where(eq(matchesTable.id, matchId)).returning();
 
-    if (lastGoal) {
-      await db.delete(matchEventsTable).where(eq(matchEventsTable.id, lastGoal.id));
-    } else {
-      if (!(await isDuplicateEvent(matchId, "score_correction"))) {
-        await db.insert(matchEventsTable).values({
-          matchId: match.id,
-          eventType: "score_correction",
-          chukker: match.currentChukker,
-          clockSeconds: match.clockElapsedSeconds,
-          scoreSnapshot: { home: newHome, away: newAway },
-          createdBy: req.user?.id ?? null,
-        });
-      }
-    }
+    await db.delete(matchEventsTable).where(eq(matchEventsTable.id, lastGoal.id));
 
     const enriched = await enrichMatch(match, true);
     emitMatchUpdate(matchId);

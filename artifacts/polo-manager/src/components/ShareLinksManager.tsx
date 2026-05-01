@@ -195,7 +195,7 @@ export function ShareLinksManager({ matchId, mode, dark, apiFetch }: Props) {
                     <div className="space-y-1 mt-2 max-h-[160px] overflow-y-auto">
                       {links.filter((l) => l.pageType === mode && !l.active).map((l) => (
                         <div key={l.id} className={`text-[11px] font-mono truncate px-2 py-1 rounded ${dark ? "" : "bg-g50"}`} style={dark ? { background: "rgba(255,255,255,0.03)", color: "#9ca3af" } : undefined}>
-                          {buildUrl(l)} · revoked
+                          {buildUrl(l)} · {l.revokedAt ? "revoked" : "expired"}
                         </div>
                       ))}
                     </div>

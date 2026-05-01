@@ -705,6 +705,43 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
               <HeartPulse className="w-3.5 h-3.5" /> Injury T/O
             </Button>
           </div>
+          <div className="flex items-center gap-2 mt-2 w-full">
+            <button
+              className={`w-10 h-10 rounded-[8px] flex items-center justify-center disabled:opacity-30 transition-colors active:scale-95 shrink-0 ${dk ? "" : "bg-g50 border border-g200 hover:bg-g100"}`}
+              style={dk ? { background: btnMuted, border: borderCard } : undefined}
+              disabled={isFinal || match.clockIsRunning || (match.currentChukker || 1) <= 1}
+              onClick={() => handleChukkerChange("back")}
+            >
+              <ChevronLeft className="w-5 h-5" style={dk ? { color: btnMutedText } : undefined} />
+            </button>
+            <span className="font-display font-bold text-xl flex-1 text-center" style={dk ? { color: textPrimary } : undefined}>
+              Chukker {match.currentChukker}
+            </span>
+            <button
+              className={`w-10 h-10 rounded-[8px] flex items-center justify-center disabled:opacity-30 transition-colors active:scale-95 shrink-0 ${dk ? "" : "bg-g50 border border-g200 hover:bg-g100"}`}
+              style={dk ? { background: btnMuted, border: borderCard } : undefined}
+              disabled={isFinal || match.clockIsRunning}
+              onClick={() => handleChukkerChange("forward")}
+            >
+              <ChevronRight className="w-5 h-5" style={dk ? { color: btnMutedText } : undefined} />
+            </button>
+            <Button
+              variant="outline"
+              className={`flex-1 h-10 rounded-[8px] text-[13px] font-semibold ${isHalftime ? "text-orange-700 border-orange-300 bg-orange-50 hover:bg-orange-100" : "text-orange-700 border-orange-200 hover:bg-orange-50"}`}
+              disabled={isFinal || match.clockIsRunning || isHalftime}
+              onClick={handleHalftime}
+            >
+              Halftime
+            </Button>
+            <Button
+              variant="danger"
+              className="h-10 px-4 rounded-[8px] text-[13px]"
+              disabled={isFinal}
+              onClick={() => handleStatus("final")}
+            >
+              <CheckSquare className="w-4 h-4 mr-2" /> End Match
+            </Button>
+          </div>
         </div>
         </>)}
 
@@ -915,47 +952,6 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
         })()}
 
         {showSection("score") && (<>
-        <div className={`rounded-[12px] p-6 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 flex-1 mr-3">
-              <button
-                className={`w-10 h-10 rounded-[8px] flex items-center justify-center disabled:opacity-30 transition-colors active:scale-95 shrink-0 ${dk ? "" : "bg-g50 border border-g200 hover:bg-g100"}`}
-                style={dk ? { background: btnMuted, border: borderCard } : undefined}
-                disabled={isFinal || match.clockIsRunning || (match.currentChukker || 1) <= 1}
-                onClick={() => handleChukkerChange("back")}
-              >
-                <ChevronLeft className="w-5 h-5" style={dk ? { color: btnMutedText } : undefined} />
-              </button>
-              <span className="font-display font-bold text-xl min-w-[120px] text-center shrink-0" style={dk ? { color: textPrimary } : undefined}>
-                Chukker {match.currentChukker}
-              </span>
-              <button
-                className={`w-10 h-10 rounded-[8px] flex items-center justify-center disabled:opacity-30 transition-colors active:scale-95 shrink-0 ${dk ? "" : "bg-g50 border border-g200 hover:bg-g100"}`}
-                style={dk ? { background: btnMuted, border: borderCard } : undefined}
-                disabled={isFinal || match.clockIsRunning}
-                onClick={() => handleChukkerChange("forward")}
-              >
-                <ChevronRight className="w-5 h-5" style={dk ? { color: btnMutedText } : undefined} />
-              </button>
-              <Button
-                variant="outline"
-                className={`flex-1 h-10 rounded-[8px] text-[13px] font-semibold ${isHalftime ? "text-orange-700 border-orange-300 bg-orange-50 hover:bg-orange-100" : "text-orange-700 border-orange-200 hover:bg-orange-50"}`}
-                disabled={isFinal || match.clockIsRunning || isHalftime}
-                onClick={handleHalftime}
-              >
-                Halftime
-              </Button>
-            </div>
-            <Button
-              variant="danger"
-              className="h-10 px-4 rounded-[8px] text-[13px]"
-              disabled={isFinal}
-              onClick={() => handleStatus("final")}
-            >
-              <CheckSquare className="w-4 h-4 mr-2" /> End Match
-            </Button>
-          </div>
-        </div>
 
         {/* Home team stat buttons — full-width card */}
         {match.homeTeamId && (

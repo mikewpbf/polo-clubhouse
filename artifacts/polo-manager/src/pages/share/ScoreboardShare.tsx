@@ -86,7 +86,7 @@ export function ScoreboardShare() {
   useEffect(() => {
     if (!matchId) return;
     fetchMatch();
-    const iv = setInterval(fetchMatch, 3000);
+    const iv = setInterval(fetchMatch, 5000);
     return () => clearInterval(iv);
   }, [matchId, fetchMatch]);
 

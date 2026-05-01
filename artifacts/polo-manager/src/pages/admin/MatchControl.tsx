@@ -855,6 +855,177 @@ export function MatchControl() {
 
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <button
+            onClick={() => setPossessionOpen(prev => !prev)}
+            className="w-full flex items-center gap-2"
+          >
+            <Crosshair className="w-4 h-4" style={dk ? { color: textMuted } : undefined} />
+            <span className="text-[12px] font-sans font-medium uppercase tracking-wider flex-1 text-left" style={dk ? { color: textMuted } : undefined}>Possession Tracker</span>
+            <ChevronRight className={`w-4 h-4 transition-transform ${possessionOpen ? "rotate-90" : ""}`} style={dk ? { color: textMuted } : undefined} />
+          </button>
+
+          {possessionOpen && (
+            <div className="mt-3 space-y-3">
+              {possessionStats && (
+                <div className="rounded-[8px] p-3" style={dk ? { background: "rgba(255,255,255,0.05)" } : { background: "rgba(0,0,0,0.03)" }}>
+                  <div className="flex items-center justify-between text-[13px] font-semibold mb-1.5">
+                    <span style={dk ? { color: textPrimary } : undefined}>{possessionStats.homePercent}%</span>
+                    <span className="text-[11px] uppercase tracking-wider" style={dk ? { color: textMuted } : undefined}>Possession</span>
+                    <span style={dk ? { color: textPrimary } : undefined}>{possessionStats.awayPercent}%</span>
+                  </div>
+                  <div className="flex h-2 rounded-full overflow-hidden gap-0.5" style={{ background: "rgba(0,0,0,0.08)" }}>
+                    <div style={{ width: `${possessionStats.homePercent}%`, background: match.homeTeam?.primaryColor || "#1B5E20", borderRadius: 4, transition: "width 0.5s", minWidth: possessionStats.homePercent > 0 ? 4 : 0 }} />
+                    <div style={{ flex: 1, background: match.awayTeam?.primaryColor || "#6A1B1A", borderRadius: 4, transition: "width 0.5s", minWidth: possessionStats.awayPercent > 0 ? 4 : 0 }} />
+                  </div>
+                  {possessionState && (
+                    <div className="mt-1.5 text-[11px] text-ink3 text-center">
+                      Active: <span className="font-semibold text-ink2">{possessionState === "home" ? (match.homeTeam?.name || "Home") : possessionState === "away" ? (match.awayTeam?.name || "Away") : "Loose / 50-50"}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!possessionToken ? (
+                <Button
+                  variant="outline"
+                  className="w-full h-9 rounded-[8px] text-[13px] gap-2"
+                  onClick={async () => {
+                    try {
+                      const data = await apiFetch(`/matches/${match.id}/possession/token`, { method: "POST", body: JSON.stringify({}) });
+                      setPossessionToken(data.token);
+                    } catch (e: any) {
+                      toast({ title: "Error", description: e.message });
+                    }
+                  }}
+                >
+                  <Link className="w-3.5 h-3.5" />
+                  Generate Tracker Link
+                </Button>
+              ) : (
+                <div className="space-y-1.5">
+                  <label className="text-[11px] text-ink3 font-medium">Share this link:</label>
+                  <div className="flex gap-1.5">
+                    <input
+                      readOnly
+                      value={`${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}/possession/${match.id}?token=${possessionToken}`}
+                      className="flex-1 h-9 rounded-[8px] border border-g200 bg-g50/50 px-2.5 text-[12px] text-ink2 font-mono select-all focus:outline-none focus:ring-1 focus:ring-g400"
+                      onFocus={(e) => e.target.select()}
+                    />
+                    <Button
+                      variant="outline"
+                      className="h-9 px-3 rounded-[8px] text-[12px] gap-1.5"
+                      onClick={() => {
+                        const url = `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}/possession/${match.id}?token=${possessionToken}`;
+                        navigator.clipboard.writeText(url).then(() => {
+                          toast({ title: "Copied", description: "Link copied to clipboard" });
+                        }).catch(() => {
+                          toast({ title: "Select & copy", description: "Tap the link above and copy manually" });
+                        });
+                      }}
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      Copy
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 h-9 rounded-[8px] text-[13px] gap-1.5"
+                  onClick={() => {
+                    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+                    window.open(`${base}/possession/${match.id}`, "_blank");
+                  }}
+                >
+                  <Crosshair className="w-3.5 h-3.5" />
+                  Open Tracker
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-9 rounded-[8px] text-[13px] gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={async () => {
+                    if (!confirm("Reset all possession data for this match?")) return;
+                    try {
+                      await apiFetch(`/matches/${match.id}/possession`, { method: "DELETE" });
+                      setPossessionStats(null);
+                      setPossessionState(null);
+                      toast({ title: "Reset", description: "Possession data cleared" });
+                    } catch (e: any) {
+                      toast({ title: "Error", description: e.message });
+                    }
+                  }}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Reset
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
+          <button
+            onClick={() => setOutputResOpen(prev => !prev)}
+            className="w-full flex items-center gap-2"
+          >
+            <Monitor className="w-4 h-4" style={dk ? { color: textMuted } : undefined} />
+            <span className="text-[12px] font-sans font-medium uppercase tracking-wider flex-1 text-left" style={dk ? { color: textMuted } : undefined}>Output Resolution</span>
+            <span className="text-[11px] font-sans font-medium" style={{ color: dk ? textMuted : "#888" }}>
+              {((match as any).broadcastResolution || "1080p") === "4k" ? "4K" : "1080P"}
+            </span>
+            <ChevronRight className={`w-4 h-4 transition-transform ${outputResOpen ? "rotate-90" : ""}`} style={dk ? { color: textMuted } : undefined} />
+          </button>
+
+          {outputResOpen && (
+            <div className="mt-3 space-y-3">
+              <div className="flex gap-2">
+                {([
+                  { label: "1080P", val: "1080p" },
+                  { label: "4K", val: "4k" },
+                ] as const).map((r) => {
+                  const current = (match as any).broadcastResolution || "1080p";
+                  const active = current === r.val;
+                  return (
+                    <button
+                      key={r.val}
+                      onClick={() => {
+                        setMatch(prev => prev ? ({ ...prev, broadcastResolution: r.val } as any) : prev);
+                        mutatePut(`/matches/${match.id}/broadcast`, { broadcastResolution: r.val });
+                      }}
+                      className={`flex-1 py-2 px-2 rounded-[8px] font-sans font-medium text-[12px] transition-colors ${
+                        active ? "bg-g700 text-white" : dk ? "" : "bg-g50 text-ink2 hover:bg-g100"
+                      }`}
+                      style={!active && dk ? { background: btnMuted, color: btnMutedText } : undefined}
+                    >
+                      {r.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {(match.broadcastResolution || "1080p") === "4k" && (
+                <FourKAdjustments
+                  matchId={match.id}
+                  scale={match.broadcast4kScale ?? 100}
+                  offsetX={match.broadcast4kOffsetX ?? 0}
+                  offsetY={match.broadcast4kOffsetY ?? 0}
+                  onChange={(patch) => {
+                    setMatch(prev => prev ? ({ ...prev, ...patch } as MatchData) : prev);
+                    mutatePut(`/matches/${match.id}/broadcast`, patch);
+                  }}
+                  dark={dk}
+                  textMuted={textMuted}
+                  btnMuted={btnMuted}
+                  btnMutedText={btnMutedText}
+                />
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
+          <button
             onClick={() => setTimingOpen(prev => !prev)}
             className="w-full flex items-center gap-2"
           >
@@ -1100,177 +1271,6 @@ export function MatchControl() {
                   </div>
                 )}
               </div>
-            </div>
-          )}
-        </div>
-
-        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
-          <button
-            onClick={() => setPossessionOpen(prev => !prev)}
-            className="w-full flex items-center gap-2"
-          >
-            <Crosshair className="w-4 h-4" style={dk ? { color: textMuted } : undefined} />
-            <span className="text-[12px] font-sans font-medium uppercase tracking-wider flex-1 text-left" style={dk ? { color: textMuted } : undefined}>Possession Tracker</span>
-            <ChevronRight className={`w-4 h-4 transition-transform ${possessionOpen ? "rotate-90" : ""}`} style={dk ? { color: textMuted } : undefined} />
-          </button>
-
-          {possessionOpen && (
-            <div className="mt-3 space-y-3">
-              {possessionStats && (
-                <div className="rounded-[8px] p-3" style={dk ? { background: "rgba(255,255,255,0.05)" } : { background: "rgba(0,0,0,0.03)" }}>
-                  <div className="flex items-center justify-between text-[13px] font-semibold mb-1.5">
-                    <span style={dk ? { color: textPrimary } : undefined}>{possessionStats.homePercent}%</span>
-                    <span className="text-[11px] uppercase tracking-wider" style={dk ? { color: textMuted } : undefined}>Possession</span>
-                    <span style={dk ? { color: textPrimary } : undefined}>{possessionStats.awayPercent}%</span>
-                  </div>
-                  <div className="flex h-2 rounded-full overflow-hidden gap-0.5" style={{ background: "rgba(0,0,0,0.08)" }}>
-                    <div style={{ width: `${possessionStats.homePercent}%`, background: match.homeTeam?.primaryColor || "#1B5E20", borderRadius: 4, transition: "width 0.5s", minWidth: possessionStats.homePercent > 0 ? 4 : 0 }} />
-                    <div style={{ flex: 1, background: match.awayTeam?.primaryColor || "#6A1B1A", borderRadius: 4, transition: "width 0.5s", minWidth: possessionStats.awayPercent > 0 ? 4 : 0 }} />
-                  </div>
-                  {possessionState && (
-                    <div className="mt-1.5 text-[11px] text-ink3 text-center">
-                      Active: <span className="font-semibold text-ink2">{possessionState === "home" ? (match.homeTeam?.name || "Home") : possessionState === "away" ? (match.awayTeam?.name || "Away") : "Loose / 50-50"}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {!possessionToken ? (
-                <Button
-                  variant="outline"
-                  className="w-full h-9 rounded-[8px] text-[13px] gap-2"
-                  onClick={async () => {
-                    try {
-                      const data = await apiFetch(`/matches/${match.id}/possession/token`, { method: "POST", body: JSON.stringify({}) });
-                      setPossessionToken(data.token);
-                    } catch (e: any) {
-                      toast({ title: "Error", description: e.message });
-                    }
-                  }}
-                >
-                  <Link className="w-3.5 h-3.5" />
-                  Generate Tracker Link
-                </Button>
-              ) : (
-                <div className="space-y-1.5">
-                  <label className="text-[11px] text-ink3 font-medium">Share this link:</label>
-                  <div className="flex gap-1.5">
-                    <input
-                      readOnly
-                      value={`${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}/possession/${match.id}?token=${possessionToken}`}
-                      className="flex-1 h-9 rounded-[8px] border border-g200 bg-g50/50 px-2.5 text-[12px] text-ink2 font-mono select-all focus:outline-none focus:ring-1 focus:ring-g400"
-                      onFocus={(e) => e.target.select()}
-                    />
-                    <Button
-                      variant="outline"
-                      className="h-9 px-3 rounded-[8px] text-[12px] gap-1.5"
-                      onClick={() => {
-                        const url = `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}/possession/${match.id}?token=${possessionToken}`;
-                        navigator.clipboard.writeText(url).then(() => {
-                          toast({ title: "Copied", description: "Link copied to clipboard" });
-                        }).catch(() => {
-                          toast({ title: "Select & copy", description: "Tap the link above and copy manually" });
-                        });
-                      }}
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                      Copy
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 h-9 rounded-[8px] text-[13px] gap-1.5"
-                  onClick={() => {
-                    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-                    window.open(`${base}/possession/${match.id}`, "_blank");
-                  }}
-                >
-                  <Crosshair className="w-3.5 h-3.5" />
-                  Open Tracker
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-9 rounded-[8px] text-[13px] gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={async () => {
-                    if (!confirm("Reset all possession data for this match?")) return;
-                    try {
-                      await apiFetch(`/matches/${match.id}/possession`, { method: "DELETE" });
-                      setPossessionStats(null);
-                      setPossessionState(null);
-                      toast({ title: "Reset", description: "Possession data cleared" });
-                    } catch (e: any) {
-                      toast({ title: "Error", description: e.message });
-                    }
-                  }}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Reset
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
-          <button
-            onClick={() => setOutputResOpen(prev => !prev)}
-            className="w-full flex items-center gap-2"
-          >
-            <Monitor className="w-4 h-4" style={dk ? { color: textMuted } : undefined} />
-            <span className="text-[12px] font-sans font-medium uppercase tracking-wider flex-1 text-left" style={dk ? { color: textMuted } : undefined}>Output Resolution</span>
-            <span className="text-[11px] font-sans font-medium" style={{ color: dk ? textMuted : "#888" }}>
-              {((match as any).broadcastResolution || "1080p") === "4k" ? "4K" : "1080P"}
-            </span>
-            <ChevronRight className={`w-4 h-4 transition-transform ${outputResOpen ? "rotate-90" : ""}`} style={dk ? { color: textMuted } : undefined} />
-          </button>
-
-          {outputResOpen && (
-            <div className="mt-3 space-y-3">
-              <div className="flex gap-2">
-                {([
-                  { label: "1080P", val: "1080p" },
-                  { label: "4K", val: "4k" },
-                ] as const).map((r) => {
-                  const current = (match as any).broadcastResolution || "1080p";
-                  const active = current === r.val;
-                  return (
-                    <button
-                      key={r.val}
-                      onClick={() => {
-                        setMatch(prev => prev ? ({ ...prev, broadcastResolution: r.val } as any) : prev);
-                        mutatePut(`/matches/${match.id}/broadcast`, { broadcastResolution: r.val });
-                      }}
-                      className={`flex-1 py-2 px-2 rounded-[8px] font-sans font-medium text-[12px] transition-colors ${
-                        active ? "bg-g700 text-white" : dk ? "" : "bg-g50 text-ink2 hover:bg-g100"
-                      }`}
-                      style={!active && dk ? { background: btnMuted, color: btnMutedText } : undefined}
-                    >
-                      {r.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {(match.broadcastResolution || "1080p") === "4k" && (
-                <FourKAdjustments
-                  matchId={match.id}
-                  scale={match.broadcast4kScale ?? 100}
-                  offsetX={match.broadcast4kOffsetX ?? 0}
-                  offsetY={match.broadcast4kOffsetY ?? 0}
-                  onChange={(patch) => {
-                    setMatch(prev => prev ? ({ ...prev, ...patch } as MatchData) : prev);
-                    mutatePut(`/matches/${match.id}/broadcast`, patch);
-                  }}
-                  dark={dk}
-                  textMuted={textMuted}
-                  btnMuted={btnMuted}
-                  btnMutedText={btnMutedText}
-                />
-              )}
             </div>
           )}
         </div>

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Users, Plus, X, Pencil, Trash2, UserPlus, Shield, Search, CalendarOff } from "lucide-react";
+import { Users, Plus, X, Pencil, Trash2, UserPlus, Shield, Search, CalendarOff, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -86,7 +86,9 @@ function PlayerSection({ teamId, player, onUpdate, onDelete, showReactivate }: {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(player.name);
   const [editHandicap, setEditHandicap] = useState(player.handicap || "");
-  const [reactivating, setReactivating] = useState(false);
+  const [toggling, setToggling] = useState(false);
+
+  const inactive = !!showReactivate;
 
   const handleSaveEdit = async () => {
     if (!editName.trim()) return;
@@ -106,67 +108,42 @@ function PlayerSection({ teamId, player, onUpdate, onDelete, showReactivate }: {
     }
   };
 
-  const handleMarkInactive = async () => {
+  const handleToggleActive = async () => {
+    setToggling(true);
     try {
       await apiFetch(`/teams/${teamId}/players/${player.id}`, {
         method: "PUT",
-        body: JSON.stringify({ isActive: false }),
+        body: JSON.stringify({ isActive: inactive }),
       });
       onUpdate();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to update player";
       toast({ title: "Error", description: msg, variant: "destructive" });
-    }
-  };
-
-  const handleReactivate = async () => {
-    setReactivating(true);
-    try {
-      await apiFetch(`/teams/${teamId}/players/${player.id}`, {
-        method: "PUT",
-        body: JSON.stringify({ isActive: true }),
-      });
-      onUpdate();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to reactivate player";
-      toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
-      setReactivating(false);
+      setToggling(false);
     }
   };
-
-  if (showReactivate) {
-    return (
-      <div className="group flex items-center gap-2 px-3 py-2.5 border border-line2 rounded-lg opacity-60 hover:opacity-80 transition-opacity">
-        <div className="flex-1 flex items-center gap-2 min-w-0">
-          <span className="text-[13px] truncate text-ink3">{player.name}</span>
-          {player.handicap != null && (
-            <span className="text-[11px] text-ink3 bg-surface2 px-1.5 py-0.5 rounded flex-shrink-0">HC {player.handicap}</span>
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={handleReactivate}
-          disabled={reactivating}
-          className="flex-shrink-0 text-[11px] font-medium text-g700 border border-g200 bg-g50 hover:bg-g100 px-2 py-1 rounded transition-colors disabled:opacity-50"
-        >
-          {reactivating ? "..." : "Reactivate"}
-        </button>
-        <button
-          type="button"
-          onClick={() => onDelete(player.id)}
-          className="opacity-0 group-hover:opacity-100 text-ink3 hover:text-live transition-all p-1"
-          title="Remove player"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </div>
-    );
-  }
 
   return (
-    <div className="group border border-line2 rounded-lg">
+    <div className={`group border border-line2 rounded-lg ${inactive ? "opacity-60 hover:opacity-80 transition-opacity" : ""}`}>
       <div className="flex items-center gap-2 px-3 py-2.5">
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={!inactive}
+          onClick={handleToggleActive}
+          disabled={toggling || editing}
+          aria-label={inactive ? "Mark as active" : "Mark as inactive"}
+          title={inactive ? "Mark as active" : "Mark as inactive"}
+          className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors disabled:opacity-50 ${
+            inactive
+              ? "border-line bg-white hover:border-g400"
+              : "border-g500 bg-g500 hover:bg-g600 hover:border-g600"
+          }`}
+        >
+          {!inactive && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+        </button>
+
         {editing ? (
           <div className="flex-1 flex items-center gap-2">
             <Input
@@ -193,19 +170,11 @@ function PlayerSection({ teamId, player, onUpdate, onDelete, showReactivate }: {
         ) : (
           <>
             <div className="flex-1 flex items-center gap-2 min-w-0">
-              <span className="text-[13px] truncate text-ink font-medium">{player.name}</span>
+              <span className={`text-[13px] truncate font-medium ${inactive ? "text-ink3" : "text-ink"}`}>{player.name}</span>
               {player.handicap != null && (
-                <span className="text-[11px] text-g700 bg-g50 px-1.5 py-0.5 rounded flex-shrink-0">HC {player.handicap}</span>
+                <span className={`text-[11px] px-1.5 py-0.5 rounded flex-shrink-0 ${inactive ? "text-ink3 bg-surface2" : "text-g700 bg-g50"}`}>HC {player.handicap}</span>
               )}
             </div>
-            <button
-              type="button"
-              onClick={handleMarkInactive}
-              className="opacity-0 group-hover:opacity-100 text-ink3 hover:text-ink2 transition-all p-1 text-[11px]"
-              title="Mark as inactive"
-            >
-              <CalendarOff className="w-3 h-3" />
-            </button>
             <button
               type="button"
               onClick={() => { setEditName(player.name); setEditHandicap(player.handicap || ""); setEditing(true); }}
@@ -217,7 +186,7 @@ function PlayerSection({ teamId, player, onUpdate, onDelete, showReactivate }: {
             <button
               type="button"
               onClick={() => onDelete(player.id)}
-              className="opacity-0 group-hover:opacity-100 text-ink3 hover:text-live transition-all p-1"
+              className="opacity-0 group-hover:opacity-100 text-ink3 hover:text-live transition-all p-1 ml-2"
               title="Remove player"
             >
               <X className="w-3.5 h-3.5" />

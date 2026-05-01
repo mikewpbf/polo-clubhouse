@@ -745,41 +745,60 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                       className="text-[9px] px-1.5 py-0.5 rounded text-red-500 hover:bg-red-50 transition-colors"
                     >Reset</button>
                   </div>
+
+                  {/* Possession toggle buttons — always show team colors */}
+                  {(() => {
+                    const homeColor = match.homeTeam?.primaryColor || "#1B5E20";
+                    const awayColor = match.awayTeam?.primaryColor || "#6A1B1A";
+                    const homeName = match.homeTeam?.name || "Home";
+                    const awayName = match.awayTeam?.name || "Away";
+                    return (
+                      <div className="flex gap-1.5 mb-2">
+                        {([
+                          { state: "home" as const, label: homeName, color: homeColor },
+                          { state: "loose" as const, label: "50/50", color: dk ? "#555" : "#999" },
+                          { state: "away" as const, label: awayName, color: awayColor },
+                        ]).map(({ state, label, color }) => {
+                          const isActive = possessionState === state;
+                          return (
+                            <button
+                              key={state}
+                              onClick={() => handleSetPossession(state)}
+                              disabled={isFinal}
+                              className="flex-1 rounded-[8px] font-sans font-bold text-[11px] transition-all disabled:opacity-30 active:scale-95 leading-tight px-1"
+                              style={{
+                                background: isActive ? color : `${color}28`,
+                                color: isActive ? "#fff" : color,
+                                border: `2px solid ${color}`,
+                                minHeight: 44,
+                                opacity: isFinal ? 0.4 : 1,
+                                boxShadow: isActive ? `0 0 0 3px ${color}44` : undefined,
+                              }}
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Percentage bar */}
                   {possessionStats ? (
                     <>
-                      <div className="flex items-center justify-between text-[12px] font-semibold mb-1">
+                      <div className="flex items-center justify-between text-[12px] font-bold mb-1">
                         <span style={{ color: match.homeTeam?.primaryColor || (dk ? "#f0f0f0" : "var(--ink)") }}>{possessionStats.homePercent}%</span>
-                        <span className="text-[9px] uppercase tracking-wider" style={{ color: dk ? textMuted : "#aaa" }}>{match.homeTeam?.shortName || "H"} / {match.awayTeam?.shortName || "A"}</span>
+                        <span className="text-[9px] font-normal uppercase tracking-wider" style={{ color: dk ? textMuted : "#aaa" }}>possession</span>
                         <span style={{ color: match.awayTeam?.primaryColor || (dk ? "#f0f0f0" : "var(--ink)") }}>{possessionStats.awayPercent}%</span>
                       </div>
-                      <div className="flex h-2.5 rounded-full overflow-hidden gap-px" style={{ background: "rgba(0,0,0,0.06)" }}>
-                        <div style={{ width: `${possessionStats.homePercent}%`, background: match.homeTeam?.primaryColor || "#1B5E20", borderRadius: 4, transition: "width 0.5s", minWidth: possessionStats.homePercent > 0 ? 4 : 0 }} />
-                        <div style={{ flex: 1, background: match.awayTeam?.primaryColor || "#6A1B1A", borderRadius: 4, transition: "width 0.5s", minWidth: possessionStats.awayPercent > 0 ? 4 : 0 }} />
+                      <div className="flex h-3 rounded-full overflow-hidden" style={{ background: "rgba(0,0,0,0.06)" }}>
+                        <div style={{ width: `${possessionStats.homePercent}%`, background: match.homeTeam?.primaryColor || "#1B5E20", transition: "width 0.5s", minWidth: possessionStats.homePercent > 0 ? 4 : 0 }} />
+                        <div style={{ flex: 1, background: match.awayTeam?.primaryColor || "#6A1B1A", transition: "width 0.5s", minWidth: possessionStats.awayPercent > 0 ? 4 : 0 }} />
                       </div>
                     </>
                   ) : (
-                    <div className="text-[11px] text-center py-1" style={{ color: dk ? textMuted : "#aaa" }}>No data yet — tap a team below</div>
+                    <div className="text-[10px] text-center mt-1" style={{ color: dk ? textMuted : "#aaa" }}>Tap a team to start tracking</div>
                   )}
-                  <div className="mt-2 flex gap-1.5">
-                    {(["home", "loose", "away"] as const).map((state) => {
-                      const label = state === "home" ? (match.homeTeam?.shortName || "Home") : state === "away" ? (match.awayTeam?.shortName || "Away") : "50/50";
-                      const isActive = possessionState === state;
-                      const activeColor = state === "home" ? (match.homeTeam?.primaryColor || "#1B5E20") : state === "away" ? (match.awayTeam?.primaryColor || "#6A1B1A") : (dk ? "#555" : "#888");
-                      return (
-                        <button
-                          key={state}
-                          onClick={() => handleSetPossession(state)}
-                          disabled={isFinal}
-                          className="flex-1 h-7 rounded-[6px] font-sans font-semibold text-[10px] transition-colors disabled:opacity-30 active:scale-95"
-                          style={isActive
-                            ? { background: activeColor, color: "#fff", border: `1px solid ${activeColor}` }
-                            : (dk ? { background: btnMuted, color: btnMutedText } : { background: "rgba(0,0,0,0.04)", color: "#555", border: "1px solid rgba(0,0,0,0.06)" })}
-                        >
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
                 </div>
               </div>
 

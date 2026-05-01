@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { db, runMigrations } from "@workspace/db";
+import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -38,19 +38,14 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-runMigrations()
-  .then(() => {
-    logger.info("Database migrations applied");
-    return seedSuperAdmin();
-  })
-  .then(() => {
-    app.listen(port, (err) => {
-      if (err) {
-        logger.error({ err }, "Error listening on port");
-        process.exit(1);
-      }
+seedSuperAdmin().then(() => {
+  app.listen(port, (err) => {
+    if (err) {
+      logger.error({ err }, "Error listening on port");
+      process.exit(1);
+    }
 
-      logger.info({ port }, "Server listening");
-      startWeatherCacheCleanup();
-    });
+    logger.info({ port }, "Server listening");
+    startWeatherCacheCleanup();
   });
+});

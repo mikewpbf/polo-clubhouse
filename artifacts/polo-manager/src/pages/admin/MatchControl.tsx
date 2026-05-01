@@ -636,7 +636,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
           const penBtnStyle = dk ? { background: "rgba(202,138,4,0.18)", color: "#facc15" } : undefined;
           const playerBtnCls = `flex-1 h-6 rounded-[5px] font-sans font-bold text-[9px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-g50 text-ink2 hover:bg-g100 hover:text-ink"}`;
           const penInBtnCls = `flex-1 h-6 rounded-[5px] font-sans font-bold text-[9px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100"}`;
-          const foulBtnCls = `flex-1 h-6 rounded-[5px] font-sans font-bold text-[9px] transition-colors disabled:opacity-30 ${dk ? "" : "bg-amber-50 text-amber-800 hover:bg-amber-100"}`;
+
 
           const renderTeamStatButtons = (teamId: string | null, side: "home" | "away") => {
             if (!teamId) return null;
@@ -679,10 +679,6 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                     <div className="flex gap-1 items-center">
                       {(["20", "30", "40"] as const).map(d => (
                         <button key={d} onClick={() => handlePlayerStat({ eventType: "penalty_in", teamId, playerId: p.id, distance: d })} disabled={isFinal} className={penInBtnCls} style={dk ? { background: "rgba(16,185,129,0.15)", color: "#34d399" } : undefined}>{d}y</button>
-                      ))}
-                      <span className="text-[8px] font-sans font-bold uppercase shrink-0 ml-0.5" style={{ color: dk ? "#facc15" : "#92400e" }}>Foul:</span>
-                      {(["1", "2", "3", "4", "5a", "5b"] as const).map(s => (
-                        <button key={s} onClick={() => handlePlayerStat({ eventType: "foul_committed", teamId, playerId: p.id, severity: s })} disabled={isFinal} className={foulBtnCls} style={dk ? { background: "rgba(202,138,4,0.18)", color: "#facc15" } : undefined} title={`Foul committed — severity ${s.toUpperCase()}`}>{s.toUpperCase()}</button>
                       ))}
                     </div>
                   </div>

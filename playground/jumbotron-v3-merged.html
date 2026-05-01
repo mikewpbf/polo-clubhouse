@@ -32,13 +32,12 @@
         background: var(--neutral);
       }
 
-      /* Top banner — V2 layout */
+      /* Top banner — 3-column grid so center group + chukker can't overlap */
       .banner {
         height: 16vh;
-        display: flex;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
         align-items: center;
-        justify-content: center;
-        gap: 3.5vw;
         padding: 0 4vw;
         background: linear-gradient(180deg, #050709 0%, #0f1419 100%);
         border-bottom: 2px solid rgba(255,255,255,0.08);
@@ -52,6 +51,16 @@
         width: 38%;
         height: 3px;
         background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%);
+      }
+      .banner-center {
+        display: flex;
+        align-items: center;
+        gap: 3.5vw;
+        justify-self: center;
+        min-width: 0;
+      }
+      .banner-right {
+        justify-self: end;
       }
 
       /* MEDALLION (V1 treatment, dropped into the banner) */
@@ -104,10 +113,6 @@
         text-transform: uppercase;
       }
       .chukker-pill {
-        position: absolute;
-        right: 4vw;
-        top: 50%;
-        transform: translateY(-50%);
         background: rgba(255,255,255,0.08);
         border: 1px solid rgba(255,255,255,0.18);
         font-family: "Syne", sans-serif;
@@ -117,6 +122,7 @@
         letter-spacing: 0.16em;
         padding: 1vh 1.6vw;
         border-radius: 1vh;
+        white-space: nowrap;
       }
 
       /* Two team panels */
@@ -192,13 +198,13 @@
 
       .label {
         position: fixed;
-        top: 1vh; right: 1vh;
+        bottom: 1vh; right: 1vh;
         font-family: "JetBrains Mono", monospace;
-        font-size: 1.8vh;
-        color: rgba(255,255,255,0.6);
+        font-size: 1.4vh;
+        color: rgba(255,255,255,0.5);
         letter-spacing: 0.1em;
         background: rgba(0,0,0,0.7);
-        padding: 0.4vh 1vw;
+        padding: 0.3vh 1vw;
         border-radius: 0.4vh;
         z-index: 100;
       }
@@ -207,14 +213,19 @@
   <body>
     <div class="stage">
       <div class="banner">
-        <div class="medallion">
-          <div class="event-logo">SUMMER<br />CUP</div>
+        <div></div>
+        <div class="banner-center">
+          <div class="medallion">
+            <div class="event-logo">SUMMER<br />CUP</div>
+          </div>
+          <div class="event-meta">
+            <div class="event-name">Summer Cup 2026</div>
+            <div class="event-sub">Sage Polo Club · Final Round</div>
+          </div>
         </div>
-        <div class="event-meta">
-          <div class="event-name">Summer Cup 2026</div>
-          <div class="event-sub">Sage Polo Club · Final Round</div>
+        <div class="banner-right">
+          <div class="chukker-pill">Chukker 4</div>
         </div>
-        <div class="chukker-pill">Chukker 4</div>
       </div>
 
       <div class="arena">

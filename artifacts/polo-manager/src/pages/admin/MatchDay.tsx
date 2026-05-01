@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { MatchClock } from "@/components/MatchClock";
 import { Link } from "wouter";
 import { formatDate } from "@/lib/utils";
-import { Tv, MapPin, ChevronLeft, ChevronRight, Image as ImageIcon, BarChart3, Sliders } from "lucide-react";
+import { Tv, MapPin, ChevronLeft, ChevronRight, Image as ImageIcon, BarChart3 } from "lucide-react";
 import { getStoredToken } from "@/hooks/use-auth";
 
 interface MatchItem {
@@ -141,7 +141,7 @@ export function MatchDay() {
                       <div className="font-display font-bold text-3xl mt-1" style={{ color: m.awayTeam?.primaryColor || "var(--ink)" }}>{m.awayScore}</div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <Button variant="secondary" className="gap-1.5" asChild>
                       <Link href={`/admin/score-control/${m.id}`}>
                         <Tv className="w-3.5 h-3.5" /> Score
@@ -150,11 +150,6 @@ export function MatchDay() {
                     <Button variant="secondary" className="gap-1.5" asChild>
                       <Link href={`/admin/stats-control/${m.id}`}>
                         <BarChart3 className="w-3.5 h-3.5" /> Stats
-                      </Link>
-                    </Button>
-                    <Button variant="secondary" className="gap-1.5" asChild>
-                      <Link href={`/admin/gfx-control/${m.id}`}>
-                        <Sliders className="w-3.5 h-3.5" /> GFX
                       </Link>
                     </Button>
                   </div>
@@ -209,11 +204,6 @@ export function MatchDay() {
                     <Button variant="secondary" size="sm" className="gap-1" asChild>
                       <Link href={`/admin/stats-control/${m.id}`}>
                         <BarChart3 className="w-3.5 h-3.5" /> Stats
-                      </Link>
-                    </Button>
-                    <Button variant="secondary" size="sm" className="gap-1" asChild>
-                      <Link href={`/admin/gfx-control/${m.id}`}>
-                        <Sliders className="w-3.5 h-3.5" /> GFX
                       </Link>
                     </Button>
                   </div>
@@ -288,11 +278,6 @@ export function MatchDay() {
                     <Button variant="secondary" size="sm" className="gap-1" asChild>
                       <Link href={`/admin/stats-control/${m.id}`}>
                         <BarChart3 className="w-3.5 h-3.5" /> Stats
-                      </Link>
-                    </Button>
-                    <Button variant="secondary" size="sm" className="gap-1" asChild>
-                      <Link href={`/admin/gfx-control/${m.id}`}>
-                        <Sliders className="w-3.5 h-3.5" /> GFX
                       </Link>
                     </Button>
                   </div>

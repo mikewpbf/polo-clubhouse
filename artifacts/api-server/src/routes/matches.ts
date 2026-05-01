@@ -155,6 +155,25 @@ router.get("/matches/manageable", requireAuth, async (req, res) => {
       : await db.select().from(adminClubMembershipsTable).where(eq(adminClubMembershipsTable.userId, req.user!.id));
     const allowedClubIds = userIsSuper ? null : new Set((memberships || []).map(m => m.clubId));
 
+    // Team-manager scope: a user managing a player on either team should also
+    // see those matches in the picker. Look up team-ids that contain a player
+    // managed by this user.
+    let managedTeamIds: Set<string> = new Set();
+    if (!userIsSuper) {
+      const managedPlayers = await db
+        .select({ id: playersTable.id })
+        .from(playersTable)
+        .where(eq(playersTable.managedByUserId, req.user!.id));
+      const managedPlayerIds = managedPlayers.map(p => p.id);
+      if (managedPlayerIds.length) {
+        const teamLinks = await db
+          .select({ teamId: teamPlayersTable.teamId })
+          .from(teamPlayersTable)
+          .where(inArray(teamPlayersTable.playerId, managedPlayerIds));
+        managedTeamIds = new Set(teamLinks.map(l => l.teamId));
+      }
+    }
+
     const since = new Date();
     since.setDate(since.getDate() - 1);
     const matchRows = await db.select().from(matchesTable).where(gte(matchesTable.scheduledAt, since));
@@ -166,12 +185,16 @@ router.get("/matches/manageable", requireAuth, async (req, res) => {
         const t = tournamentMap.get(m.tournamentId);
         if (!t) return false;
         if (userIsSuper) return true;
-        return t.clubId ? allowedClubIds!.has(t.clubId) : false;
+        // Club admin path
+        if (t.clubId && allowedClubIds!.has(t.clubId)) return true;
+        // Team-manager path
+        if (m.homeTeamId && managedTeamIds.has(m.homeTeamId)) return true;
+        if (m.awayTeamId && managedTeamIds.has(m.awayTeamId)) return true;
+        return false;
       })
       .sort((a, b) => {
-        const aLive = a.status === "live" ? 0 : 1;
-        const bLive = b.status === "live" ? 0 : 1;
-        if (aLive !== bLive) return aLive - bLive;
+        // Strict scheduled-time ascending (live matches naturally appear first
+        // since they are scheduled earlier today).
         const aTs = a.scheduledAt ? new Date(a.scheduledAt).getTime() : 0;
         const bTs = b.scheduledAt ? new Date(b.scheduledAt).getTime() : 0;
         return aTs - bTs;

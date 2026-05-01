@@ -27,7 +27,6 @@ import { MatchControl } from "@/pages/admin/MatchControl";
 import { ScoreControl } from "@/pages/admin/ScoreControl";
 import { StatsControl } from "@/pages/admin/StatsControl";
 import { GFXControl } from "@/pages/admin/GFXControl";
-import { PossessionTracker } from "@/pages/possession/PossessionTracker";
 import { ShareControl } from "@/pages/share/ShareControl";
 import { AdminUsers } from "@/pages/admin/Users";
 import { AdminClubs } from "@/pages/admin/Clubs";
@@ -72,7 +71,9 @@ function Router() {
       <Route path="/admin/score-control/:id" component={ScoreControl} />
       <Route path="/admin/stats-control/:id" component={StatsControl} />
       <Route path="/admin/gfx-control/:id" component={GFXControl} />
-      <Route path="/possession/:matchId" component={PossessionTracker} />
+      <Route path="/possession/:matchId">
+        {(params) => <Redirect to={`/admin/stats-control/${params.matchId}`} />}
+      </Route>
       <Route path="/share/stats/:token">{() => <ShareControl pageType="stats" />}</Route>
       <Route path="/share/gfx/:token">{() => <ShareControl pageType="gfx" />}</Route>
       <Route path="/admin/match/:id/graphics" component={MatchGraphics} />

@@ -11,7 +11,7 @@ export const matchShareLinksTable = pgTable("match_share_links", {
   label: varchar("label", { length: 120 }),
   createdBy: uuid("created_by").references(() => usersTable.id),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   revokedAt: timestamp("revoked_at", { withTimezone: true }),
   active: boolean("active").notNull().default(true),
 });

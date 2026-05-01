@@ -317,6 +317,27 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
     const allEvents = await db.select().from(matchEventsTable).where(eq(matchEventsTable.playerId, playerId));
     const careerGoals = allEvents.filter(e => e.eventType === "goal").length;
 
+    // Per-player stat rollups (Task #83): count new event types from match_events.
+    // distance/severity sub-attributes are surfaced as rollup buckets so the
+    // profile page can render breakdowns (e.g. "30-yarders converted").
+    const careerPenaltyIn = allEvents.filter(e => e.eventType === "penalty_in").length;
+    const careerPenaltyOut = allEvents.filter(e => e.eventType === "penalty_out").length;
+    const careerThrowInsWon = allEvents.filter(e => e.eventType === "throw_in_won").length;
+    const careerFoulsCommitted = allEvents.filter(e => e.eventType === "foul_committed").length;
+    const careerFoulsWon = allEvents.filter(e => e.eventType === "fouls_won").length;
+    const penaltyInByDistance: Record<string, number> = { "20": 0, "30": 0, "40": 0 };
+    for (const ev of allEvents) {
+      if (ev.eventType === "penalty_in" && ev.distance && penaltyInByDistance[ev.distance] != null) {
+        penaltyInByDistance[ev.distance]++;
+      }
+    }
+    const foulsBySeverity: Record<string, number> = { "1": 0, "2": 0, "3": 0, "4": 0, "5a": 0, "5b": 0 };
+    for (const ev of allEvents) {
+      if (ev.eventType === "foul_committed" && ev.severity && foulsBySeverity[ev.severity] != null) {
+        foulsBySeverity[ev.severity]++;
+      }
+    }
+
     // Participation is determined exclusively by match_events. A player is considered
     // to have participated in a match only if they have at least one recorded event
     // in that match. This prevents roster-only members (who haven't played yet) from
@@ -466,7 +487,11 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
       managedByUser,
       hasLinkedUser: !!player.managedByUserId,
       age: calcAge(player.dateOfBirth as any),
-      stats: { seasonGoals, seasonWins, careerGoals, careerWins, mvpAwards, bppAwards },
+      stats: {
+        seasonGoals, seasonWins, careerGoals, careerWins, mvpAwards, bppAwards,
+        careerPenaltyIn, careerPenaltyOut, careerThrowInsWon, careerFoulsCommitted, careerFoulsWon,
+        penaltyInByDistance, foulsBySeverity,
+      },
       teams,
       horses,
       recentMatches,

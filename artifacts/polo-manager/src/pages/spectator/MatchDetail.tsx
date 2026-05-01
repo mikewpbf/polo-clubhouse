@@ -45,7 +45,8 @@ function renderEventLabel(evt: MatchEvent, style?: React.CSSProperties, classNam
   else if (evt.eventType === "foul") label = `Foul${evt.teamName ? ` \u2014 ${evt.teamName}` : ""}`;
   else if (evt.eventType === "penalty_goal") label = `Penalty Goal${evt.teamName ? ` \u2014 ${evt.teamName}` : ""}`;
   else if (evt.eventType === "shot_on_goal") label = `Shot on Goal${evt.teamName ? ` \u2014 ${evt.teamName}` : ""}`;
-  return <span className={className} style={style}>{label}</span>;
+  const playerSuffix = evt.playerName ? ` \u2014 ${evt.playerName}` : "";
+  return <span className={className} style={style}>{label}{playerSuffix}</span>;
 }
 
 function eventDotColor(evt: MatchEvent): string {

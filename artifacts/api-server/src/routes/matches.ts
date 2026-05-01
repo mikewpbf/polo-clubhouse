@@ -4,7 +4,7 @@ import { matchesTable, matchEventsTable, teamsTable, fieldsTable, tournamentsTab
 import crypto from "crypto";
 import { eq, and, gte, lte, gt, desc, asc, isNull, inArray, sql } from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
-import { requireAuth, optionalAuth, isSuperAdmin, requireMatchWrite, requireMatchAdmin as requireMatchAdminFactory } from "../lib/auth";
+import { requireAuth, optionalAuth, isSuperAdmin, requireMatchWrite, requireMatchAdmin as requireMatchAdminFactory, resolveShareToken } from "../lib/auth";
 import { addSSEClient, emitMatchUpdate, emitMatchEnded } from "../lib/sse";
 
 const router: IRouter = Router();
@@ -1351,7 +1351,13 @@ router.post("/matches/:matchId/possession", optionalAuth, async (req, res) => {
 
     const hasValidToken = token && match.possessionToken && match.possessionToken === token;
     const hasAuth = req.user && (isSuperAdmin(req.user) || req.user.role === "admin");
-    if (!hasValidToken && !hasAuth) {
+
+    // Also accept full_control or stats share tokens for this match.
+    const share = await resolveShareToken(req);
+    const hasShareAccess = share && share.matchId === matchId &&
+      (share.pageType === "full_control" || share.pageType === "stats");
+
+    if (!hasValidToken && !hasAuth && !hasShareAccess) {
       res.status(403).json({ message: "Valid possession token or admin auth required" }); return;
     }
 

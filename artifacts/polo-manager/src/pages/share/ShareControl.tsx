@@ -34,7 +34,7 @@ function resolvedModeFor(pageType: SharePageType): ControlMode {
 export function ShareControl({ pageType }: { pageType: SharePageType }) {
   const routePattern = `/share/${pageType}/:token`;
   const [, params] = useRoute(routePattern);
-  const token = params?.token;
+  const token = (params as Record<string, string> | null)?.token;
   const [resolved, setResolved] = useState<Resolved | null>(null);
   const [error, setError] = useState<ErrorState | null>(null);
 

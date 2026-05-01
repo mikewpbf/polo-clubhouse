@@ -39,6 +39,22 @@ interface Player {
   isActive: boolean;
 }
 
+interface MatchEventRecord {
+  id: string;
+  eventType: string;
+  teamId: string | null;
+  teamName: string | null;
+  teamColor: string | null;
+  playerId: string | null;
+  playerName: string | null;
+  chukker: number | null;
+  clockSeconds: number | null;
+  description: string | null;
+  distance: string | null;
+  severity: string | null;
+  createdAt: string | null;
+}
+
 interface MatchData {
   id: string;
   homeScore: number;
@@ -66,6 +82,8 @@ interface MatchData {
   streamStartedAt?: string | null;
   scoringLocation?: "studio" | "field";
   broadcastOffsetSeconds?: number;
+  events?: MatchEventRecord[];
+  lastGoalScorerName?: string | null;
 }
 
 export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, hideHeader = false, sharePageType }: { mode?: ControlMode; shareToken?: string | null; matchId?: string; hideHeader?: boolean; sharePageType?: string } = {}) {
@@ -147,6 +165,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
     if (!matchId || !match) return;
     mutatingRef.current++;
     const mySeq = ++seqRef.current;
+    let succeeded = false;
     if (optimistic) {
       setMatch(prev => prev ? optimistic(prev) : prev);
     }
@@ -154,6 +173,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
       const data = await apiFetch(path, { method: "POST", body: JSON.stringify(body) });
       if (seqRef.current === mySeq) {
         setMatch(data);
+        succeeded = true;
       }
     } catch {
       if (seqRef.current === mySeq) {
@@ -161,6 +181,11 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
       }
     } finally {
       mutatingRef.current--;
+    }
+    // After the last in-flight mutation completes, do a full refresh so that
+    // match.events (and any other server-side computed fields) are up to date.
+    if (succeeded && mutatingRef.current === 0) {
+      void fetchMatch();
     }
   }, [matchId, match, fetchMatch]);
 
@@ -949,6 +974,44 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                   {renderCompactPlayerRows(match.awayTeam, match.awayTeamId, awayPlayers)}
                 </div>
               </div>
+
+              {/* Row 4: Recent Actions feed */}
+              {(() => {
+                const STAT_EVENT_LABELS: Record<string, string> = {
+                  bowl_in: "Bowl In", knock_in: "Knock In", foul: "Foul",
+                  penalty_goal: "Penalty Goal", shot_on_goal: "Shot on Goal",
+                  throw_in_won: "Throw In Won", penalty_in: "Penalty In",
+                  penalty_out: "Pen Out", foul_committed: "Foul Committed",
+                  fouls_won: "Fouls Won",
+                };
+                const statEventTypes = new Set(Object.keys(STAT_EVENT_LABELS));
+                const recentEvents = (match.events || [])
+                  .filter(e => statEventTypes.has(e.eventType))
+                  .slice(-12)
+                  .reverse();
+                if (recentEvents.length === 0) return null;
+                return (
+                  <div className={cardCls} style={cardStyle}>
+                    <span className="text-[10px] font-sans font-semibold uppercase tracking-wider block mb-1.5" style={{ color: dk ? textMuted : "#888" }}>Recent Actions</span>
+                    <div className="space-y-1 max-h-40 overflow-y-auto">
+                      {recentEvents.map((evt, i) => {
+                        const color = evt.teamColor || (dk ? "#666" : "#ccc");
+                        const label = STAT_EVENT_LABELS[evt.eventType] || evt.eventType;
+                        const sub = evt.playerName ? evt.playerName : evt.description || null;
+                        const dist = evt.distance ? ` · ${evt.distance}y` : "";
+                        return (
+                          <div key={evt.id ?? i} className="flex items-center gap-1.5 min-w-0">
+                            <div className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
+                            <span className="text-[11px] font-semibold shrink-0" style={{ color: dk ? "#d0d0d0" : "var(--ink)" }}>{label}{dist}</span>
+                            {sub && <span className="text-[10px] truncate" style={{ color: dk ? textMuted : "#888" }}>· {sub}</span>}
+                            {evt.chukker && <span className="text-[9px] ml-auto shrink-0 tabular-nums" style={{ color: dk ? textMuted : "#aaa" }}>C{evt.chukker}</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           );
         })()}

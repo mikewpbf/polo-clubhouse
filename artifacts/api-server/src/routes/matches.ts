@@ -1106,7 +1106,7 @@ async function buildBroadcastPayload(matchId: string) {
     let liveLastGoalScorerName = match.lastGoalScorerName;
     const lastGoalEvt = [...allEvents]
       .filter(e => e.eventType === "goal" && e.playerId)
-      .sort((a, b) => new Date(b.timestamp as any).getTime() - new Date(a.timestamp as any).getTime())[0];
+      .sort((a, b) => new Date(b.createdAt as any).getTime() - new Date(a.createdAt as any).getTime())[0];
     if (lastGoalEvt?.playerId) {
       const [livePlayer] = await db.select({ name: playersTable.name }).from(playersTable)
         .where(eq(playersTable.id, lastGoalEvt.playerId)).limit(1);

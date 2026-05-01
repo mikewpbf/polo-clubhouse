@@ -1,0 +1,310 @@
+Polo Clubhouse — Match Control restructure + link previews.
+
+Big changes ahead. Read the whole prompt before starting, then come back 
+with a written plan covering the file moves, new pages, schema changes, 
+and order of operations. Wait for approval before running migrations.
+
+============================================================
+PART 1 — SPLIT MATCH CONTROL INTO THREE PAGES
+============================================================
+
+The current Match Control page (artifacts/polo-manager/src/pages/admin/
+MatchControl.tsx) is being split into three focused pages:
+
+1. Score Control (renamed from Match Control)
+2. Stats Control (NEW)
+3. GFX Control (NEW)
+
+----- SCORE CONTROL (renamed) -----
+
+Route: /admin/score-control/:matchId (rename from existing match control 
+route — keep a redirect from the old route for back-compat).
+
+Page contents in this order:
+- Game picker dropdown (see PART 4)
+- Match clock
+- Chukker section MOVED to directly below the clock
+- Team A score control (goals)
+- Team B score control (goals)
+- Match Status buttons (Scheduled / Live / Halftime / Final)
+
+REMOVED from this page (moved elsewhere — see below):
+- Team A / Team B team-level stat buttons → Stats Control
+- Possession Tracker section → Stats Control
+- Broadcast Graphics, Broadcast URL, Output Resolution → GFX Control
+- Timing Offset section → GFX Control
+
+----- STATS CONTROL (NEW) -----
+
+Route: /admin/stats-control/:matchId
+
+Wider layout, optimized for landscape iPad 13" minimum (~1180px usable 
+width). Reduce scrolling by using the wider area.
+
+Top of page:
+- Game picker dropdown (see PART 4)
+- Public share link control (see PART 3)
+
+Page contents:
+- Possession Tracker at the top, reformatted for the wider width
+- Team A team-level stat buttons (move from current Match Control)
+- Team B team-level stat buttons (move from current Match Control)
+- Per-player stat panels for every player on each team
+
+Per-player buttons (each player gets the full set):
+- Penalty in (with distance sub-buttons: 20 yard / 30 yard / 40 yard)
+- Penalty out
+- Throw-in won
+- Foul committed (with severity sub-buttons: 1 / 2 / 3 / 4 / 5a / 5b)
+- Fouls won
+
+Data shape:
+- penalty_in event with a `distance` attribute ("20" | "30" | "40")
+- foul_committed event with a `severity` attribute 
+  ("1" | "2" | "3" | "4" | "5a" | "5b")
+- One event_type per category with a sub-attribute. Do NOT create separate 
+  event_types like penalty_in_20, penalty_in_30 etc.
+
+Behavior:
+- Every action logs a match_event row (same table as goals/fouls today)
+- Every action appears in the match timeline
+- Player stats roll up to the player's profile (career + season)
+- Player stats roll up to team match stats and tournament stats
+
+Retired:
+- Standalone Possession Tracker page (delete the route, redirect to the 
+  containing match's Stats Control)
+- Possession Tracker dropdown/section in old Match Control (already 
+  moved to Stats Control)
+
+----- GFX CONTROL (NEW) -----
+
+Route: /admin/gfx-control/:matchId
+
+Card/section layout similar to current Match Control.
+
+Top of page:
+- Game picker dropdown (see PART 4)
+- Public share link control (see PART 3)
+
+Page contents:
+- Broadcast Graphics (visibility toggle, style — move from old Match Control)
+- Broadcast URL (move from old Match Control)
+- Output Resolution (move from old Match Control)
+- Timing Offset section, containing:
+  • Stream Anchor:
+    - Add column matches.stream_started_at (timestamptz, nullable).
+    - In the match status update handler in api-server/src/routes/matches.ts: 
+      when status transitions from anything → "live", if stream_started_at 
+      is null, set it to NOW(). If already set, leave it alone.
+    - PATCH /matches/:id accepts streamStartedAt for super_admin and club 
+      admin; allow null to clear.
+    - Include streamStartedAt in GET /matches/:id response.
+    - UI: when set, show "Stream live since [time] · Edit". Edit modal 
+      allows shifting by N seconds (+/-), setting datetime, or resetting.
+  • Broadcast Timing:
+    - Add columns: matches.scoring_location enum 
+      ('studio' | 'field') default 'studio', and 
+      matches.broadcast_offset_seconds numeric default 0.
+    - When scoring_location = 'studio', broadcast_offset_seconds is 
+      ignored (treated as 0).
+    - UI toggle: Studio | Field. When Field selected, show numeric 
+      "Broadcast delay (seconds)" input (decimals allowed, default 1.0). 
+      Save on change.
+    - Help text: "Delays score, goal, foul, and horse-change graphics by 
+      this amount to match field-to-broadcast transmission latency. 
+      Studio scoring should leave this off."
+- Layout designed to grow — leave room for future graphics buttons.
+
+JUMP-TO-VIDEO BEHAVIOR (consumes stream_started_at, lives on spectator 
+MatchDetail page):
+- In artifacts/polo-manager/src/pages/spectator/MatchDetail.tsx, replace 
+  the static YouTube iframe with the YouTube IFrame Player API. Load 
+  https://www.youtube.com/iframe_api once, instantiate YT.Player on mount, 
+  hold a ref. Keep autoplay-muted-while-live behavior.
+- For EVERY event in the Match Timeline (all event_types — goals, fouls, 
+  penalties, throw-ins, horse changes, everything): if streamStartedAt is 
+  set AND event.createdAt > streamStartedAt, render the row as a clickable 
+  button. Otherwise render as static.
+- On click: offsetSeconds = (event.createdAt - streamStartedAt) / 1000. 
+  Call player.seekTo(offsetSeconds, true) and player.playVideo().
+- Show offset on the right of clickable events in mm:ss format ("→ 12:42").
+- Auto-scroll to the embed on click. Use a stable id (#match-video) on 
+  whichever embed is currently mounted (live or replay). After seekTo: 
+  document.getElementById("match-video")?.scrollIntoView(
+  { behavior: "smooth", block: "start" })
+- Events with createdAt before streamStartedAt: non-clickable, muted 
+  "(before stream)" label.
+- If streamStartedAt is null, render the timeline as today.
+- Footer note where timeline is clickable: "Jump-to works best on replays. 
+  Live streams may seek to the live edge."
+- The IFrame API loads asynchronously; if a user clicks before the player 
+  is ready, queue the seek and fire on onReady.
+
+BROADCAST OFFSET BEHAVIOR (consumes scoring_location + 
+broadcast_offset_seconds):
+- Applied client-side, in the broadcast graphic page (the OBS browser 
+  source) only. Does NOT affect spectator pages, match controllers, event 
+  timestamps, or the match clock.
+- Broadcast graphic component receives events via the existing channel, 
+  holds them in a setTimeout queue for broadcast_offset_seconds before 
+  applying them to rendered state.
+- On disconnect/reconnect, queued events still pending are re-evaluated 
+  against current time.
+- The match clock display is unchanged — it just runs.
+
+============================================================
+PART 2 — MATCH DAY VIEW UPDATES
+============================================================
+
+Wherever the current "Match Control" button lives on Match Day cards 
+(artifacts/polo-manager/src/pages/admin/MatchDay.tsx and any other admin 
+list views that link to match control), replace the single button with 
+THREE separate buttons in the same area, same visual pattern:
+
+- Score Control → /admin/score-control/:matchId
+- Stats Control → /admin/stats-control/:matchId
+- GFX Control → /admin/gfx-control/:matchId
+
+============================================================
+PART 3 — PUBLIC SHARE LINKS
+============================================================
+
+Add public share link functionality to Stats Control and GFX Control pages.
+
+Schema:
+- New table match_share_links: id (uuid), match_id (FK), 
+  page_type ('stats' | 'gfx'), token (random 32-char URL-safe), 
+  created_by_user_id (FK), created_at (timestamptz), 
+  revoked_at (timestamptz nullable), expires_at (timestamptz).
+
+Behavior:
+- Token is generated with crypto.randomBytes — URL-safe, hard to guess.
+- expires_at = match.scheduled_end + 6 hours (or match.scheduled_at + 4 
+  hours if no end time exists). Hard expiration; not extendable.
+- Generating a new link for the same (match_id, page_type) revokes any 
+  prior active link by setting its revoked_at = NOW().
+- Public URL pattern: /share/stats/:token and /share/gfx/:token (no auth 
+  required; the token IS the auth).
+- Hitting a public share link grants the holder full edit access to that 
+  one match's Stats Control or GFX Control page. Same UI as the admin 
+  version. The visitor does NOT see other matches in the game picker — 
+  the dropdown is hidden or replaced with the single match name.
+- Server-side: every API call from a public-link session must validate 
+  the token is active (not expired, not revoked) AND matches the match_id 
+  on the resource being modified.
+- UI on the admin side: in the share section, show "Active link expires 
+  [time]" with [Copy] and [Regenerate] buttons. Regenerate confirms with 
+  a "this will invalidate the current link" warning before issuing a new 
+  one.
+- When a link is expired or revoked, the public page renders a clear 
+  "This link has expired or been revoked" state — do not silently fail.
+
+============================================================
+PART 4 — GAME PICKER DROPDOWN (shared component)
+============================================================
+
+A single dropdown component used at the top of Score Control, Stats 
+Control, and GFX Control.
+
+Behavior:
+- Lists all matches the current user has manager/admin access to in the 
+  current scope (probably the current tournament — match the existing 
+  list logic). Sorted by scheduled time ascending.
+- If a user is not a manager / approved admin for a match, it does not 
+  appear in the dropdown.
+- Exception: when accessed via public share link, the dropdown is hidden 
+  or shows only the single match the link was issued for.
+- On selection: navigate to the same page (Score / Stats / GFX) for the 
+  newly-selected match. Preserve which page the user is on.
+
+============================================================
+PART 5 — LINK PREVIEWS / OPEN GRAPH METADATA
+============================================================
+
+Currently every page on the app shares the same generic metadata when 
+linked in iMessage, WhatsApp, Slack, social, etc. Make link previews 
+content-aware so they show useful info per page.
+
+Implement Open Graph and Twitter Card meta tags on these spectator routes:
+
+- /tournaments/:id (TournamentDetail) — og:title = tournament name; 
+  og:description = "Tournament at [club] · [date range] · [team count] 
+  teams"; og:image = tournament logo or generated card with name + dates.
+- /match/:id (MatchDetail) — og:title = "[Team A] vs [Team B]"; 
+  og:description = "[tournament name] · [scheduled date] · [status — 
+  live, scheduled, final score]"; og:image = generated card with team 
+  logos and score (or scheduled time).
+- /clubs/:id or /clubs/:slug (ClubDetail) — og:title = club name; 
+  og:description = "[location] · [active tournament count] tournaments"; 
+  og:image = club logo.
+- /players/:id (PlayerProfile) — og:title = player name; og:description 
+  = "Handicap [N] · [home club] · [season goals] goals this season"; 
+  og:image = player headshot or gray placeholder.
+- /teams/:id or wherever teams are displayed publicly — og:title = team 
+  name; og:description = "Tournament: [tournament name] · [roster names 
+  comma separated]"; og:image = team logo.
+- / (homepage) — keep current generic preview.
+
+Implementation notes:
+- Vite SPAs default to client-side rendering, which means meta tags set 
+  via JS aren't seen by social crawlers. Two acceptable approaches:
+  (a) SSR meta injection for spectator routes via a small Express 
+      middleware on the API server that detects bot user-agents 
+      (facebookexternalhit, Twitterbot, Slackbot-LinkExpanding, 
+      WhatsApp, Discordbot, LinkedInBot, etc.) and serves a minimal 
+      HTML shell with the right meta tags.
+  (b) Pre-render meta tags using a route-aware HTML template at build 
+      time for known stable routes, fall back to dynamic for entity 
+      pages.
+- Pick (a). It's simpler to maintain and supports dynamic data lookups 
+  for entity pages. Use cheap server-side queries — tournament, match, 
+  player lookups by ID from the DB.
+- og:image generation: for now, use existing logos/headshots where 
+  available, fall back to a static branded image. A future task can add 
+  dynamic image generation; out of scope here.
+
+============================================================
+CONSTRAINTS
+============================================================
+
+- Match existing visual conventions everywhere — fonts, colors, button 
+  styles, card patterns. Do not introduce new design language.
+- Keep all existing API endpoints functional; only the frontend surfaces 
+  are reorganized.
+- Update the OpenAPI spec at lib/api-spec for every new field and endpoint, 
+  then run `pnpm --filter @workspace/api-spec run codegen`.
+- Run `pnpm run typecheck` and existing tests after the migration.
+- Add tests for:
+  • Per-player stat events log to match_events with correct 
+    distance/severity attributes.
+  • Public share link respects expiration and revocation.
+  • Public share link cannot modify a match other than the one it was 
+    issued for.
+  • Game picker dropdown filters by user access correctly.
+  • OG meta middleware returns valid tags for at least one of each 
+    spectator route type.
+
+============================================================
+EXECUTION ORDER
+============================================================
+
+1. Schema migrations: stream_started_at, scoring_location, 
+   broadcast_offset_seconds, match_share_links table.
+2. API endpoints for share link generate / revoke / consume.
+3. Update OpenAPI spec, run codegen.
+4. Create the GFX Control page (move broadcast bits + add timing 
+   offset + add jump-to-video data).
+5. Create the Stats Control page (move team stats + possession tracker 
+   + add per-player stats).
+6. Refactor Match Control → Score Control (slim down, add Chukker 
+   under clock).
+7. Add the Game Picker shared component, embed on all three pages.
+8. Update Match Day view buttons.
+9. Add OG meta middleware on the API server for spectator routes.
+10. Refactor MatchDetail to use the YouTube IFrame API and click-to-jump.
+11. Implement broadcast offset queue in the broadcast graphic page.
+12. Run typecheck, tests, manual QA.
+
+START WITH a written plan covering migrations, file moves, and new files. 
+Wait for approval before running migrations.

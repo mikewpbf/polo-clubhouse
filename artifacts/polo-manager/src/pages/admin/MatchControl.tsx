@@ -979,6 +979,7 @@ export function MatchControl() {
                         : { background: "#f5f5f5", color: "#333", border: "1px solid #e0e0e0" }}
                       onClick={() => {
                         const now = new Date().toISOString();
+                        setEditAnchorOpen(false);
                         setMatch(prev => prev ? { ...prev, streamStartedAt: now } : prev);
                         mutatePut(`/matches/${match.id}`, { streamStartedAt: now });
                       }}
@@ -986,6 +987,64 @@ export function MatchControl() {
                       <Video className="w-3.5 h-3.5" />
                       Anchor stream to now
                     </button>
+                    <button
+                      className="w-full h-8 rounded-[8px] text-[12px] font-medium transition-colors"
+                      style={dk
+                        ? { background: "transparent", color: "#86efac", border: "1px solid rgba(134,239,172,0.3)" }
+                        : { background: "transparent", color: "#166534", border: "1px solid #bbf7d0" }}
+                      onClick={() => {
+                        setEditAnchorOpen(prev => !prev);
+                        if (!editAnchorOpen) {
+                          const now = new Date();
+                          setEditAnchorDateInput(
+                            new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                              .toISOString().slice(0, 16)
+                          );
+                        }
+                      }}
+                    >
+                      Set custom time…
+                    </button>
+                    {editAnchorOpen && (
+                      <div className="rounded-[8px] p-3 space-y-2" style={dk ? { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" } : { background: "#f9f9f9", border: "1px solid #e8e8e8" }}>
+                        <div className="text-[11px] font-semibold uppercase tracking-wider mb-1" style={dk ? { color: textMuted } : { color: "#888" }}>Set exact start time</div>
+                        <div className="flex gap-2">
+                          <input
+                            type="datetime-local"
+                            className="flex-1 h-8 rounded-[6px] px-2 text-[12px]"
+                            style={dk
+                              ? { background: "rgba(255,255,255,0.06)", color: "#e0e0e0", border: "1px solid rgba(255,255,255,0.1)" }
+                              : { background: "#fff", color: "#333", border: "1px solid #e0e0e0" }}
+                            value={editAnchorDateInput}
+                            onChange={e => setEditAnchorDateInput(e.target.value)}
+                          />
+                          <button
+                            className="px-3 h-8 rounded-[6px] text-[12px] font-medium transition-colors"
+                            style={dk
+                              ? { background: "rgba(34,197,94,0.15)", color: "#86efac" }
+                              : { background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0" }}
+                            onClick={() => {
+                              if (!editAnchorDateInput) return;
+                              const updated = new Date(editAnchorDateInput).toISOString();
+                              setMatch(prev => prev ? { ...prev, streamStartedAt: updated } : prev);
+                              mutatePut(`/matches/${match.id}`, { streamStartedAt: updated });
+                              setEditAnchorOpen(false);
+                            }}
+                          >
+                            Set
+                          </button>
+                          <button
+                            className="px-3 h-8 rounded-[6px] text-[12px] font-medium transition-colors"
+                            style={dk
+                              ? { background: "rgba(255,255,255,0.06)", color: textMuted }
+                              : { background: "#f5f5f5", color: "#555" }}
+                            onClick={() => setEditAnchorOpen(false)}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

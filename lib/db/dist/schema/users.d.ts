@@ -99,14 +99,14 @@ export declare const usersTable: import("drizzle-orm/pg-core").PgTableWithColumn
             tableName: "users";
             dataType: "string";
             columnType: "PgEnumColumn";
-            data: "spectator" | "team_manager" | "admin" | "super_admin";
+            data: "spectator" | "team_manager" | "admin" | "super_admin" | "producer";
             driverParam: string;
             notNull: false;
             hasDefault: true;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: ["spectator", "team_manager", "admin", "super_admin"];
+            enumValues: ["spectator", "team_manager", "admin", "super_admin", "producer"];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
@@ -177,6 +177,7 @@ export declare const insertUserSchema: z.ZodObject<{
         team_manager: "team_manager";
         admin: "admin";
         super_admin: "super_admin";
+        producer: "producer";
     }>>>;
     passwordHash: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     googleId: z.ZodOptional<z.ZodNullable<z.ZodString>>;

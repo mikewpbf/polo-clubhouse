@@ -90,6 +90,23 @@ export declare const playersTable: import("drizzle-orm/pg-core").PgTableWithColu
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        broadcastImageUrl: import("drizzle-orm/pg-core").PgColumn<{
+            name: "broadcast_image_url";
+            tableName: "players";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         dateOfBirth: import("drizzle-orm/pg-core").PgColumn<{
             name: "date_of_birth";
             tableName: "players";
@@ -200,6 +217,7 @@ export declare const insertPlayerSchema: z.ZodObject<{
     handicap: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     isActive: z.ZodOptional<z.ZodBoolean>;
     headshotUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    broadcastImageUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     dateOfBirth: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     homeClubId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     bio: z.ZodOptional<z.ZodNullable<z.ZodString>>;

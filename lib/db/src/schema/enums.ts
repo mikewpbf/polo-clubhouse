@@ -30,6 +30,7 @@ export const userRoleEnum = pgEnum("user_role", [
   "team_manager",
   "admin",
   "super_admin",
+  "producer",
 ]);
 
 export const clubMembershipRoleEnum = pgEnum("club_membership_role", [

@@ -10,6 +10,7 @@ export const teamsTable = pgTable("teams", {
   shortName: varchar("short_name", { length: 8 }),
   logoUrl: text("logo_url"),
   logoThumbUrl: text("logo_thumb_url"),
+  jerseyImageUrl: text("jersey_image_url"),
   primaryColor: varchar("primary_color", { length: 7 }),
   handicap: decimal("handicap"),
   scoreboardName: varchar("scoreboard_name", { length: 12 }),

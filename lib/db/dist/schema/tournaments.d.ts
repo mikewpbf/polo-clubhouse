@@ -56,6 +56,23 @@ export declare const tournamentsTable: import("drizzle-orm/pg-core").PgTableWith
         }, {}, {
             length: 255;
         }>;
+        logoUrl: import("drizzle-orm/pg-core").PgColumn<{
+            name: "logo_url";
+            tableName: "tournaments";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         format: import("drizzle-orm/pg-core").PgColumn<{
             name: "format";
             tableName: "tournaments";
@@ -505,6 +522,7 @@ export declare const tournamentsTable: import("drizzle-orm/pg-core").PgTableWith
 }>;
 export declare const insertTournamentSchema: z.ZodObject<{
     name: z.ZodString;
+    logoUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     sponsored: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;
     sponsoredRank: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     clubId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;

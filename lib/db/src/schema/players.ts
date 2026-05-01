@@ -10,6 +10,7 @@ export const playersTable = pgTable("players", {
   handicap: decimal("handicap"),
   isActive: boolean("is_active").default(true).notNull(),
   headshotUrl: text("headshot_url"),
+  broadcastImageUrl: text("broadcast_image_url"),
   dateOfBirth: date("date_of_birth"),
   homeClubId: uuid("home_club_id").references(() => clubsTable.id),
   bio: text("bio"),

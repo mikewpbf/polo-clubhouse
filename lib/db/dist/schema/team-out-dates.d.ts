@@ -128,8 +128,8 @@ export declare const teamOutDatesTable: import("drizzle-orm/pg-core").PgTableWit
     dialect: "pg";
 }>;
 export declare const insertTeamOutDateSchema: z.ZodObject<{
-    tournamentId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     teamId: z.ZodUUID;
+    tournamentId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     outDate: z.ZodString;
     reason: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     createdByUserId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;

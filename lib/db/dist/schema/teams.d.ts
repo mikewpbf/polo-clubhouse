@@ -109,6 +109,23 @@ export declare const teamsTable: import("drizzle-orm/pg-core").PgTableWithColumn
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        jerseyImageUrl: import("drizzle-orm/pg-core").PgColumn<{
+            name: "jersey_image_url";
+            tableName: "teams";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         primaryColor: import("drizzle-orm/pg-core").PgColumn<{
             name: "primary_color";
             tableName: "teams";
@@ -228,6 +245,7 @@ export declare const insertTeamSchema: z.ZodObject<{
     clubId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     shortName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     logoThumbUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    jerseyImageUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     primaryColor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     handicap: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     scoreboardName: z.ZodOptional<z.ZodNullable<z.ZodString>>;

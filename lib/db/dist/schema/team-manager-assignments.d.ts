@@ -167,10 +167,10 @@ export declare const insertTeamManagerAssignmentSchema: z.ZodObject<{
         active: "active";
         revoked: "revoked";
     }>>>;
-    tournamentId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
-    teamId: z.ZodUUID;
     userId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     assignedBy: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
+    teamId: z.ZodUUID;
+    tournamentId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     inviteEmail: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     acceptedAt: z.ZodOptional<z.ZodNullable<z.ZodDate>>;
 }, {

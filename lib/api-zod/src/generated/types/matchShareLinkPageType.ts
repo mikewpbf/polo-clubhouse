@@ -12,4 +12,6 @@ export type MatchShareLinkPageType =
 export const MatchShareLinkPageType = {
   stats: "stats",
   gfx: "gfx",
+  scoreboard: "scoreboard",
+  full_control: "full_control",
 } as const;

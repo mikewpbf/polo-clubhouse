@@ -12,4 +12,6 @@ export type ResolveShareTokenResponsePageType =
 export const ResolveShareTokenResponsePageType = {
   stats: "stats",
   gfx: "gfx",
+  scoreboard: "scoreboard",
+  full_control: "full_control",
 } as const;

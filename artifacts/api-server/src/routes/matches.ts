@@ -963,6 +963,57 @@ async function buildBroadcastPayload(matchId: string) {
       if (livePlayer?.name) liveLastGoalScorerName = livePlayer.name;
     }
 
+    // Roster — only loaded when broadcastStyle is "lineup", to avoid the per-player
+    // join cost on every poll for the simpler overlays.
+    let homeRoster: Array<{
+      id: string; name: string; handicap: string | null;
+      broadcastImageUrl: string | null; headshotUrl: string | null;
+      homeClubName: string | null; matchGoals: number;
+    }> = [];
+    let awayRoster: typeof homeRoster = [];
+    if (match.broadcastStyle === "lineup") {
+      const seasonYear = new Date().getUTCFullYear();
+      const teamIds = [match.homeTeamId, match.awayTeamId].filter((x): x is string => !!x);
+      const links = teamIds.length > 0
+        ? await db.select().from(teamPlayersTable).where(and(
+            inArray(teamPlayersTable.teamId, teamIds),
+            eq(teamPlayersTable.seasonYear, seasonYear),
+            eq(teamPlayersTable.isActive, true),
+          ))
+        : [];
+      const linkedPlayerIds = Array.from(new Set(links.map(l => l.playerId)));
+      const linkedPlayers = linkedPlayerIds.length > 0
+        ? await db.select().from(playersTable).where(inArray(playersTable.id, linkedPlayerIds))
+        : [];
+      const playerById = new Map(linkedPlayers.map(p => [p.id, p]));
+      const playerClubIds = Array.from(new Set(linkedPlayers.map(p => p.homeClubId).filter((x): x is string => !!x)));
+      const playerClubs = playerClubIds.length > 0
+        ? await db.select({ id: clubsTable.id, name: clubsTable.name }).from(clubsTable).where(inArray(clubsTable.id, playerClubIds))
+        : [];
+      const clubNameById = new Map(playerClubs.map(c => [c.id, c.name]));
+      const matchGoalsByPlayerId = new Map<string, number>();
+      for (const ev of allEvents) {
+        if (ev.eventType !== "goal" || !ev.playerId) continue;
+        matchGoalsByPlayerId.set(ev.playerId, (matchGoalsByPlayerId.get(ev.playerId) ?? 0) + 1);
+      }
+      const buildRoster = (teamId: string | null) => links
+        .filter(l => l.teamId === teamId)
+        .map(l => playerById.get(l.playerId))
+        .filter((p): p is NonNullable<typeof p> => !!p)
+        .map(p => ({
+          id: p.id,
+          name: p.name,
+          handicap: p.handicap,
+          broadcastImageUrl: p.broadcastImageUrl ?? null,
+          headshotUrl: p.headshotUrl ?? null,
+          homeClubName: p.homeClubId ? (clubNameById.get(p.homeClubId) ?? null) : null,
+          matchGoals: matchGoalsByPlayerId.get(p.id) ?? 0,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      homeRoster = buildRoster(match.homeTeamId);
+      awayRoster = buildRoster(match.awayTeamId);
+    }
+
     const bHomeName = homeTeam?.name || "";
     const bAwayName = awayTeam?.name || "";
     const bSwap = bHomeName && bAwayName && bAwayName.localeCompare(bHomeName) < 0;
@@ -996,11 +1047,12 @@ async function buildBroadcastPayload(matchId: string) {
       lastStoppageEvent,
       homeTeam: (bSwap ? awayTeam : homeTeam) ? { name: (bSwap ? awayTeam : homeTeam)!.name, shortName: (bSwap ? awayTeam : homeTeam)!.shortName, scoreboardName: (bSwap ? awayTeam : homeTeam)!.scoreboardName, logoUrl: (bSwap ? awayTeam : homeTeam)!.logoUrl, primaryColor: (bSwap ? awayTeam : homeTeam)!.primaryColor } : null,
       awayTeam: (bSwap ? homeTeam : awayTeam) ? { name: (bSwap ? homeTeam : awayTeam)!.name, shortName: (bSwap ? homeTeam : awayTeam)!.shortName, scoreboardName: (bSwap ? homeTeam : awayTeam)!.scoreboardName, logoUrl: (bSwap ? homeTeam : awayTeam)!.logoUrl, primaryColor: (bSwap ? homeTeam : awayTeam)!.primaryColor } : null,
-      tournament: tournament ? { name: tournament.name, chukkersPerMatch: tournament.chukkersPerMatch || 6, clubId: tournament.clubId } : null,
+      tournament: tournament ? { name: tournament.name, chukkersPerMatch: tournament.chukkersPerMatch || 6, clubId: tournament.clubId, logoUrl: tournament.logoUrl || null } : null,
       club: club ? { name: club.name, logoUrl: club.logoUrl || null } : null,
       field: field ? { id: field.id, name: field.name, number: field.number, imageUrl: field.imageUrl || null, hasLocation: !!(field.lat && field.lng) || !!field.zipcode } : null,
       stats: { home: bSwap ? rawAwayStats : rawHomeStats, away: bSwap ? rawHomeStats : rawAwayStats },
       topScorers: topScorers.map(s => ({ playerId: s.playerId, name: s.name, goals: s.goals, teamSide: bSwap ? (s.teamSide === "home" ? "away" : "home") : s.teamSide })),
+      roster: { home: bSwap ? awayRoster : homeRoster, away: bSwap ? homeRoster : awayRoster },
       possession: await (async () => {
         const p = await getPossessionStats(matchId);
         if (!p) return null;
@@ -1056,8 +1108,8 @@ router.put("/matches/:matchId/broadcast", requireAuth, requireMatchAdmin, async 
       updates.broadcastVisible = broadcastVisible;
     }
     if (broadcastStyle !== undefined) {
-      const allowedStyles = ["option1", "option2", "stats", "stats_mini", "field"];
-      if (!allowedStyles.includes(broadcastStyle)) { res.status(400).json({ message: "broadcastStyle must be option1, option2, stats, stats_mini, or field" }); return; }
+      const allowedStyles = ["option1", "option2", "stats", "stats_mini", "field", "lineup"];
+      if (!allowedStyles.includes(broadcastStyle)) { res.status(400).json({ message: "broadcastStyle must be option1, option2, stats, stats_mini, field, or lineup" }); return; }
       updates.broadcastStyle = broadcastStyle;
     }
     if (broadcastResolution !== undefined) {

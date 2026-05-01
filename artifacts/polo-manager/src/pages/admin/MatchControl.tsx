@@ -683,6 +683,7 @@ export function MatchControl() {
                 { label: "Stats", val: "stats" },
                 { label: "Mini Stats", val: "stats_mini" },
                 { label: "Field", val: "field" },
+                { label: "Lineup", val: "lineup" },
               ] as const).map((b) => {
                 const active = b.val === "option1" ? (match.broadcastStyle || "option1") === "option1" : match.broadcastStyle === b.val;
                 return (

@@ -2,6 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react
 import { StatsOverlay } from "./StatsOverlay";
 import { MiniStatsOverlay } from "./MiniStatsOverlay";
 import { FieldBugOverlay } from "./FieldBugOverlay";
+import { TeamLineupOverlay } from "./TeamLineupOverlay";
 import { getOnColorTheme, themed } from "../../lib/colorContrast";
 
 interface BroadcastTeam {
@@ -42,12 +43,24 @@ interface BroadcastData {
   lastStoppageEvent: StoppageEvent | null;
   homeTeam: BroadcastTeam | null;
   awayTeam: BroadcastTeam | null;
-  tournament: { name: string; chukkersPerMatch: number } | null;
+  tournament: { name: string; chukkersPerMatch: number; logoUrl?: string | null } | null;
   club?: { name: string; logoUrl?: string | null } | null;
   field?: { id: string; name: string | null; number: number | null; imageUrl: string | null; hasLocation: boolean } | null;
   stats?: { home: Record<string, number>; away: Record<string, number> };
   topScorers?: { name: string; goals: number; teamSide: "home" | "away" }[];
   possession?: { homePercent: number; awayPercent: number; homeSeconds: number; awaySeconds: number } | null;
+  roster?: {
+    home: Array<{
+      id: string; name: string; handicap: string | null;
+      broadcastImageUrl: string | null; headshotUrl: string | null;
+      homeClubName: string | null; matchGoals: number;
+    }>;
+    away: Array<{
+      id: string; name: string; handicap: string | null;
+      broadcastImageUrl: string | null; headshotUrl: string | null;
+      homeClubName: string | null; matchGoals: number;
+    }>;
+  };
 }
 
 interface GoalAlert {
@@ -797,6 +810,26 @@ export function ScoreBugOverlay() {
         pointerEvents: isVisible ? "auto" : "none",
       }}>
         <FieldBugOverlay field={data.field ?? null} club={data.club ?? null} showClock />
+      </div>
+    );
+  }
+
+  if (style === "lineup") {
+    return (
+      <div style={{
+        position: "fixed",
+        inset: 0,
+        transition: "opacity 0.6s ease",
+        opacity: isVisible ? 1 : 0,
+        pointerEvents: isVisible ? "auto" : "none",
+      }}>
+        <TeamLineupOverlay
+          homeTeam={data.homeTeam}
+          awayTeam={data.awayTeam}
+          homeRoster={data.roster?.home ?? []}
+          awayRoster={data.roster?.away ?? []}
+          tournament={data.tournament}
+        />
       </div>
     );
   }

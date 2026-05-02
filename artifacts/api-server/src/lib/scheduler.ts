@@ -2,6 +2,7 @@ import { db } from "@workspace/db";
 import { matchesTable, tournamentTeamsTable, playDatesTable, teamOutDatesTable, tournamentsTable } from "@workspace/db/schema";
 import { eq, and, or, isNull } from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
+import { scheduleMatchPreviewGeneration } from "./serverMatchPreview";
 
 interface ScheduleSlot {
   playDateId: string;
@@ -358,6 +359,11 @@ export async function saveSchedule(tournamentId: string, matches: ScheduleMatch[
       status: m.status || "scheduled",
     } as typeof matchesTable.$inferInsert).returning();
     inserted.push(row);
+    // Fire-and-forget: schedule generation pulls home/away/field/tournament
+    // for the row, so it must run after the insert. Each generation is
+    // independent so we don't await — the scheduled backfill job is the
+    // safety net if any of these fail silently.
+    scheduleMatchPreviewGeneration(row.id);
   }
 
   const lockedMatches = existingMatches.filter(m => m.isLocked);

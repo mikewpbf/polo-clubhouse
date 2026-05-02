@@ -5,6 +5,7 @@ import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { startWeatherCacheCleanup } from "./lib/weather-cache-cleanup";
+import { startMatchPreviewBackfill } from "./lib/matchPreviewBackfillJob";
 
 async function seedSuperAdmin() {
   try {
@@ -46,4 +47,5 @@ app.listen(port, (err) => {
   logger.info({ port }, "Server listening");
   seedSuperAdmin();
   startWeatherCacheCleanup();
+  startMatchPreviewBackfill();
 });

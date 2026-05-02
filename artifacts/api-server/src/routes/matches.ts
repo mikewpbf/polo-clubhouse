@@ -7,6 +7,7 @@ import type { InferSelectModel } from "drizzle-orm";
 import { requireAuth, optionalAuth, isSuperAdmin, requireMatchWrite, requireMatchAdmin as requireMatchAdminFactory, resolveShareToken } from "../lib/auth";
 import { addSSEClient, emitMatchUpdate, emitMatchEnded } from "../lib/sse";
 import { invalidateMatchPreview } from "./match-previews";
+import { scheduleMatchPreviewGeneration } from "../lib/serverMatchPreview";
 
 const router: IRouter = Router();
 
@@ -1032,6 +1033,11 @@ router.post("/tournaments/:tournamentId/matches", requireAuth, async (req, res) 
       status: "scheduled",
     }).returning();
     const enriched = await enrichMatch(match);
+    // Fire-and-forget: every newly created match gets a server-side
+    // fallback preview without waiting for an admin to open Match
+    // Graphics. The high-fidelity client snap will overwrite this PNG
+    // at the same storage key whenever an admin next opens the editor.
+    scheduleMatchPreviewGeneration(match.id);
     res.status(201).json(enriched);
   } catch (e: any) {
     res.status(400).json({ message: e.message });

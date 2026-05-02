@@ -4,6 +4,7 @@ import { db } from "@workspace/db";
 import { clubsTable, teamsTable, tournamentsTable, fieldsTable, playersTable, teamPlayersTable, tournamentTeamsTable, matchesTable } from "@workspace/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import OpenAI from "openai";
+import { scheduleMatchPreviewGeneration } from "../lib/serverMatchPreview";
 
 const router: IRouter = Router();
 
@@ -468,7 +469,7 @@ router.post("/admin/ai/execute-setup", requireAuth, requireSuperAdmin, async (re
             scheduledAt = new Date(dateStr);
           }
 
-          await db.insert(matchesTable).values({
+          const [insertedMatch] = await db.insert(matchesTable).values({
             tournamentId: tournId,
             homeTeamId: homeId,
             awayTeamId: awayId,
@@ -476,8 +477,9 @@ router.post("/admin/ai/execute-setup", requireAuth, requireSuperAdmin, async (re
             scheduledAt,
             round: m.round || null,
             status: "scheduled",
-          });
+          }).returning({ id: matchesTable.id });
           results.matches.created++;
+          if (insertedMatch?.id) scheduleMatchPreviewGeneration(insertedMatch.id);
         } catch (e: any) {
           results.matches.errors.push(`Match "${m.homeTeamName} vs ${m.awayTeamName}": ${e.message}`);
         }
@@ -527,15 +529,16 @@ router.post("/admin/ai/execute-setup", requireAuth, requireSuperAdmin, async (re
               const pair = [a, b].sort().join("|");
               if (!existingPairs.has(pair)) {
                 try {
-                  await db.insert(matchesTable).values({
+                  const [rrMatch] = await db.insert(matchesTable).values({
                     tournamentId: tourn.id,
                     homeTeamId: a,
                     awayTeamId: b,
                     status: "scheduled",
                     round: "Preliminary",
-                  });
+                  }).returning({ id: matchesTable.id });
                   results.matches.created++;
                   existingPairs.add(pair);
+                  if (rrMatch?.id) scheduleMatchPreviewGeneration(rrMatch.id);
                 } catch (e: any) {
                   results.matches.errors.push(`Auto round-robin match: ${e.message}`);
                 }

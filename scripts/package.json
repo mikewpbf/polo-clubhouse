@@ -7,6 +7,7 @@
     "hello": "tsx ./src/hello.ts",
     "migrate": "tsx ./src/migrate.ts",
     "migrate-storage": "tsx ./src/migrate-storage.ts",
+    "verify-link-previews": "tsx ./src/verify-link-previews.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

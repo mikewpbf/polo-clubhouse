@@ -3,9 +3,10 @@ import { useState, useEffect, useCallback, useRef, type CSSProperties } from "re
 import { MatchClock } from "@/components/MatchClock";
 import { PageLoading } from "@/components/LoadingBar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Play, Pause, RotateCcw, ChevronLeft, ChevronRight, CheckSquare, ChevronUp, ChevronDown, Plus, AlertTriangle, RefreshCw, Shield, HeartPulse, Copy, Eye, EyeOff, Monitor, Crosshair, Trash2, Link, Moon, Sun, Video, Timer, Share2 } from "lucide-react";
+import { ArrowLeft, Play, Pause, RotateCcw, ChevronLeft, ChevronRight, CheckSquare, ChevronUp, ChevronDown, Plus, AlertTriangle, RefreshCw, Shield, HeartPulse, Copy, Eye, EyeOff, Monitor, Crosshair, Trash2, Link, Moon, Sun, Video, Timer, Share2, Volume2, VolumeX } from "lucide-react";
 import { getStoredToken } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { usePressFeedback } from "@/hooks/use-press-feedback";
 import { formatDate } from "@/lib/utils";
 import { GamePicker } from "@/components/GamePicker";
 import { ShareLinksManager } from "@/components/ShareLinksManager";
@@ -106,6 +107,10 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
   const mutatingRef = useRef(0);
   const seqRef = useRef(0);
 
+  const feedback = usePressFeedback(mode === "score" || mode === "stats");
+  const feedbackRef = useRef(feedback);
+  feedbackRef.current = feedback;
+
   const fetchMatch = useCallback(async () => {
     if (!matchId) return;
     try {
@@ -165,6 +170,8 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
     if (!matchId || !match) return;
     mutatingRef.current++;
     const mySeq = ++seqRef.current;
+    const pressedEl = feedbackRef.current.lastPressedRef.current;
+    feedbackRef.current.lastPressedRef.current = null;
     let succeeded = false;
     if (optimistic) {
       setMatch(prev => prev ? optimistic(prev) : prev);
@@ -176,6 +183,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
         succeeded = true;
       }
     } catch {
+      feedbackRef.current.error(pressedEl);
       if (seqRef.current === mySeq) {
         fetchMatch();
       }
@@ -191,10 +199,14 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
 
   const mutatePut = useCallback(async (path: string, body: any) => {
     if (!matchId) return;
+    const pressedEl = feedbackRef.current.lastPressedRef.current;
+    feedbackRef.current.lastPressedRef.current = null;
     try {
       await apiFetch(path, { method: "PUT", body: JSON.stringify(body) });
       fetchMatch();
-    } catch {}
+    } catch {
+      feedbackRef.current.error(pressedEl);
+    }
   }, [matchId, fetchMatch]);
 
   const { toast } = useToast();
@@ -307,10 +319,14 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
 
   const handleSetPossession = useCallback(async (state: "home" | "away" | "loose") => {
     if (!matchId) return;
+    const pressedEl = feedbackRef.current.lastPressedRef.current;
+    feedbackRef.current.lastPressedRef.current = null;
     try {
       await apiFetch(`/matches/${matchId}/possession`, { method: "POST", body: JSON.stringify({ state }) });
       fetchPossessionData();
-    } catch {}
+    } catch {
+      feedbackRef.current.error(pressedEl);
+    }
   }, [matchId, apiFetch, fetchPossessionData]);
 
   useEffect(() => {
@@ -616,9 +632,9 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
 
   return (
     <div className={`min-h-screen ${dk ? "" : "bg-bg"}`} style={dk ? { background: bgPage } : undefined}>
-      <div className={`${containerWidthClass} mx-auto px-4 py-6 space-y-6`}>
+      <div className={`${containerWidthClass} mx-auto px-4 py-6 space-y-6`} onClickCapture={feedback.onClickCapture}>
         {!hideHeader && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3" data-no-feedback>
           <button
             onClick={() => {
               if (isShareMode) return;
@@ -638,6 +654,20 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
           >
             {dk ? <Sun className="w-4 h-4" style={{ color: "#f5c542" }} /> : <Moon className="w-4 h-4 text-ink2" />}
           </button>
+          {(mode === "score" || mode === "stats") && !isShareMode && (
+            <button
+              onClick={feedback.toggleMute}
+              className={`w-9 h-9 rounded-[8px] flex items-center justify-center transition-colors ${dk ? "" : "bg-white border border-g200 hover:border-g300 card-shadow"}`}
+              style={dk ? { background: bgCard, border: borderCard } : undefined}
+              title={feedback.isMuted ? "Unmute click sounds" : "Mute click sounds"}
+              aria-label={feedback.isMuted ? "Unmute click sounds" : "Mute click sounds"}
+              aria-pressed={feedback.isMuted}
+            >
+              {feedback.isMuted
+                ? <VolumeX className="w-4 h-4" style={dk ? { color: textMuted } : { color: "var(--ink2)" }} />
+                : <Volume2 className="w-4 h-4" style={dk ? { color: textPrimary } : { color: "var(--g700)" }} />}
+            </button>
+          )}
           <div className="flex-1 min-w-0">
             {isShareMode ? (
               <h1 className={`font-display text-xl font-bold truncate ${dk ? "" : "text-ink"}`} style={dk ? { color: textPrimary } : undefined}>
@@ -1631,7 +1661,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
         </>)}
 
         {mode === "score" && !isShareMode && (
-        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
+        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined} data-no-feedback>
           <button
             onClick={() => setShareOpen(prev => !prev)}
             className="w-full flex items-center gap-2"

@@ -115,7 +115,7 @@ artifacts-monorepo/
 - `pnpm --filter @workspace/db run generate` — Generate new migration file from schema changes
 - `pnpm --filter @workspace/db run migrate` — Apply pending migrations via drizzle-kit (CI/manual)
 - `pnpm --filter @workspace/db run push` — Push schema to database (dev shortcut, bypasses migration history)
-- `LIVE_DEPLOYMENT_URL=https://poloclubhouse.app LIVE_MATCH_ID=<id> pnpm --filter @workspace/scripts run verify-link-previews` — Post-deploy smoke check that hits the deployed routing layer with bot + browser UAs and asserts `/match/:id` and `/share/:pageType/:token` return OG HTML to crawlers and the SPA shell to humans. Optional `LIVE_SHARE_TOKEN_{STATS,GFX,SCOREBOARD,FULL_CONTROL,REVOKED}` env vars enable share-link checks.
+- `LIVE_DEPLOYMENT_URL=https://poloclubhouse.app LIVE_MATCH_ID=<id> pnpm --filter @workspace/scripts run verify-link-previews` — Post-deploy smoke check that hits the deployed routing layer with bot + browser UAs and asserts `/match/:id` and `/share/:pageType/:token` return OG HTML to crawlers and the SPA shell to humans. Always covers the unknown-token non-leaky fallback (synthetic random token, no env var needed). Optional `LIVE_SHARE_TOKEN_{STATS,GFX,SCOREBOARD,FULL_CONTROL,REVOKED}` env vars enable per-pageType active-token checks plus the revoked-token fallback; providing any one of them also synthesizes a pageType-mismatch fallback check. Set `LIVE_STRICT=1` in CI / release mode to make all five share-token env vars required so partial coverage can't silently pass.
 
 ## Link Previews (iMessage / WhatsApp / Slack)
 

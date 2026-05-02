@@ -23,10 +23,26 @@
  *   LIVE_SHARE_TOKEN_FULL_CONTROL  active full_control share token
  *   LIVE_SHARE_TOKEN_REVOKED       a revoked or expired token (any pageType)
  *
+ *   LIVE_STRICT=1                  treat the five share-token env vars above
+ *                                  as REQUIRED. Use in release / post-deploy
+ *                                  CI so partial coverage can't silently pass.
+ *
  * Usage:
  *   LIVE_DEPLOYMENT_URL=https://poloclubhouse.app \
  *   LIVE_MATCH_ID=24f201fb-6e61-48ba-9728-9e3cbb8d65fa \
  *     pnpm --filter @workspace/scripts run verify-link-previews
+ *
+ * Coverage:
+ *   - /match/:id (bot UA → OG HTML, human UA → SPA shell)
+ *   - /share/<pageType>/<token> for all four pageType values when their env
+ *     var is provided (bot UA → OG HTML, human UA → SPA shell)
+ *   - /share/stats/<revoked|expired token> (bot UA → non-leaky 'no longer
+ *     active' card)
+ *   - /share/stats/<random unknown token> (bot UA → same non-leaky card —
+ *     ALWAYS RUNS, no env var needed; the random UUID has no DB row)
+ *   - /share/<wrong-pageType>/<known-token> (bot UA → non-leaky card;
+ *     synthesized by re-using one of the four pageType env vars under a
+ *     different pageType slug — runs when at least one is provided)
  *
  * Exits non-zero if any required check fails.
  */
@@ -127,19 +143,28 @@ async function main(): Promise<void> {
     expectSpa(`human GET /match/${matchId}`, r.body, r.status);
   }
 
-  // Share-link checks (each independently optional).
+  const strict = process.env.LIVE_STRICT === "1" || process.env.LIVE_STRICT === "true";
+
+  // Share-link checks (each independently optional unless LIVE_STRICT=1).
   const shareTokens: Array<{ pageType: string; envVar: string }> = [
     { pageType: "stats", envVar: "LIVE_SHARE_TOKEN_STATS" },
     { pageType: "gfx", envVar: "LIVE_SHARE_TOKEN_GFX" },
     { pageType: "scoreboard", envVar: "LIVE_SHARE_TOKEN_SCOREBOARD" },
     { pageType: "full_control", envVar: "LIVE_SHARE_TOKEN_FULL_CONTROL" },
   ];
+  const presentShareTokens: Array<{ pageType: string; token: string }> = [];
   for (const { pageType, envVar } of shareTokens) {
     const token = process.env[envVar];
     if (!token) {
-      console.log(`[SKIP] ${envVar} not set — skipping /share/${pageType}/:token check`);
+      if (strict) {
+        record(`bot GET /share/${pageType}/<token>`, false, `LIVE_STRICT=1 but ${envVar} not set`);
+        record(`human GET /share/${pageType}/<token>`, false, `LIVE_STRICT=1 but ${envVar} not set`);
+      } else {
+        console.log(`[SKIP] ${envVar} not set — skipping /share/${pageType}/:token check`);
+      }
       continue;
     }
+    presentShareTokens.push({ pageType, token });
     const url = `${base}/share/${pageType}/${token}`;
     const r = await fetchText(url, BOT_UA);
     expectOg(`bot GET /share/${pageType}/<token>`, r.body, r.status);
@@ -147,26 +172,73 @@ async function main(): Promise<void> {
     expectSpa(`human GET /share/${pageType}/<token>`, h.body, h.status);
   }
 
-  // Revoked / expired token: must still return OG HTML, but the generic
-  // non-leaky card. We assert og:title is present and body contains the
-  // "no longer active" fallback string from buildOg.
+  // Helper: assert the response is the non-leaky 'no longer active' card.
+  // Used by the revoked, unknown-token, and pageType-mismatch checks below.
+  function expectNonLeakyCard(name: string, body: string, status: number): void {
+    if (status !== 200) {
+      record(name, false, `status=${status}`);
+      return;
+    }
+    if (!/no longer active/i.test(body)) {
+      record(name, false, `expected non-leaky 'no longer active' card, got ${body.length}B body`);
+      return;
+    }
+    // Sanity: must not look like the SPA shell either (would mean the route
+    // never reached the OG middleware and silently fell through to /*splat).
+    if (/<div\s+id=["']root["']/i.test(body) && /\/assets\/index-/.test(body)) {
+      record(name, false, "got SPA shell instead of OG fallback card (routing regression)");
+      return;
+    }
+    record(name, true, "non-leaky generic card returned");
+  }
+
+  // Revoked / expired token: known-bad token from env. Must still return the
+  // generic 'no longer active' OG card.
   const revoked = process.env.LIVE_SHARE_TOKEN_REVOKED;
   if (revoked) {
     const url = `${base}/share/stats/${revoked}`;
     const r = await fetchText(url, BOT_UA);
-    if (r.status !== 200) {
-      record("bot GET /share/stats/<revoked>", false, `status=${r.status}`);
-    } else if (!/no longer active/i.test(r.body)) {
-      record(
-        "bot GET /share/stats/<revoked>",
-        false,
-        `expected non-leaky 'no longer active' card, got ${r.body.length}B body`,
-      );
-    } else {
-      record("bot GET /share/stats/<revoked>", true, "non-leaky generic card returned");
-    }
+    expectNonLeakyCard("bot GET /share/stats/<revoked>", r.body, r.status);
+  } else if (strict) {
+    record("bot GET /share/stats/<revoked>", false, "LIVE_STRICT=1 but LIVE_SHARE_TOKEN_REVOKED not set");
   } else {
     console.log("[SKIP] LIVE_SHARE_TOKEN_REVOKED not set — skipping revoked-token fallback check");
+  }
+
+  // Unknown-token check — ALWAYS runs. A randomly generated token UUID won't
+  // exist in the DB, so buildOg must return the generic non-leaky card. This
+  // covers the "no row found" branch of the share-link OG handler with no
+  // operational setup required.
+  {
+    const randomToken = `verify-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+    const url = `${base}/share/stats/${randomToken}`;
+    const r = await fetchText(url, BOT_UA);
+    expectNonLeakyCard("bot GET /share/stats/<unknown>", r.body, r.status);
+  }
+
+  // pageType mismatch check — synthesized from any active share token by
+  // hitting it under a *different* pageType slug. og-meta.ts treats this
+  // exactly like an unknown token (non-leaky card) so a sender can't craft
+  // /share/full_control/<stats-token> and mislabel the link's capability.
+  if (presentShareTokens.length > 0) {
+    const { pageType: realPageType, token } = presentShareTokens[0];
+    const allPageTypes = ["stats", "gfx", "scoreboard", "full_control"];
+    const wrongPageType = allPageTypes.find((p) => p !== realPageType)!;
+    const url = `${base}/share/${wrongPageType}/${token}`;
+    const r = await fetchText(url, BOT_UA);
+    expectNonLeakyCard(
+      `bot GET /share/${wrongPageType}/<${realPageType}-token> (mismatch)`,
+      r.body,
+      r.status,
+    );
+  } else if (strict) {
+    record(
+      "bot GET /share/<wrong-pageType>/<token> (mismatch)",
+      false,
+      "LIVE_STRICT=1 but no share tokens provided to synthesize mismatch check",
+    );
+  } else {
+    console.log("[SKIP] no share tokens provided — skipping pageType-mismatch fallback check");
   }
 
   console.log("");

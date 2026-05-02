@@ -5,9 +5,16 @@ const STORAGE_KEY = "pm_sound_muted";
 const PRESS_MS = 700;
 const RESULT_MS = 600;
 
+const ASSET_BASE = (typeof import.meta !== "undefined" && import.meta.env?.BASE_URL) || "/";
+const CLICK_URL = `${ASSET_BASE.replace(/\/$/, "")}/sounds/click.wav`;
+const ERROR_URL = `${ASSET_BASE.replace(/\/$/, "")}/sounds/error.wav`;
+
 type AudioCtxCtor = typeof AudioContext;
 
 let sharedCtx: AudioContext | null = null;
+const decodedBuffers: Map<string, AudioBuffer> = new Map();
+const inflightDecodes: Map<string, Promise<AudioBuffer | null>> = new Map();
+const fallbackEls: Map<string, HTMLAudioElement> = new Map();
 
 function getAudioCtx(): AudioContext | null {
   if (typeof window === "undefined") return null;
@@ -24,27 +31,75 @@ function getAudioCtx(): AudioContext | null {
   }
 }
 
-function playTone(freq: number, durationMs: number, type: OscillatorType, volume: number) {
+async function loadBuffer(url: string): Promise<AudioBuffer | null> {
+  const cached = decodedBuffers.get(url);
+  if (cached) return cached;
+  const inflight = inflightDecodes.get(url);
+  if (inflight) return inflight;
   const ctx = getAudioCtx();
-  if (!ctx) return;
+  if (!ctx) return null;
+  const p = (async () => {
+    try {
+      const res = await fetch(url, { cache: "force-cache" });
+      if (!res.ok) return null;
+      const ab = await res.arrayBuffer();
+      const decoded = await ctx.decodeAudioData(ab.slice(0));
+      decodedBuffers.set(url, decoded);
+      return decoded;
+    } catch {
+      return null;
+    } finally {
+      inflightDecodes.delete(url);
+    }
+  })();
+  inflightDecodes.set(url, p);
+  return p;
+}
+
+function playFallback(url: string, volume: number) {
+  if (typeof window === "undefined") return;
+  let el = fallbackEls.get(url);
+  if (!el) {
+    el = new Audio(url);
+    el.preload = "auto";
+    fallbackEls.set(url, el);
+  }
+  try {
+    el.volume = volume;
+    el.currentTime = 0;
+    void el.play().catch(() => {});
+  } catch {
+    // best-effort
+  }
+}
+
+function playSound(url: string, volume: number) {
+  const ctx = getAudioCtx();
+  if (!ctx) {
+    playFallback(url, volume);
+    return;
+  }
   if (ctx.state === "suspended") {
     ctx.resume().catch(() => {});
   }
-  try {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = type;
-    osc.frequency.value = freq;
-    const now = ctx.currentTime;
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(volume, now + 0.005);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + durationMs / 1000);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + durationMs / 1000 + 0.02);
-  } catch {
-    // Audio failures are non-fatal
+  const buf = decodedBuffers.get(url);
+  if (buf) {
+    try {
+      const src = ctx.createBufferSource();
+      const gain = ctx.createGain();
+      gain.gain.value = volume;
+      src.buffer = buf;
+      src.connect(gain).connect(ctx.destination);
+      src.start();
+      return;
+    } catch {
+      playFallback(url, volume);
+      return;
+    }
   }
+  // Kick off decode for next time; play fallback so this press isn't silent.
+  void loadBuffer(url);
+  playFallback(url, volume);
 }
 
 export interface PressFeedback {
@@ -104,13 +159,12 @@ export function usePressFeedback(enabled: boolean): PressFeedback {
 
   const playClick = useCallback(() => {
     if (mutedRef.current) return;
-    playTone(880, 70, "square", 0.045);
+    playSound(CLICK_URL, 0.5);
   }, []);
 
   const playError = useCallback(() => {
     if (mutedRef.current) return;
-    playTone(220, 160, "sawtooth", 0.07);
-    window.setTimeout(() => playTone(160, 200, "sawtooth", 0.07), 90);
+    playSound(ERROR_URL, 0.55);
   }, []);
 
   const pulse = useCallback((el: HTMLElement | null) => {
@@ -133,6 +187,24 @@ export function usePressFeedback(enabled: boolean): PressFeedback {
     enabledRef.current = enabled;
   }, [enabled]);
 
+  // Warm up audio buffers at first user gesture (any click) so the very next
+  // press has near-zero latency. The initial press itself uses the fallback
+  // path (HTMLAudioElement) until decoding completes.
+  const warmupDoneRef = useRef(false);
+  useEffect(() => {
+    if (!enabled) return;
+    const warmup = () => {
+      if (warmupDoneRef.current) return;
+      warmupDoneRef.current = true;
+      void loadBuffer(CLICK_URL);
+      void loadBuffer(ERROR_URL);
+    };
+    window.addEventListener("pointerdown", warmup, { once: true, capture: true });
+    return () => {
+      window.removeEventListener("pointerdown", warmup, { capture: true } as EventListenerOptions);
+    };
+  }, [enabled]);
+
   const onClickCapture = useCallback((e: ReactMouseEvent<HTMLElement>) => {
     if (!enabledRef.current) return;
     const target = e.target as HTMLElement | null;
@@ -147,3 +219,12 @@ export function usePressFeedback(enabled: boolean): PressFeedback {
 
   return { isMuted, toggleMute, pulse, success, error, onClickCapture, lastPressedRef };
 }
+
+// Exported for testing only.
+export const __testing = {
+  STORAGE_KEY,
+  CLICK_URL,
+  ERROR_URL,
+  PRESS_MS,
+  RESULT_MS,
+};

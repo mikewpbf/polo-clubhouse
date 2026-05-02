@@ -182,6 +182,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
         setMatch(data);
         succeeded = true;
       }
+      feedbackRef.current.success(pressedEl);
     } catch {
       feedbackRef.current.error(pressedEl);
       if (seqRef.current === mySeq) {
@@ -204,6 +205,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
     try {
       await apiFetch(path, { method: "PUT", body: JSON.stringify(body) });
       fetchMatch();
+      feedbackRef.current.success(pressedEl);
     } catch {
       feedbackRef.current.error(pressedEl);
     }
@@ -324,6 +326,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
     try {
       await apiFetch(`/matches/${matchId}/possession`, { method: "POST", body: JSON.stringify({ state }) });
       fetchPossessionData();
+      feedbackRef.current.success(pressedEl);
     } catch {
       feedbackRef.current.error(pressedEl);
     }
@@ -1235,7 +1238,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
         </>)}
 
         {(showSection("gfx") || mode === "score") && (<>
-        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
+        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined} data-no-feedback>
           <button
             onClick={() => setStreamOpen(prev => !prev)}
             className="w-full flex items-center gap-2"

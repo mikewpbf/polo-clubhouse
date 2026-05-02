@@ -278,19 +278,64 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
       if (!confirm("An active link already exists. Generating a new one will revoke it. Continue?")) return;
     }
     setShareLinksWorking(prev => ({ ...prev, [pageType]: true }));
+
+    // Kick off the API call so we can pair it with a clipboard write that is
+    // initiated SYNCHRONOUSLY in the user-gesture context. Safari/iOS only
+    // honors clipboard writes made during the gesture; calling
+    // navigator.clipboard.writeText() after `await` silently fails.
+    const apiPromise = apiFetch(`/matches/${matchId}/share-links`, {
+      method: "POST",
+      body: JSON.stringify({ pageType }),
+    });
+
+    // Pre-arm a Promise-based ClipboardItem write while the user gesture is
+    // still active. The Blob resolves later when the API responds.
+    let preCopyPromise: Promise<boolean> | null = null;
+    const Ctor = (window as unknown as { ClipboardItem?: typeof ClipboardItem }).ClipboardItem;
+    if (Ctor && navigator.clipboard?.write) {
+      try {
+        const blobPromise = apiPromise
+          .then((link: ShareLink) => new Blob([buildShareUrl(link)], { type: "text/plain" }))
+          .catch(() => new Blob([""], { type: "text/plain" }));
+        preCopyPromise = navigator.clipboard
+          .write([new Ctor({ "text/plain": blobPromise })])
+          .then(() => true)
+          .catch(() => false);
+      } catch {
+        preCopyPromise = null;
+      }
+    }
+
     try {
-      const link = await apiFetch(`/matches/${matchId}/share-links`, {
-        method: "POST",
-        body: JSON.stringify({ pageType }),
-      });
+      const link = (await apiPromise) as ShareLink;
       setShareLinks(prev => [
         link,
         ...prev.map(l => l.pageType === pageType && l.active && l.id !== link.id
           ? { ...l, active: false, revokedAt: new Date().toISOString() }
           : l),
       ]);
-      await navigator.clipboard.writeText(buildShareUrl(link)).catch(() => {});
-      toast({ title: "Link created & copied", description: "Share link copied to clipboard" });
+
+      const url = buildShareUrl(link);
+      let copied = preCopyPromise ? await preCopyPromise : false;
+      if (!copied) {
+        // Fallback: best-effort writeText (works on Chrome/desktop where the
+        // gesture allowance is more lenient).
+        try {
+          await navigator.clipboard.writeText(url);
+          copied = true;
+        } catch {
+          copied = false;
+        }
+      }
+
+      if (copied) {
+        toast({ title: "Link created & copied", description: "Share link copied to clipboard" });
+      } else {
+        toast({
+          title: "Link created — copy failed",
+          description: `Tap the URL field to copy: ${url}`,
+        });
+      }
     } catch (e: any) {
       toast({ title: "Error", description: e.message });
     } finally {

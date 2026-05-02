@@ -27,6 +27,27 @@ interface PlayerStatsResponse {
     shotsOnGoal: number;
     conversion: number;
   };
+  tournamentRanks?: {
+    goalsRank: number | null;
+    goalsLeaders: number;
+    shotsRank: number | null;
+    shotsLeaders: number;
+  };
+}
+
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+function rankPhrase(rank: number, total: number, label: string): string | null {
+  if (!rank || total <= 1) return null;
+  if (rank === 1) return `#1 in ${label}`;
+  if (rank <= 3) return `#${rank} in ${label}`;
+  if (rank <= 5 && total >= 5) return `top 5 in ${label}`;
+  if (rank <= 10 && total >= 10) return `top 10 in ${label}`;
+  return `${ordinal(rank)} in ${label}`;
 }
 
 // Mirrors PANEL_STYLE in StatsOverlay / MiniStatsOverlay / LineupOverlay so the
@@ -256,6 +277,15 @@ export default function PlayerStatsOverlay(props: PlayerStatsOverlayProps = {}) 
   const accent = data.team?.primaryColor || "#888";
   const { first, last } = splitName(data.player.name);
 
+  const ranks = data.tournamentRanks;
+  const rankPhrases: string[] = [];
+  if (ranks) {
+    const g = rankPhrase(ranks.goalsRank ?? 0, ranks.goalsLeaders, "goals");
+    const s = rankPhrase(ranks.shotsRank ?? 0, ranks.shotsLeaders, "shots");
+    if (g) rankPhrases.push(g);
+    if (s) rankPhrases.push(s);
+  }
+
   // Lower-third positioned with the same bottom offset as MiniStats so it
   // shares the broadcast safe area.
   return (
@@ -345,6 +375,27 @@ export default function PlayerStatsOverlay(props: PlayerStatsOverlayProps = {}) 
                 }}>
                   {data.team.name}
                   {data.tournamentName ? <span style={{ color: "rgba(255,255,255,0.35)" }}> &middot; {data.tournamentName}</span> : null}
+                </div>
+              )}
+              {rankPhrases.length > 0 && (
+                <div style={{
+                  marginTop: 6,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  background: `${accent}25`,
+                  border: `1px solid ${accent}55`,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 1.2,
+                  textTransform: "uppercase",
+                  color: "#fff",
+                }}>
+                  <span style={{ color: "rgba(255,255,255,0.6)" }}>Tournament leaders</span>
+                  <span style={{ color: "rgba(255,255,255,0.35)" }}>·</span>
+                  <span>{rankPhrases.join(" · ")}</span>
                 </div>
               )}
             </div>

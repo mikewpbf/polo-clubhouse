@@ -1513,6 +1513,57 @@ router.get("/matches/:matchId/player-stats/:playerId", async (req, res) => {
     const matchesPlayed = matchesAppeared.size;
     const avgPerMatch = matchesPlayed > 0 ? Math.round((tGoals / matchesPlayed) * 10) / 10 : 0;
 
+    // Tournament-wide ranks for goals and shots on goal. Aggregates the same
+    // event types per playerId across every match in this tournament, then
+    // ranks the focused player using a competition (1224) ranking so ties
+    // share the same rank. Players with zero in a category are excluded so we
+    // never report a "rank" that exists only because nobody has scored.
+    let goalsRank: number | null = null;
+    let goalsLeaders = 0;
+    let shotsRank: number | null = null;
+    let shotsLeaders = 0;
+    if (tournamentMatchIds.length > 0) {
+      const allEvents = await db.select({
+        playerId: matchEventsTable.playerId,
+        eventType: matchEventsTable.eventType,
+      }).from(matchEventsTable).where(and(
+        inArray(matchEventsTable.matchId, tournamentMatchIds),
+        inArray(matchEventsTable.eventType, ["goal", "shot_on_goal", "penalty_goal"]),
+      ));
+      const goalsByPlayer = new Map<string, number>();
+      const penaltyByPlayer = new Map<string, number>();
+      const rawShotsByPlayer = new Map<string, number>();
+      for (const ev of allEvents) {
+        if (!ev.playerId) continue;
+        if (ev.eventType === "goal") goalsByPlayer.set(ev.playerId, (goalsByPlayer.get(ev.playerId) || 0) + 1);
+        else if (ev.eventType === "penalty_goal") penaltyByPlayer.set(ev.playerId, (penaltyByPlayer.get(ev.playerId) || 0) + 1);
+        else if (ev.eventType === "shot_on_goal") rawShotsByPlayer.set(ev.playerId, (rawShotsByPlayer.get(ev.playerId) || 0) + 1);
+      }
+      const playerIds = new Set<string>([
+        ...goalsByPlayer.keys(),
+        ...penaltyByPlayer.keys(),
+        ...rawShotsByPlayer.keys(),
+      ]);
+      const goalTotals: number[] = [];
+      const shotTotals: number[] = [];
+      for (const pid of playerIds) {
+        const g = goalsByPlayer.get(pid) || 0;
+        const pg = penaltyByPlayer.get(pid) || 0;
+        const rs = rawShotsByPlayer.get(pid) || 0;
+        if (g > 0) goalTotals.push(g);
+        const sog = rs + g + pg;
+        if (sog > 0) shotTotals.push(sog);
+      }
+      if (tGoals > 0) {
+        goalsRank = 1 + goalTotals.filter(v => v > tGoals).length;
+        goalsLeaders = goalTotals.length;
+      }
+      if (tShotsOnGoal > 0) {
+        shotsRank = 1 + shotTotals.filter(v => v > tShotsOnGoal).length;
+        shotsLeaders = shotTotals.length;
+      }
+    }
+
     res.setHeader("Cache-Control", "no-store");
     res.json({
       tournamentName: tournament?.name ?? null,
@@ -1539,6 +1590,12 @@ router.get("/matches/:matchId/player-stats/:playerId", async (req, res) => {
         avgPerMatch,
         shotsOnGoal: tShotsOnGoal,
         conversion,
+      },
+      tournamentRanks: {
+        goalsRank,
+        goalsLeaders,
+        shotsRank,
+        shotsLeaders,
       },
     });
   } catch (e: any) {

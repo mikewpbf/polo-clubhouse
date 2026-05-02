@@ -275,7 +275,7 @@ router.get("/players/top", async (req, res) => {
 
 router.post("/players", requireAuth, async (req, res) => {
   try {
-    const { name, handicap, homeClubId, headshotUrl, broadcastImageUrl, dateOfBirth, bio, managedByUserId } = req.body;
+    const { name, handicap, homeClubId, headshotUrl, headshotSourceUrl, broadcastImageUrl, broadcastImageSourceUrl, dateOfBirth, bio, managedByUserId } = req.body;
     if (!name || !String(name).trim()) { res.status(400).json({ message: "Name is required" }); return; }
 
     // Permission: super_admin OR club admin of homeClubId (if provided)
@@ -294,7 +294,9 @@ router.post("/players", requireAuth, async (req, res) => {
       handicap: handicap != null ? String(handicap) : null,
       homeClubId: homeClubId || null,
       headshotUrl: headshotUrl || null,
+      headshotSourceUrl: headshotSourceUrl || null,
       broadcastImageUrl: broadcastImageUrl || null,
+      broadcastImageSourceUrl: broadcastImageSourceUrl || null,
       dateOfBirth: dateOfBirth || null,
       bio: bio || null,
       managedByUserId: managedByUserId || null,
@@ -509,7 +511,14 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
       headshotUrl: player.headshotUrl,
       // Conditional: omitted entirely when the viewer isn't owner/admin so the
       // response shape is byte-identical to the public response (no `null` tell).
-      ...(viewerCanSeeBroadcastImage ? { broadcastImageUrl: player.broadcastImageUrl ?? null } : {}),
+      // Source URLs are full-resolution originals used by the cropper to allow
+      // re-cropping without re-uploading; same visibility rule as the broadcast
+      // aux image so the originals never leak to spectators.
+      ...(viewerCanSeeBroadcastImage ? {
+        headshotSourceUrl: player.headshotSourceUrl ?? null,
+        broadcastImageUrl: player.broadcastImageUrl ?? null,
+        broadcastImageSourceUrl: player.broadcastImageSourceUrl ?? null,
+      } : {}),
       dateOfBirth: player.dateOfBirth,
       bio: player.bio,
       homeClubId: player.homeClubId,
@@ -536,13 +545,15 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
 router.put("/players/:playerId", requireAuth, requireSelfOrEditor(false), async (req, res) => {
   try {
     const playerId = String(req.params.playerId);
-    const { name, handicap, homeClubId, headshotUrl, broadcastImageUrl, dateOfBirth, bio, managedByUserId, isActive } = req.body;
+    const { name, handicap, homeClubId, headshotUrl, headshotSourceUrl, broadcastImageUrl, broadcastImageSourceUrl, dateOfBirth, bio, managedByUserId, isActive } = req.body;
     const updates: Record<string, any> = { updatedAt: new Date() };
     if (name !== undefined) updates.name = String(name).trim();
     if (handicap !== undefined) updates.handicap = handicap != null ? String(handicap) : null;
     if (homeClubId !== undefined) updates.homeClubId = homeClubId || null;
     if (headshotUrl !== undefined) updates.headshotUrl = headshotUrl || null;
+    if (headshotSourceUrl !== undefined) updates.headshotSourceUrl = headshotSourceUrl || null;
     if (broadcastImageUrl !== undefined) updates.broadcastImageUrl = broadcastImageUrl || null;
+    if (broadcastImageSourceUrl !== undefined) updates.broadcastImageSourceUrl = broadcastImageSourceUrl || null;
     if (dateOfBirth !== undefined) updates.dateOfBirth = dateOfBirth || null;
     if (bio !== undefined) updates.bio = bio || null;
     if (managedByUserId !== undefined) updates.managedByUserId = managedByUserId || null;
@@ -555,7 +566,16 @@ router.put("/players/:playerId", requireAuth, requireSelfOrEditor(false), async 
   }
 });
 
-const SELF_PROFILE_ALLOWED_FIELDS = new Set(["name", "headshotUrl", "broadcastImageUrl", "dateOfBirth", "homeClubId", "bio"]);
+const SELF_PROFILE_ALLOWED_FIELDS = new Set([
+  "name",
+  "headshotUrl",
+  "headshotSourceUrl",
+  "broadcastImageUrl",
+  "broadcastImageSourceUrl",
+  "dateOfBirth",
+  "homeClubId",
+  "bio",
+]);
 
 router.patch("/players/:playerId/profile", requireAuth, requireSelfOnly, async (req, res) => {
   try {
@@ -571,11 +591,13 @@ router.patch("/players/:playerId/profile", requireAuth, requireSelfOnly, async (
       });
       return;
     }
-    const { name, headshotUrl, broadcastImageUrl, dateOfBirth, homeClubId, bio } = body as Record<string, any>;
+    const { name, headshotUrl, headshotSourceUrl, broadcastImageUrl, broadcastImageSourceUrl, dateOfBirth, homeClubId, bio } = body as Record<string, any>;
     const updates: Record<string, any> = { updatedAt: new Date() };
     if (name !== undefined) updates.name = String(name).trim();
     if (headshotUrl !== undefined) updates.headshotUrl = headshotUrl || null;
+    if (headshotSourceUrl !== undefined) updates.headshotSourceUrl = headshotSourceUrl || null;
     if (broadcastImageUrl !== undefined) updates.broadcastImageUrl = broadcastImageUrl || null;
+    if (broadcastImageSourceUrl !== undefined) updates.broadcastImageSourceUrl = broadcastImageSourceUrl || null;
     if (dateOfBirth !== undefined) updates.dateOfBirth = dateOfBirth || null;
     if (homeClubId !== undefined) updates.homeClubId = homeClubId || null;
     if (bio !== undefined) updates.bio = bio || null;

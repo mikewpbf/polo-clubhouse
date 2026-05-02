@@ -3298,7 +3298,15 @@ export const CreatePlayerBody = zod.object({
   handicap: zod.string().nullish(),
   homeClubId: zod.string().uuid().nullish(),
   headshotUrl: zod.string().nullish(),
+  headshotSourceUrl: zod
+    .string()
+    .nullish()
+    .describe("Original full-resolution upload preserved for re-cropping."),
   broadcastImageUrl: zod.string().nullish(),
+  broadcastImageSourceUrl: zod
+    .string()
+    .nullish()
+    .describe("Original full-resolution upload preserved for re-cropping."),
   dateOfBirth: zod.date().nullish(),
   bio: zod.string().nullish(),
   managedByUserId: zod.string().uuid().nullish(),
@@ -3361,11 +3369,23 @@ export const GetPlayerProfileResponse = zod.object({
     .describe(
       "True when this player is linked to a user account (verified player).",
     ),
+  headshotSourceUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Original full-resolution upload that produced `headshotUrl`.\nPreserved so owners and admins can re-crop without re-uploading.\nOmitted from public\/spectator response shapes (same visibility\nrule as `broadcastImageUrl`).\n",
+    ),
   broadcastImageUrl: zod
     .string()
     .nullish()
     .describe(
       "Vertical (3:4 portrait) aux image used by broadcast graphics overlays.\nReturned only when the caller is the player's owner (linked user) or an\nadmin\/staff role. Omitted from public\/spectator response shapes.\n",
+    ),
+  broadcastImageSourceUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Original full-resolution upload that produced `broadcastImageUrl`.\nPreserved so owners and admins can re-crop without re-uploading.\nOmitted from public\/spectator response shapes (same visibility\nrule as `broadcastImageUrl`).\n",
     ),
   age: zod.number().nullish(),
   stats: zod.object({
@@ -3447,7 +3467,15 @@ export const UpdatePlayerBody = zod.object({
   handicap: zod.string().nullish(),
   homeClubId: zod.string().uuid().nullish(),
   headshotUrl: zod.string().nullish(),
+  headshotSourceUrl: zod
+    .string()
+    .nullish()
+    .describe("Original full-resolution upload preserved for re-cropping."),
   broadcastImageUrl: zod.string().nullish(),
+  broadcastImageSourceUrl: zod
+    .string()
+    .nullish()
+    .describe("Original full-resolution upload preserved for re-cropping."),
   dateOfBirth: zod.date().nullish(),
   bio: zod.string().nullish(),
   managedByUserId: zod.string().uuid().nullish(),
@@ -3459,11 +3487,23 @@ export const UpdatePlayerResponse = zod.object({
   name: zod.string(),
   handicap: zod.string().nullish(),
   headshotUrl: zod.string().nullish(),
+  headshotSourceUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Original full-resolution upload that produced `headshotUrl`.\nPreserved so owners and admins can re-crop without re-uploading.\nOmitted from public\/spectator response shapes (same visibility\nrule as `broadcastImageUrl`).\n",
+    ),
   broadcastImageUrl: zod
     .string()
     .nullish()
     .describe(
       "Vertical (3:4 portrait) aux image used by broadcast graphics overlays.\nReturned only when the caller is the player's owner (linked user) or an\nadmin\/staff role. Omitted from public\/spectator response shapes.\n",
+    ),
+  broadcastImageSourceUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Original full-resolution upload that produced `broadcastImageUrl`.\nPreserved so owners and admins can re-crop without re-uploading.\nOmitted from public\/spectator response shapes (same visibility\nrule as `broadcastImageUrl`).\n",
     ),
   dateOfBirth: zod.date().nullish(),
   homeClubId: zod.string().uuid().nullish(),
@@ -3495,7 +3535,15 @@ export const UpdateMyProfileParams = zod.object({
 export const UpdateMyProfileBody = zod.object({
   name: zod.string().optional(),
   headshotUrl: zod.string().nullish(),
+  headshotSourceUrl: zod
+    .string()
+    .nullish()
+    .describe("Original full-resolution upload preserved for re-cropping."),
   broadcastImageUrl: zod.string().nullish(),
+  broadcastImageSourceUrl: zod
+    .string()
+    .nullish()
+    .describe("Original full-resolution upload preserved for re-cropping."),
   dateOfBirth: zod.date().nullish(),
   homeClubId: zod.string().uuid().nullish(),
   bio: zod.string().nullish(),
@@ -3506,11 +3554,23 @@ export const UpdateMyProfileResponse = zod.object({
   name: zod.string(),
   handicap: zod.string().nullish(),
   headshotUrl: zod.string().nullish(),
+  headshotSourceUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Original full-resolution upload that produced `headshotUrl`.\nPreserved so owners and admins can re-crop without re-uploading.\nOmitted from public\/spectator response shapes (same visibility\nrule as `broadcastImageUrl`).\n",
+    ),
   broadcastImageUrl: zod
     .string()
     .nullish()
     .describe(
       "Vertical (3:4 portrait) aux image used by broadcast graphics overlays.\nReturned only when the caller is the player's owner (linked user) or an\nadmin\/staff role. Omitted from public\/spectator response shapes.\n",
+    ),
+  broadcastImageSourceUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Original full-resolution upload that produced `broadcastImageUrl`.\nPreserved so owners and admins can re-crop without re-uploading.\nOmitted from public\/spectator response shapes (same visibility\nrule as `broadcastImageUrl`).\n",
     ),
   dateOfBirth: zod.date().nullish(),
   homeClubId: zod.string().uuid().nullish(),
@@ -3563,11 +3623,23 @@ export const GetMyLinkedPlayerResponse = zod.union([
     name: zod.string(),
     handicap: zod.string().nullish(),
     headshotUrl: zod.string().nullish(),
+    headshotSourceUrl: zod
+      .string()
+      .nullish()
+      .describe(
+        "Original full-resolution upload that produced `headshotUrl`.\nPreserved so owners and admins can re-crop without re-uploading.\nOmitted from public\/spectator response shapes (same visibility\nrule as `broadcastImageUrl`).\n",
+      ),
     broadcastImageUrl: zod
       .string()
       .nullish()
       .describe(
         "Vertical (3:4 portrait) aux image used by broadcast graphics overlays.\nReturned only when the caller is the player's owner (linked user) or an\nadmin\/staff role. Omitted from public\/spectator response shapes.\n",
+      ),
+    broadcastImageSourceUrl: zod
+      .string()
+      .nullish()
+      .describe(
+        "Original full-resolution upload that produced `broadcastImageUrl`.\nPreserved so owners and admins can re-crop without re-uploading.\nOmitted from public\/spectator response shapes (same visibility\nrule as `broadcastImageUrl`).\n",
       ),
     dateOfBirth: zod.date().nullish(),
     homeClubId: zod.string().uuid().nullish(),

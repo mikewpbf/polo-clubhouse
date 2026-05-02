@@ -48,18 +48,28 @@ export function MyProfile() {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [bio, setBio] = useState("");
   const [headshotUrl, setHeadshotUrl] = useState<string | null>(null);
+  const [headshotSourceUrl, setHeadshotSourceUrl] = useState<string | null>(null);
   const [broadcastImageUrl, setBroadcastImageUrl] = useState<string | null>(null);
+  const [broadcastImageSourceUrl, setBroadcastImageSourceUrl] = useState<string | null>(null);
 
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (linked) {
-      setName(linked.name);
-      setHomeClubId(linked.homeClubId ?? "");
-      setDateOfBirth(linked.dateOfBirth ?? "");
-      setBio(linked.bio ?? "");
-      setHeadshotUrl(linked.headshotUrl ?? null);
-      setBroadcastImageUrl((linked as Player & { broadcastImageUrl?: string | null }).broadcastImageUrl ?? null);
+      type LinkedExtras = Player & {
+        headshotSourceUrl?: string | null;
+        broadcastImageUrl?: string | null;
+        broadcastImageSourceUrl?: string | null;
+      };
+      const l = linked as LinkedExtras;
+      setName(l.name);
+      setHomeClubId(l.homeClubId ?? "");
+      setDateOfBirth(l.dateOfBirth ?? "");
+      setBio(l.bio ?? "");
+      setHeadshotUrl(l.headshotUrl ?? null);
+      setHeadshotSourceUrl(l.headshotSourceUrl ?? null);
+      setBroadcastImageUrl(l.broadcastImageUrl ?? null);
+      setBroadcastImageSourceUrl(l.broadcastImageSourceUrl ?? null);
     }
   }, [linked]);
 
@@ -99,7 +109,9 @@ export function MyProfile() {
           dateOfBirth: dateOfBirth || null,
           bio: bio || null,
           headshotUrl,
+          headshotSourceUrl,
           broadcastImageUrl,
+          broadcastImageSourceUrl,
         },
       });
       setSaveMsg("Saved");
@@ -121,15 +133,22 @@ export function MyProfile() {
         <div className="bg-white rounded-[12px] p-5 card-shadow">
           <div className="flex items-start gap-5 mb-5">
             <div className="flex flex-col items-center gap-2">
-              <ImageCropUpload value={headshotUrl} onChange={setHeadshotUrl} name={name || linked.name} size={96} />
+              <ImageCropUpload
+                value={headshotUrl}
+                sourceValue={headshotSourceUrl}
+                onChange={(url, srcUrl) => { setHeadshotUrl(url); setHeadshotSourceUrl(srcUrl); }}
+                name={name || linked.name}
+                size={96}
+              />
               {headshotUrl && (
-                <button className="text-[11px] text-red-600 hover:underline" onClick={() => setHeadshotUrl(null)}>Remove</button>
+                <button className="text-[11px] text-red-600 hover:underline" onClick={() => { setHeadshotUrl(null); setHeadshotSourceUrl(null); }}>Remove</button>
               )}
             </div>
             <div className="flex flex-col items-center gap-2">
               <ImageCropUpload
                 value={broadcastImageUrl}
-                onChange={setBroadcastImageUrl}
+                sourceValue={broadcastImageSourceUrl}
+                onChange={(url, srcUrl) => { setBroadcastImageUrl(url); setBroadcastImageSourceUrl(srcUrl); }}
                 name={name || linked.name}
                 shape="portrait"
                 size={72}
@@ -138,7 +157,7 @@ export function MyProfile() {
                 Broadcast aux image · <span className="font-medium">Not publicly visible</span>
               </div>
               {broadcastImageUrl && (
-                <button className="text-[11px] text-red-600 hover:underline" onClick={() => setBroadcastImageUrl(null)}>Remove</button>
+                <button className="text-[11px] text-red-600 hover:underline" onClick={() => { setBroadcastImageUrl(null); setBroadcastImageSourceUrl(null); }}>Remove</button>
               )}
             </div>
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">

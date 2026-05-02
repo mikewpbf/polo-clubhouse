@@ -23,11 +23,23 @@ export interface PlayerProfile {
   managedByUserId?: string | null;
   /** True when this player is linked to a user account (verified player). */
   hasLinkedUser?: boolean;
+  /** Original full-resolution upload that produced `headshotUrl`.
+Preserved so owners and admins can re-crop without re-uploading.
+Omitted from public/spectator response shapes (same visibility
+rule as `broadcastImageUrl`).
+ */
+  headshotSourceUrl?: string | null;
   /** Vertical (3:4 portrait) aux image used by broadcast graphics overlays.
 Returned only when the caller is the player's owner (linked user) or an
 admin/staff role. Omitted from public/spectator response shapes.
  */
   broadcastImageUrl?: string | null;
+  /** Original full-resolution upload that produced `broadcastImageUrl`.
+Preserved so owners and admins can re-crop without re-uploading.
+Omitted from public/spectator response shapes (same visibility
+rule as `broadcastImageUrl`).
+ */
+  broadcastImageSourceUrl?: string | null;
   age?: number | null;
   stats: PlayerStats;
   teams: PlayerTeamHistory[];

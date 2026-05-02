@@ -255,4 +255,112 @@ describe("PUT /api/players/:playerId — managedByUserId authorization", () => {
       }
     });
   });
+
+  // The original-resolution source URLs that back the recroppable headshot and
+  // broadcast aux image must follow the same private-visibility rules as the
+  // cropped broadcastImageUrl: present for the linked owner / club admins /
+  // super_admin, omitted for everyone else.
+  describe("headshotSourceUrl / broadcastImageSourceUrl visibility", () => {
+    const HEADSHOT_SRC = "https://cdn.example/headshot-original.jpg";
+    const BROADCAST_SRC = "https://cdn.example/broadcast-original.jpg";
+
+    beforeEach(async () => {
+      await db.update(playersTable)
+        .set({
+          headshotSourceUrl: HEADSHOT_SRC,
+          broadcastImageSourceUrl: BROADCAST_SRC,
+          managedByUserId: targetUserId,
+        })
+        .where(eq(playersTable.id, playerId));
+    });
+
+    it("anonymous GET /api/players/:id omits both source URL fields", async () => {
+      const res = await request(app).get(`/api/players/${playerId}`);
+      expect(res.status).toBe(200);
+      expect(res.body).not.toHaveProperty("headshotSourceUrl");
+      expect(res.body).not.toHaveProperty("broadcastImageSourceUrl");
+    });
+
+    it("non-home-club admin does NOT see source URL fields", async () => {
+      const res = await request(app)
+        .get(`/api/players/${playerId}`)
+        .set("Authorization", `Bearer ${otherAdminToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body).not.toHaveProperty("headshotSourceUrl");
+      expect(res.body).not.toHaveProperty("broadcastImageSourceUrl");
+    });
+
+    it("home-club admin sees both source URL fields", async () => {
+      const res = await request(app)
+        .get(`/api/players/${playerId}`)
+        .set("Authorization", `Bearer ${homeAdminToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.headshotSourceUrl).toBe(HEADSHOT_SRC);
+      expect(res.body.broadcastImageSourceUrl).toBe(BROADCAST_SRC);
+    });
+
+    it("super_admin sees both source URL fields", async () => {
+      const res = await request(app)
+        .get(`/api/players/${playerId}`)
+        .set("Authorization", `Bearer ${superToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.headshotSourceUrl).toBe(HEADSHOT_SRC);
+      expect(res.body.broadcastImageSourceUrl).toBe(BROADCAST_SRC);
+    });
+
+    it("linked managed user (owner) sees both source URL fields", async () => {
+      const ownerToken = generateToken({
+        id: targetUserId, email: `target@test.local`, displayName: "Target", role: "spectator",
+      });
+      const res = await request(app)
+        .get(`/api/players/${playerId}`)
+        .set("Authorization", `Bearer ${ownerToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.headshotSourceUrl).toBe(HEADSHOT_SRC);
+      expect(res.body.broadcastImageSourceUrl).toBe(BROADCAST_SRC);
+    });
+
+    it("home-club admin can persist source URLs via PUT /api/players/:id", async () => {
+      const NEW_HS = "https://cdn.example/new-headshot.jpg";
+      const NEW_BC = "https://cdn.example/new-broadcast.jpg";
+      const res = await request(app)
+        .put(`/api/players/${playerId}`)
+        .set("Authorization", `Bearer ${homeAdminToken}`)
+        .send({ headshotSourceUrl: NEW_HS, broadcastImageSourceUrl: NEW_BC });
+      expect(res.status).toBe(200);
+
+      const [row] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
+      expect(row.headshotSourceUrl).toBe(NEW_HS);
+      expect(row.broadcastImageSourceUrl).toBe(NEW_BC);
+    });
+
+    it("home-club admin can clear source URLs by sending null", async () => {
+      const res = await request(app)
+        .put(`/api/players/${playerId}`)
+        .set("Authorization", `Bearer ${homeAdminToken}`)
+        .send({ headshotSourceUrl: null, broadcastImageSourceUrl: null });
+      expect(res.status).toBe(200);
+
+      const [row] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
+      expect(row.headshotSourceUrl).toBeNull();
+      expect(row.broadcastImageSourceUrl).toBeNull();
+    });
+
+    it("linked owner can persist source URLs via PATCH /api/players/:id/profile", async () => {
+      const ownerToken = generateToken({
+        id: targetUserId, email: `target@test.local`, displayName: "Target", role: "spectator",
+      });
+      const NEW_HS = "https://cdn.example/owner-headshot.jpg";
+      const NEW_BC = "https://cdn.example/owner-broadcast.jpg";
+      const res = await request(app)
+        .patch(`/api/players/${playerId}/profile`)
+        .set("Authorization", `Bearer ${ownerToken}`)
+        .send({ headshotSourceUrl: NEW_HS, broadcastImageSourceUrl: NEW_BC });
+      expect(res.status).toBe(200);
+
+      const [row] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
+      expect(row.headshotSourceUrl).toBe(NEW_HS);
+      expect(row.broadcastImageSourceUrl).toBe(NEW_BC);
+    });
+  });
 });

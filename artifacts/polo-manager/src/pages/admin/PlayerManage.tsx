@@ -56,7 +56,9 @@ export function PlayerManage() {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [bio, setBio] = useState("");
   const [headshotUrl, setHeadshotUrl] = useState<string | null>(null);
+  const [headshotSourceUrl, setHeadshotSourceUrl] = useState<string | null>(null);
   const [broadcastImageUrl, setBroadcastImageUrl] = useState<string | null>(null);
+  const [broadcastImageSourceUrl, setBroadcastImageSourceUrl] = useState<string | null>(null);
   const [managedByUserId, setManagedByUserId] = useState<string | null>(null);
   const [linkedUserLabel, setLinkedUserLabel] = useState<string | null>(null);
 
@@ -72,7 +74,14 @@ export function PlayerManage() {
       setDateOfBirth(data.dateOfBirth ?? "");
       setBio(data.bio ?? "");
       setHeadshotUrl(data.headshotUrl ?? null);
-      setBroadcastImageUrl((data as PlayerProfileWithUser & { broadcastImageUrl?: string | null }).broadcastImageUrl ?? null);
+      const extras = data as PlayerProfileWithUser & {
+        headshotSourceUrl?: string | null;
+        broadcastImageUrl?: string | null;
+        broadcastImageSourceUrl?: string | null;
+      };
+      setHeadshotSourceUrl(extras.headshotSourceUrl ?? null);
+      setBroadcastImageUrl(extras.broadcastImageUrl ?? null);
+      setBroadcastImageSourceUrl(extras.broadcastImageSourceUrl ?? null);
       const muid = data?.managedByUserId ?? null;
       setManagedByUserId(muid);
       const linkedUser = data?.managedByUser;
@@ -97,7 +106,9 @@ export function PlayerManage() {
         dateOfBirth: dateOfBirth || null,
         bio: bio || null,
         headshotUrl,
+        headshotSourceUrl,
         broadcastImageUrl,
+        broadcastImageSourceUrl,
       };
       // Only super_admins or this player's home club admins may mutate the link.
       if (canManageLink) payload.managedByUserId = managedByUserId || null;
@@ -130,15 +141,22 @@ export function PlayerManage() {
           <h2 className="font-display text-lg font-bold text-ink mb-4">Profile</h2>
           <div className="flex items-start gap-5 mb-5">
             <div className="flex flex-col items-center gap-2">
-              <ImageCropUpload value={headshotUrl} onChange={setHeadshotUrl} name={name || data.name} size={96} />
+              <ImageCropUpload
+                value={headshotUrl}
+                sourceValue={headshotSourceUrl}
+                onChange={(url, srcUrl) => { setHeadshotUrl(url); setHeadshotSourceUrl(srcUrl); }}
+                name={name || data.name}
+                size={96}
+              />
               {headshotUrl && (
-                <button className="text-[11px] text-red-600 hover:underline" onClick={() => setHeadshotUrl(null)}>Remove</button>
+                <button className="text-[11px] text-red-600 hover:underline" onClick={() => { setHeadshotUrl(null); setHeadshotSourceUrl(null); }}>Remove</button>
               )}
             </div>
             <div className="flex flex-col items-center gap-2">
               <ImageCropUpload
                 value={broadcastImageUrl}
-                onChange={setBroadcastImageUrl}
+                sourceValue={broadcastImageSourceUrl}
+                onChange={(url, srcUrl) => { setBroadcastImageUrl(url); setBroadcastImageSourceUrl(srcUrl); }}
                 name={name || data.name}
                 shape="portrait"
                 size={72}
@@ -147,7 +165,7 @@ export function PlayerManage() {
                 Broadcast aux image · <span className="font-medium">Not publicly visible</span>
               </div>
               {broadcastImageUrl && (
-                <button className="text-[11px] text-red-600 hover:underline" onClick={() => setBroadcastImageUrl(null)}>Remove</button>
+                <button className="text-[11px] text-red-600 hover:underline" onClick={() => { setBroadcastImageUrl(null); setBroadcastImageSourceUrl(null); }}>Remove</button>
               )}
             </div>
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">

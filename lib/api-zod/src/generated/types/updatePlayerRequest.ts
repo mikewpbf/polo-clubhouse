@@ -11,7 +11,11 @@ export interface UpdatePlayerRequest {
   handicap?: string | null;
   homeClubId?: string | null;
   headshotUrl?: string | null;
+  /** Original full-resolution upload preserved for re-cropping. */
+  headshotSourceUrl?: string | null;
   broadcastImageUrl?: string | null;
+  /** Original full-resolution upload preserved for re-cropping. */
+  broadcastImageSourceUrl?: string | null;
   dateOfBirth?: Date | null;
   bio?: string | null;
   managedByUserId?: string | null;

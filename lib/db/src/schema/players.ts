@@ -10,7 +10,13 @@ export const playersTable = pgTable("players", {
   handicap: decimal("handicap"),
   isActive: boolean("is_active").default(true).notNull(),
   headshotUrl: text("headshot_url"),
+  // Original full-resolution upload preserved alongside the cropped JPEG so
+  // owners/admins can re-crop without re-uploading the source photo.
+  headshotSourceUrl: text("headshot_source_url"),
   broadcastImageUrl: text("broadcast_image_url"),
+  // Same purpose as headshotSourceUrl — original of the cropped broadcast aux
+  // image, kept private (only readable by owner / club admin / super_admin).
+  broadcastImageSourceUrl: text("broadcast_image_source_url"),
   dateOfBirth: date("date_of_birth"),
   homeClubId: uuid("home_club_id").references(() => clubsTable.id),
   bio: text("bio"),

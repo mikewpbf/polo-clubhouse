@@ -3600,6 +3600,14 @@ components:
         headshotUrl:
           type: string
           nullable: true
+        headshotSourceUrl:
+          type: string
+          nullable: true
+          description: |
+            Original full-resolution upload that produced `headshotUrl`.
+            Preserved so owners and admins can re-crop without re-uploading.
+            Omitted from public/spectator response shapes (same visibility
+            rule as `broadcastImageUrl`).
         broadcastImageUrl:
           type: string
           nullable: true
@@ -3607,6 +3615,14 @@ components:
             Vertical (3:4 portrait) aux image used by broadcast graphics overlays.
             Returned only when the caller is the player's owner (linked user) or an
             admin/staff role. Omitted from public/spectator response shapes.
+        broadcastImageSourceUrl:
+          type: string
+          nullable: true
+          description: |
+            Original full-resolution upload that produced `broadcastImageUrl`.
+            Preserved so owners and admins can re-crop without re-uploading.
+            Omitted from public/spectator response shapes (same visibility
+            rule as `broadcastImageUrl`).
         dateOfBirth:
           type: string
           format: date
@@ -3760,6 +3776,14 @@ components:
         hasLinkedUser:
           type: boolean
           description: True when this player is linked to a user account (verified player).
+        headshotSourceUrl:
+          type: string
+          nullable: true
+          description: |
+            Original full-resolution upload that produced `headshotUrl`.
+            Preserved so owners and admins can re-crop without re-uploading.
+            Omitted from public/spectator response shapes (same visibility
+            rule as `broadcastImageUrl`).
         broadcastImageUrl:
           type: string
           nullable: true
@@ -3767,6 +3791,14 @@ components:
             Vertical (3:4 portrait) aux image used by broadcast graphics overlays.
             Returned only when the caller is the player's owner (linked user) or an
             admin/staff role. Omitted from public/spectator response shapes.
+        broadcastImageSourceUrl:
+          type: string
+          nullable: true
+          description: |
+            Original full-resolution upload that produced `broadcastImageUrl`.
+            Preserved so owners and admins can re-crop without re-uploading.
+            Omitted from public/spectator response shapes (same visibility
+            rule as `broadcastImageUrl`).
         age:
           type: integer
           nullable: true
@@ -3861,9 +3893,17 @@ components:
         headshotUrl:
           type: string
           nullable: true
+        headshotSourceUrl:
+          type: string
+          nullable: true
+          description: Original full-resolution upload preserved for re-cropping.
         broadcastImageUrl:
           type: string
           nullable: true
+        broadcastImageSourceUrl:
+          type: string
+          nullable: true
+          description: Original full-resolution upload preserved for re-cropping.
         dateOfBirth:
           type: string
           format: date
@@ -3893,9 +3933,17 @@ components:
         headshotUrl:
           type: string
           nullable: true
+        headshotSourceUrl:
+          type: string
+          nullable: true
+          description: Original full-resolution upload preserved for re-cropping.
         broadcastImageUrl:
           type: string
           nullable: true
+        broadcastImageSourceUrl:
+          type: string
+          nullable: true
+          description: Original full-resolution upload preserved for re-cropping.
         dateOfBirth:
           type: string
           format: date
@@ -3918,9 +3966,17 @@ components:
         headshotUrl:
           type: string
           nullable: true
+        headshotSourceUrl:
+          type: string
+          nullable: true
+          description: Original full-resolution upload preserved for re-cropping.
         broadcastImageUrl:
           type: string
           nullable: true
+        broadcastImageSourceUrl:
+          type: string
+          nullable: true
+          description: Original full-resolution upload preserved for re-cropping.
         dateOfBirth:
           type: string
           format: date

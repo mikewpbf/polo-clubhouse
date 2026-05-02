@@ -375,7 +375,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
 
   const handleStat = (eventType: "bowl_in" | "knock_in" | "foul" | "penalty_goal" | "shot_on_goal", teamId: string) => {
     mutate(`/matches/${match.id}/stat`, { eventType, teamId }, prev => prev);
-    if (eventType === "knock_in") {
+    if (eventType === "bowl_in") {
       const side = teamId === match.homeTeamId ? "home" : teamId === match.awayTeamId ? "away" : null;
       if (side) handleSetPossession(side);
     }
@@ -403,6 +403,10 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
     if (args.eventType === "penalty_in") body.distance = args.distance;
     else if (args.eventType === "foul_committed") body.severity = args.severity;
     mutate(`/matches/${match.id}/event`, body, prev => prev);
+    if (args.eventType === "throw_in_won") {
+      const side = args.teamId === match.homeTeamId ? "home" : args.teamId === match.awayTeamId ? "away" : null;
+      if (side) handleSetPossession(side);
+    }
   };
 
   const handleStatus = (status: string) => {

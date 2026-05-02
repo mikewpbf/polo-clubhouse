@@ -74,12 +74,27 @@ function expectSpa(name: string, body: string, status: number): void {
     record(name, false, `status=${status}`);
     return;
   }
-  const looksLikeOgStub = /property=["']og:image["']/.test(body) && body.length < 4000;
-  if (looksLikeOgStub) {
-    record(name, false, `body looks like OG stub (${body.length}B) — bot middleware is firing for human UA`);
+  // Positive SPA markers — both must be present. The polo-manager Vite build
+  // always emits a <div id="root"></div> mount node and an /assets/index-*.js
+  // (or /assets/index-*.css) bundle reference in index.html. If either is
+  // missing on a human-UA response, something other than the SPA shell came
+  // back (likely the OG SSR stub or an error page).
+  const hasRootDiv = /<div\s+id=["']root["']/i.test(body);
+  const hasAssetBundle = /\/assets\/index-[A-Za-z0-9_-]+\.(?:js|css)/.test(body);
+  // Negative assertion — the SPA shell must NOT carry OG meta tags. If it
+  // does, the bot middleware is leaking past its UA gate.
+  const hasOgMeta = /property=["']og:(?:title|image|description|url|type)["']/.test(body);
+
+  const problems: string[] = [];
+  if (!hasRootDiv) problems.push('missing <div id="root">');
+  if (!hasAssetBundle) problems.push("missing /assets/index-*.{js,css} bundle");
+  if (hasOgMeta) problems.push("OG meta tags present (bot middleware leaked past UA gate)");
+
+  if (problems.length > 0) {
+    record(name, false, `${problems.join("; ")} (body=${body.length}B)`);
     return;
   }
-  record(name, true, `${body.length}B HTML, no OG stub`);
+  record(name, true, `${body.length}B SPA shell with #root + asset bundle, no OG tags`);
 }
 
 async function main(): Promise<void> {

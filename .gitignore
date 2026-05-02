@@ -8,3 +8,4 @@ photofield.*
 .cache/
 artifacts/polo-manager/dist/
 artifacts/api-server/dist/public/
+*.tsbuildinfo

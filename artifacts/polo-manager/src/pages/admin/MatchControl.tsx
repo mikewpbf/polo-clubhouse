@@ -375,6 +375,10 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
 
   const handleStat = (eventType: "bowl_in" | "knock_in" | "foul" | "penalty_goal" | "shot_on_goal", teamId: string) => {
     mutate(`/matches/${match.id}/stat`, { eventType, teamId }, prev => prev);
+    if (eventType === "knock_in") {
+      const side = teamId === match.homeTeamId ? "home" : teamId === match.awayTeamId ? "away" : null;
+      if (side) handleSetPossession(side);
+    }
   };
 
   const handleEvent = (eventType: "penalty" | "horse_change" | "safety" | "injury_timeout", description?: string, teamId?: string) => {
@@ -732,7 +736,11 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
               <HeartPulse className="w-3.5 h-3.5" /> Injury T/O
             </Button>
           </div>
-          <div className="flex items-center gap-2 mt-2 w-full">
+        </div>
+
+        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
+          <span className="text-[12px] font-sans font-medium uppercase tracking-wider block mb-3" style={dk ? { color: textMuted } : undefined}>Chukker</span>
+          <div className="flex items-center gap-2 w-full">
             <button
               className={`w-10 h-10 rounded-[8px] flex items-center justify-center disabled:opacity-30 transition-colors active:scale-95 shrink-0 ${dk ? "" : "bg-g50 border border-g200 hover:bg-g100"}`}
               style={dk ? { background: btnMuted, border: borderCard } : undefined}

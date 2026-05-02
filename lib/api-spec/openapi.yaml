@@ -1045,6 +1045,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/MatchWithTeams"
 
+  /matches/{matchId}/sync-anchor:
+    post:
+      operationId: syncMatchAnchor
+      tags: [matches]
+      summary: Realign the YouTube stream anchor for this match (admin only)
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncMatchAnchorRequest"
+      responses:
+        "200":
+          description: Anchor updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncMatchAnchorResponse"
+
   /matches/{matchId}/events:
     get:
       operationId: listMatchEvents
@@ -2793,6 +2819,9 @@ components:
           enum: [studio, field]
         broadcastOffsetSeconds:
           type: number
+        canAdminMatch:
+          type: boolean
+          description: True if the requesting user is a club admin of the tournament's club, or a super admin. Always false for unauthenticated requests and for share-token requests.
       required:
         - id
         - tournamentId
@@ -2837,6 +2866,48 @@ components:
           enum: [studio, field]
         broadcastOffsetSeconds:
           type: number
+
+    SyncMatchAnchorRequest:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum: [event, nudge, restore]
+          description: |
+            "event" back-calculates the anchor from a chosen event + the video position;
+            "nudge" shifts the existing anchor by N seconds;
+            "restore" sets the anchor to a specific ISO datetime or null (Undo).
+        eventId:
+          type: string
+          format: uuid
+          description: Required when mode=event. Must belong to this match.
+        videoSeconds:
+          type: number
+          description: Required when mode=event. Current YouTube player position when the admin clicked the chip.
+        shiftSeconds:
+          type: number
+          description: Required when mode=nudge. Positive = events appear earlier in the video, negative = later.
+        restoreToIso:
+          type: string
+          nullable: true
+          description: Required when mode=restore. ISO datetime to restore the anchor to, or null to clear it.
+      required:
+        - mode
+
+    SyncMatchAnchorResponse:
+      type: object
+      properties:
+        streamStartedAt:
+          type: string
+          format: date-time
+          nullable: true
+        previousStreamStartedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - streamStartedAt
+        - previousStreamStartedAt
 
     UpdateScoreRequest:
       type: object

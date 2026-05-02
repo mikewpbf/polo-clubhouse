@@ -1,5 +1,5 @@
 import { useRoute, Link } from "wouter";
-import { useGetMatch, useListMatchEvents } from "@workspace/api-client-react";
+import { useGetMatch, useListMatchEvents, useSyncMatchAnchor } from "@workspace/api-client-react";
 import { SpectatorLayout } from "@/components/layout/SpectatorLayout";
 import { PageLoading, EmptyState } from "@/components/LoadingBar";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { MatchClock } from "@/components/MatchClock";
 import { formatDate } from "@/lib/utils";
 import { MapPin, Calendar, BarChart3, Clock } from "lucide-react";
 import { getYouTubeVideoId } from "@/lib/youtube";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { getStoredToken, useAuth } from "@/hooks/use-auth";
 import { X } from "lucide-react";
 
@@ -76,7 +76,7 @@ export function MatchDetail() {
   const [, params] = useRoute("/match/:id");
   const matchId = params?.id || "";
 
-  const { data: match, isLoading } = useGetMatch(matchId, {
+  const { data: match, isLoading, refetch: refetchMatch } = useGetMatch(matchId, {
     query: { refetchInterval: 3000 },
   });
   const { data: events, refetch: refetchEvents } = useListMatchEvents(matchId, {
@@ -90,6 +90,25 @@ export function MatchDetail() {
   const pendingSeekRef = useRef<number | null>(null);
   const embedRef = useRef<HTMLDivElement>(null);
   const currentVideoIdRef = useRef<string | null>(null);
+
+  // Admin sync-strip state. `syncToast` shows the most recent action with an
+  // Undo button; the previousAnchor is captured per-action so Undo restores it
+  // even after the next refetch.
+  const syncMutation = useSyncMatchAnchor();
+  const [syncToast, setSyncToast] = useState<{ label: string; previousIso: string | null } | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = useCallback((label: string, previousIso: string | null) => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setSyncToast({ label, previousIso });
+    toastTimeoutRef.current = setTimeout(() => setSyncToast(null), 10_000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    };
+  }, []);
 
   const handleDeleteEvent = async (eventId: string) => {
     if (!window.confirm("Remove this event from the timeline?")) return;
@@ -215,6 +234,101 @@ export function MatchDetail() {
     };
   }, []);
 
+  // Anchor candidates for the admin sync strip. Chukker starts come first
+  // (one per chukker, in chronological order), then the most recent goals
+  // are appended as fallback so the strip always has something to click.
+  // Computed before early returns to obey the Rules of Hooks.
+  const anchorCandidates = useMemo(() => {
+    const mm = match as Record<string, any> | undefined;
+    if (!mm) return [] as Array<{ id: string; label: string; tooltip: string }>;
+    const canAdmin = !!mm.canAdminMatch;
+    const vId = getYouTubeVideoId(mm.streamUrl);
+    const status = mm.status;
+    const hasVid = !!(vId && (status === "live" || status === "halftime" || status === "final"));
+    if (!canAdmin || !hasVid) return [];
+    const evts: MatchEvent[] = (mm.events || []) as MatchEvent[];
+    const chukkerStarts = evts
+      .filter(e => e.eventType === "chukker_start")
+      .slice()
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+      .map(e => ({
+        id: e.id,
+        label: `Ch.${e.chukker ?? "?"} Start`,
+        tooltip: `Pause the video at the moment Chukker ${e.chukker ?? "?"} starts, then click here.`,
+      }));
+    const goalChips = evts
+      .filter(e => e.eventType === "goal" || e.eventType === "penalty_goal")
+      .slice()
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .map(e => {
+        const score = e.scoreSnapshot ? `${e.scoreSnapshot.home}-${e.scoreSnapshot.away}` : "";
+        const who = e.playerName ? ` · ${e.playerName}` : "";
+        const ck = e.chukker != null ? `Ch.${e.chukker} ` : "";
+        const labelExtras = [score, e.playerName].filter(Boolean).join(" · ");
+        const label = `${ck}Goal${labelExtras ? " · " + labelExtras : ""}`;
+        return {
+          id: e.id,
+          label,
+          tooltip: `Pause the video at the moment of this goal${who}, then click here.`,
+        };
+      });
+    const out = [...chukkerStarts];
+    for (const g of goalChips) {
+      if (out.length >= 6) break;
+      out.push(g);
+    }
+    return out;
+  }, [match]);
+
+  const handleSyncToEvent = useCallback(async (eventId: string, label: string) => {
+    if (!playerRef.current || !playerReadyRef.current) return;
+    try {
+      try { playerRef.current.pauseVideo(); } catch {}
+      const videoSeconds = Number(playerRef.current.getCurrentTime?.() ?? 0);
+      const result = await syncMutation.mutateAsync({
+        matchId,
+        data: { mode: "event", eventId, videoSeconds: Math.max(0, videoSeconds) },
+      });
+      showToast(`Synced to "${label}"`, result.previousStreamStartedAt ?? null);
+      refetchMatch();
+    } catch (e: any) {
+      const msg = e?.message || e?.error?.message || "Failed to sync";
+      window.alert(msg);
+    }
+  }, [matchId, refetchMatch, showToast, syncMutation]);
+
+  const handleNudge = useCallback(async (shiftSeconds: number) => {
+    try {
+      const result = await syncMutation.mutateAsync({
+        matchId,
+        data: { mode: "nudge", shiftSeconds },
+      });
+      const sign = shiftSeconds >= 0 ? "+" : "";
+      showToast(`Nudged ${sign}${shiftSeconds}s`, result.previousStreamStartedAt ?? null);
+      refetchMatch();
+    } catch (e: any) {
+      const msg = e?.message || e?.error?.message || "Failed to nudge";
+      window.alert(msg);
+    }
+  }, [matchId, refetchMatch, showToast, syncMutation]);
+
+  const handleUndo = useCallback(async () => {
+    if (!syncToast) return;
+    const restoreToIso = syncToast.previousIso;
+    try {
+      await syncMutation.mutateAsync({
+        matchId,
+        data: { mode: "restore", restoreToIso },
+      });
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+      setSyncToast(null);
+      refetchMatch();
+    } catch (e: any) {
+      const msg = e?.message || e?.error?.message || "Failed to undo";
+      window.alert(msg);
+    }
+  }, [matchId, refetchMatch, syncMutation, syncToast]);
+
   if (isLoading) return <SpectatorLayout><PageLoading /></SpectatorLayout>;
   if (!match) return <SpectatorLayout><EmptyState title="Match not found" /></SpectatorLayout>;
 
@@ -231,6 +345,8 @@ export function MatchDetail() {
 
   const streamStartedAt: string | null = m!.streamStartedAt || null;
   const streamAnchorMs = streamStartedAt ? new Date(streamStartedAt).getTime() : null;
+  const canAdminMatch: boolean = !!m!.canAdminMatch;
+  const showSyncStrip = canAdminMatch && hasVideo;
 
   return (
     <SpectatorLayout>
@@ -254,6 +370,88 @@ export function MatchDetail() {
               className="w-full h-full [&_iframe]:w-full [&_iframe]:h-full [&_iframe]:block"
               style={{ background: "#000" }}
             />
+          </div>
+        )}
+
+        {showSyncStrip && (
+          <div
+            className="bg-white rounded-[12px] px-4 py-3 border border-line2"
+            style={{ boxShadow: 'var(--shadow-card)' }}
+            data-testid="admin-sync-strip"
+          >
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-ink3">
+                Video Sync · Admin
+              </span>
+              {streamAnchorMs !== null ? (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={(e) => handleNudge(e.shiftKey ? -0.5 : -5)}
+                    title="Shift anchor 5s earlier (hold Shift for 0.5s)"
+                    className="px-2 py-1 text-[11px] font-mono rounded border border-line2 hover:bg-g50 disabled:opacity-50"
+                    disabled={syncMutation.isPending}
+                  >−5s</button>
+                  <button
+                    onClick={(e) => handleNudge(e.shiftKey ? -0.5 : -1)}
+                    title="Shift anchor 1s earlier (hold Shift for 0.5s)"
+                    className="px-2 py-1 text-[11px] font-mono rounded border border-line2 hover:bg-g50 disabled:opacity-50"
+                    disabled={syncMutation.isPending}
+                  >−1s</button>
+                  <button
+                    onClick={(e) => handleNudge(e.shiftKey ? 0.5 : 1)}
+                    title="Shift anchor 1s later (hold Shift for 0.5s)"
+                    className="px-2 py-1 text-[11px] font-mono rounded border border-line2 hover:bg-g50 disabled:opacity-50"
+                    disabled={syncMutation.isPending}
+                  >+1s</button>
+                  <button
+                    onClick={(e) => handleNudge(e.shiftKey ? 0.5 : 5)}
+                    title="Shift anchor 5s later (hold Shift for 0.5s)"
+                    className="px-2 py-1 text-[11px] font-mono rounded border border-line2 hover:bg-g50 disabled:opacity-50"
+                    disabled={syncMutation.isPending}
+                  >+5s</button>
+                </div>
+              ) : (
+                <span className="text-[11px] text-ink3">Pick an event to set the initial anchor</span>
+              )}
+            </div>
+            {anchorCandidates.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {anchorCandidates.map(chip => (
+                  <button
+                    key={chip.id}
+                    onClick={() => handleSyncToEvent(chip.id, chip.label)}
+                    title={chip.tooltip}
+                    disabled={syncMutation.isPending}
+                    className="px-2.5 py-1 text-[12px] font-medium rounded-[6px] bg-g50 hover:bg-g100 text-ink border border-line2 transition-colors disabled:opacity-50"
+                    data-testid={`sync-chip-${chip.id}`}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[11px] text-ink3">No anchor candidates yet — record a chukker start or goal first.</p>
+            )}
+            <p className="mt-2 text-[10px] text-ink3 leading-tight">
+              Pause the video at the moment you see an event happen on screen, then click its chip. The whole timeline re-aligns.
+            </p>
+          </div>
+        )}
+
+        {syncToast && (
+          <div
+            className="bg-ink text-white rounded-[10px] px-4 py-2.5 flex items-center justify-between gap-3"
+            data-testid="sync-toast"
+          >
+            <span className="text-[13px] font-medium">{syncToast.label}</span>
+            <button
+              onClick={handleUndo}
+              disabled={syncMutation.isPending}
+              className="text-[12px] font-semibold underline hover:text-g100 disabled:opacity-50"
+              data-testid="sync-undo"
+            >
+              Undo
+            </button>
           </div>
         )}
 

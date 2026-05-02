@@ -656,6 +656,8 @@ export interface MatchDetail {
   streamStartedAt?: string | null;
   scoringLocation: MatchDetailScoringLocation;
   broadcastOffsetSeconds: number;
+  /** True if the requesting user is a club admin of the tournament's club, or a super admin. Always false for unauthenticated requests and for share-token requests. */
+  canAdminMatch?: boolean;
 }
 
 export type UpdateMatchRequestScoringLocation =
@@ -677,6 +679,42 @@ export interface UpdateMatchRequest {
   streamStartedAt?: string | null;
   scoringLocation?: UpdateMatchRequestScoringLocation;
   broadcastOffsetSeconds?: number;
+}
+
+/**
+ * "event" back-calculates the anchor from a chosen event + the video position;
+"nudge" shifts the existing anchor by N seconds;
+"restore" sets the anchor to a specific ISO datetime or null (Undo).
+
+ */
+export type SyncMatchAnchorRequestMode =
+  (typeof SyncMatchAnchorRequestMode)[keyof typeof SyncMatchAnchorRequestMode];
+
+export const SyncMatchAnchorRequestMode = {
+  event: "event",
+  nudge: "nudge",
+  restore: "restore",
+} as const;
+
+export interface SyncMatchAnchorRequest {
+  /** "event" back-calculates the anchor from a chosen event + the video position;
+"nudge" shifts the existing anchor by N seconds;
+"restore" sets the anchor to a specific ISO datetime or null (Undo).
+ */
+  mode: SyncMatchAnchorRequestMode;
+  /** Required when mode=event. Must belong to this match. */
+  eventId?: string;
+  /** Required when mode=event. Current YouTube player position when the admin clicked the chip. */
+  videoSeconds?: number;
+  /** Required when mode=nudge. Positive = events appear earlier in the video, negative = later. */
+  shiftSeconds?: number;
+  /** Required when mode=restore. ISO datetime to restore the anchor to, or null to clear it. */
+  restoreToIso?: string | null;
+}
+
+export interface SyncMatchAnchorResponse {
+  streamStartedAt: string | null;
+  previousStreamStartedAt: string | null;
 }
 
 export interface UpdateScoreRequest {

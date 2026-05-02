@@ -38,4 +38,6 @@ export interface MatchDetail {
   streamStartedAt?: Date | null;
   scoringLocation: MatchDetailScoringLocation;
   broadcastOffsetSeconds: number;
+  /** True if the requesting user is a club admin of the tournament's club, or a super admin. Always false for unauthenticated requests and for share-token requests. */
+  canAdminMatch?: boolean;
 }

@@ -71,6 +71,8 @@ import type {
   ShareTokenError,
   SignupRequest,
   StandingsEntry,
+  SyncMatchAnchorRequest,
+  SyncMatchAnchorResponse,
   Team,
   TeamDetail,
   TeamManagerAssignment,
@@ -4046,6 +4048,93 @@ export const useAdvanceChukker = <
   TContext
 > => {
   return useMutation(getAdvanceChukkerMutationOptions(options));
+};
+
+/**
+ * @summary Realign the YouTube stream anchor for this match (admin only)
+ */
+export const getSyncMatchAnchorUrl = (matchId: string) => {
+  return `/api/matches/${matchId}/sync-anchor`;
+};
+
+export const syncMatchAnchor = async (
+  matchId: string,
+  syncMatchAnchorRequest: SyncMatchAnchorRequest,
+  options?: RequestInit,
+): Promise<SyncMatchAnchorResponse> => {
+  return customFetch<SyncMatchAnchorResponse>(getSyncMatchAnchorUrl(matchId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(syncMatchAnchorRequest),
+  });
+};
+
+export const getSyncMatchAnchorMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof syncMatchAnchor>>,
+    TError,
+    { matchId: string; data: BodyType<SyncMatchAnchorRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof syncMatchAnchor>>,
+  TError,
+  { matchId: string; data: BodyType<SyncMatchAnchorRequest> },
+  TContext
+> => {
+  const mutationKey = ["syncMatchAnchor"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof syncMatchAnchor>>,
+    { matchId: string; data: BodyType<SyncMatchAnchorRequest> }
+  > = (props) => {
+    const { matchId, data } = props ?? {};
+
+    return syncMatchAnchor(matchId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SyncMatchAnchorMutationResult = NonNullable<
+  Awaited<ReturnType<typeof syncMatchAnchor>>
+>;
+export type SyncMatchAnchorMutationBody = BodyType<SyncMatchAnchorRequest>;
+export type SyncMatchAnchorMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Realign the YouTube stream anchor for this match (admin only)
+ */
+export const useSyncMatchAnchor = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof syncMatchAnchor>>,
+    TError,
+    { matchId: string; data: BodyType<SyncMatchAnchorRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof syncMatchAnchor>>,
+  TError,
+  { matchId: string; data: BodyType<SyncMatchAnchorRequest> },
+  TContext
+> => {
+  return useMutation(getSyncMatchAnchorMutationOptions(options));
 };
 
 /**

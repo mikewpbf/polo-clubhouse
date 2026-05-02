@@ -1338,7 +1338,7 @@ export const GetMatchResponse = zod.object({
         ),
       playerName: zod.string().nullish(),
       distance: zod
-        .enum(["30", "40", "60", "5A", "5B"])
+        .enum(["20", "30", "40"])
         .nullish()
         .describe("Yardage distance. Only valid on penalty_in events."),
       severity: zod
@@ -1356,6 +1356,12 @@ export const GetMatchResponse = zod.object({
   streamStartedAt: zod.date().nullish(),
   scoringLocation: zod.enum(["studio", "field"]),
   broadcastOffsetSeconds: zod.number(),
+  canAdminMatch: zod
+    .boolean()
+    .optional()
+    .describe(
+      "True if the requesting user is a club admin of the tournament's club, or a super admin. Always false for unauthenticated requests and for share-token requests.",
+    ),
 });
 
 /**
@@ -1817,6 +1823,49 @@ export const AdvanceChukkerResponse = zod.object({
 });
 
 /**
+ * @summary Realign the YouTube stream anchor for this match (admin only)
+ */
+export const SyncMatchAnchorParams = zod.object({
+  matchId: zod.coerce.string().uuid(),
+});
+
+export const SyncMatchAnchorBody = zod.object({
+  mode: zod
+    .enum(["event", "nudge", "restore"])
+    .describe(
+      '\"event\" back-calculates the anchor from a chosen event + the video position;\n\"nudge\" shifts the existing anchor by N seconds;\n\"restore\" sets the anchor to a specific ISO datetime or null (Undo).\n',
+    ),
+  eventId: zod
+    .string()
+    .uuid()
+    .optional()
+    .describe("Required when mode=event. Must belong to this match."),
+  videoSeconds: zod
+    .number()
+    .optional()
+    .describe(
+      "Required when mode=event. Current YouTube player position when the admin clicked the chip.",
+    ),
+  shiftSeconds: zod
+    .number()
+    .optional()
+    .describe(
+      "Required when mode=nudge. Positive = events appear earlier in the video, negative = later.",
+    ),
+  restoreToIso: zod
+    .string()
+    .nullish()
+    .describe(
+      "Required when mode=restore. ISO datetime to restore the anchor to, or null to clear it.",
+    ),
+});
+
+export const SyncMatchAnchorResponse = zod.object({
+  streamStartedAt: zod.date().nullable(),
+  previousStreamStartedAt: zod.date().nullable(),
+});
+
+/**
  * @summary List match events
  */
 export const ListMatchEventsParams = zod.object({
@@ -1860,7 +1909,7 @@ export const ListMatchEventsResponseItem = zod.object({
     ),
   playerName: zod.string().nullish(),
   distance: zod
-    .enum(["30", "40", "60", "5A", "5B"])
+    .enum(["20", "30", "40"])
     .nullish()
     .describe("Yardage distance. Only valid on penalty_in events."),
   severity: zod

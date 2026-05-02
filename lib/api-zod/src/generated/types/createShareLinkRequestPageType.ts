@@ -12,6 +12,4 @@ export type CreateShareLinkRequestPageType =
 export const CreateShareLinkRequestPageType = {
   stats: "stats",
   gfx: "gfx",
-  scoreboard: "scoreboard",
-  full_control: "full_control",
 } as const;

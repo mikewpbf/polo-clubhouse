@@ -338,7 +338,7 @@ router.get("/matches/upcoming", async (req, res) => {
   }
 });
 
-router.get("/matches/:matchId", async (req, res) => {
+router.get("/matches/:matchId", optionalAuth, async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const [match] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
@@ -357,7 +357,25 @@ router.get("/matches/:matchId", async (req, res) => {
       }
       return { ...evt, teamName, teamColor };
     }));
-    res.json({ ...enriched, events: enrichedEvents });
+
+    // Compute whether the requesting user can administer this match (used by
+    // the spectator page to decide whether to render admin-only controls like
+    // the video sync strip). Always false for unauthenticated requests and
+    // for share-token-only access.
+    let canAdminMatch = false;
+    if (req.user) {
+      if (isSuperAdmin(req.user)) {
+        canAdminMatch = true;
+      } else {
+        const [tournament] = await db.select().from(tournamentsTable).where(eq(tournamentsTable.id, match.tournamentId));
+        if (tournament) {
+          const memberships = await db.select().from(adminClubMembershipsTable).where(eq(adminClubMembershipsTable.userId, req.user.id));
+          canAdminMatch = memberships.some(mem => mem.clubId === tournament.clubId);
+        }
+      }
+    }
+
+    res.json({ ...enriched, events: enrichedEvents, canAdminMatch });
   } catch (e: any) {
     res.status(500).json({ message: e.message });
   }
@@ -1444,6 +1462,80 @@ router.delete("/matches/:matchId/possession", requireMatchWrite("stats", "full_c
     await db.delete(possessionSegmentsTable).where(eq(possessionSegmentsTable.matchId, matchId));
     emitMatchUpdate(matchId);
     res.json({ message: "Possession data reset" });
+  } catch (e: any) {
+    res.status(500).json({ message: e.message });
+  }
+});
+
+// Admin-only: realign the YouTube stream anchor for this match.
+// Three modes:
+//   - "event": back-calc anchor from a specific event + the video position the
+//     admin paused at (this is the chip-strip flow)
+//   - "nudge": shift the existing anchor by N seconds (positive = events appear
+//     EARLIER in the video, negative = LATER)
+//   - "restore": set anchor to a specific ISO string or null (Undo)
+// Returns { streamStartedAt, previousStreamStartedAt } so the client can offer
+// a one-click Undo.
+router.post("/matches/:matchId/sync-anchor", requireAuth, requireMatchAdmin, async (req, res) => {
+  try {
+    const matchId = String(req.params.matchId);
+    const { mode, eventId, videoSeconds, shiftSeconds, restoreToIso } = req.body || {};
+
+    const [match] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
+    if (!match) { res.status(404).json({ message: "Match not found" }); return; }
+
+    const previousIso = match.streamStartedAt ? match.streamStartedAt.toISOString() : null;
+    let newAnchor: Date | null = null;
+
+    if (mode === "event") {
+      if (!eventId || typeof eventId !== "string") {
+        res.status(400).json({ message: "eventId is required for event mode" }); return;
+      }
+      if (typeof videoSeconds !== "number" || !Number.isFinite(videoSeconds) || videoSeconds < 0) {
+        res.status(400).json({ message: "videoSeconds must be a non-negative number" }); return;
+      }
+      const [evt] = await db.select().from(matchEventsTable).where(eq(matchEventsTable.id, eventId));
+      if (!evt) { res.status(404).json({ message: "Event not found" }); return; }
+      if (evt.matchId !== matchId) { res.status(400).json({ message: "Event does not belong to this match" }); return; }
+      if (!evt.createdAt) { res.status(400).json({ message: "Event missing timestamp" }); return; }
+      const eventMs = new Date(evt.createdAt).getTime();
+      newAnchor = new Date(eventMs - Math.round(videoSeconds * 1000));
+    } else if (mode === "nudge") {
+      if (typeof shiftSeconds !== "number" || !Number.isFinite(shiftSeconds)) {
+        res.status(400).json({ message: "shiftSeconds (number) is required for nudge mode" }); return;
+      }
+      if (!match.streamStartedAt) {
+        res.status(400).json({ message: "No stream anchor set. Click an event chip to set the initial anchor." }); return;
+      }
+      const currentMs = new Date(match.streamStartedAt).getTime();
+      newAnchor = new Date(currentMs + Math.round(shiftSeconds * 1000));
+    } else if (mode === "restore") {
+      if (restoreToIso === null) {
+        newAnchor = null;
+      } else if (typeof restoreToIso === "string") {
+        const d = new Date(restoreToIso);
+        if (Number.isNaN(d.getTime())) { res.status(400).json({ message: "restoreToIso must be a valid ISO datetime or null" }); return; }
+        newAnchor = d;
+      } else {
+        res.status(400).json({ message: "restoreToIso must be a string or null" }); return;
+      }
+    } else {
+      res.status(400).json({ message: "mode must be 'event', 'nudge', or 'restore'" }); return;
+    }
+
+    // Sanity check: don't allow an anchor more than a minute in the future
+    // (would mean every event has a negative offset and the video is unwatchable).
+    if (newAnchor && newAnchor.getTime() > Date.now() + 60_000) {
+      res.status(400).json({ message: "Resulting anchor is too far in the future. Double-check the chosen event and the paused video position." }); return;
+    }
+
+    await db.update(matchesTable).set({ streamStartedAt: newAnchor }).where(eq(matchesTable.id, matchId));
+    emitMatchUpdate(matchId);
+
+    res.json({
+      streamStartedAt: newAnchor ? newAnchor.toISOString() : null,
+      previousStreamStartedAt: previousIso,
+    });
   } catch (e: any) {
     res.status(500).json({ message: e.message });
   }

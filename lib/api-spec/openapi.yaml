@@ -3464,6 +3464,13 @@ components:
         headshotUrl:
           type: string
           nullable: true
+        broadcastImageUrl:
+          type: string
+          nullable: true
+          description: |
+            Vertical (3:4 portrait) aux image used by broadcast graphics overlays.
+            Returned only when the caller is the player's owner (linked user) or an
+            admin/staff role. Omitted from public/spectator response shapes.
         dateOfBirth:
           type: string
           format: date
@@ -3617,6 +3624,13 @@ components:
         hasLinkedUser:
           type: boolean
           description: True when this player is linked to a user account (verified player).
+        broadcastImageUrl:
+          type: string
+          nullable: true
+          description: |
+            Vertical (3:4 portrait) aux image used by broadcast graphics overlays.
+            Returned only when the caller is the player's owner (linked user) or an
+            admin/staff role. Omitted from public/spectator response shapes.
         age:
           type: integer
           nullable: true
@@ -3711,6 +3725,9 @@ components:
         headshotUrl:
           type: string
           nullable: true
+        broadcastImageUrl:
+          type: string
+          nullable: true
         dateOfBirth:
           type: string
           format: date
@@ -3740,6 +3757,9 @@ components:
         headshotUrl:
           type: string
           nullable: true
+        broadcastImageUrl:
+          type: string
+          nullable: true
         dateOfBirth:
           type: string
           format: date
@@ -3760,6 +3780,9 @@ components:
         name:
           type: string
         headshotUrl:
+          type: string
+          nullable: true
+        broadcastImageUrl:
           type: string
           nullable: true
         dateOfBirth:

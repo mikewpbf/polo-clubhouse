@@ -35,6 +35,28 @@ function calcAge(dob: string | null | undefined): number | null {
   return age >= 0 ? age : null;
 }
 
+// Determine whether a viewer is allowed to see the player's broadcast aux
+// image. Mirrors the "owner OR admin/staff" rule from the spec:
+//   - super_admin                                  → always
+//   - linked managed user (player.managedByUserId) → always
+//   - club admin of the player's canonical home club → yes
+// All other callers (spectators, anonymous, unrelated team managers, club
+// admins of OTHER clubs) get nothing — the field is omitted from the
+// serialized response so it can't leak via the OpenAPI client either.
+async function canViewBroadcastImage(
+  user: { id: string; role: string } | undefined,
+  player: { managedByUserId: string | null; homeClubId: string | null },
+): Promise<boolean> {
+  if (!user) return false;
+  if (user.role === "super_admin") return true;
+  if (player.managedByUserId && player.managedByUserId === user.id) return true;
+  if (!player.homeClubId) return false;
+  const memberships = await db.select({ clubId: adminClubMembershipsTable.clubId })
+    .from(adminClubMembershipsTable)
+    .where(eq(adminClubMembershipsTable.userId, user.id));
+  return memberships.some(m => m.clubId === player.homeClubId);
+}
+
 async function userCanEditPlayerFull(userId: string, userRole: string, playerId: string): Promise<boolean> {
   if (userRole === "super_admin") return true;
   // Club admins may only edit players whose canonical home club they administer.
@@ -253,7 +275,7 @@ router.get("/players/top", async (req, res) => {
 
 router.post("/players", requireAuth, async (req, res) => {
   try {
-    const { name, handicap, homeClubId, headshotUrl, dateOfBirth, bio, managedByUserId } = req.body;
+    const { name, handicap, homeClubId, headshotUrl, broadcastImageUrl, dateOfBirth, bio, managedByUserId } = req.body;
     if (!name || !String(name).trim()) { res.status(400).json({ message: "Name is required" }); return; }
 
     // Permission: super_admin OR club admin of homeClubId (if provided)
@@ -272,6 +294,7 @@ router.post("/players", requireAuth, async (req, res) => {
       handicap: handicap != null ? String(handicap) : null,
       homeClubId: homeClubId || null,
       headshotUrl: headshotUrl || null,
+      broadcastImageUrl: broadcastImageUrl || null,
       dateOfBirth: dateOfBirth || null,
       bio: bio || null,
       managedByUserId: managedByUserId || null,
@@ -405,6 +428,12 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
       if (u) managedByUser = { id: u.id, email: u.email, displayName: u.displayName };
     }
 
+    // Broadcast aux image is private — only readable by the player's own owner
+    // (linked user) and admins/staff (super_admin OR a club admin of this
+    // player's canonical home club). Any other caller — including spectators
+    // and unauthenticated viewers — must never see the field.
+    const viewerCanSeeBroadcastImage = await canViewBroadcastImage(req.user, player);
+
     // Recent matches: pick the most recent matches the player participated in
     // (by team_players OR by event), newest first. Includes tournament + opponent
     // info so the spectator profile can deep-link into a match or its tournament.
@@ -478,6 +507,9 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
       name: player.name,
       handicap: player.handicap,
       headshotUrl: player.headshotUrl,
+      // Conditional: omitted entirely when the viewer isn't owner/admin so the
+      // response shape is byte-identical to the public response (no `null` tell).
+      ...(viewerCanSeeBroadcastImage ? { broadcastImageUrl: player.broadcastImageUrl ?? null } : {}),
       dateOfBirth: player.dateOfBirth,
       bio: player.bio,
       homeClubId: player.homeClubId,
@@ -504,12 +536,13 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
 router.put("/players/:playerId", requireAuth, requireSelfOrEditor(false), async (req, res) => {
   try {
     const playerId = String(req.params.playerId);
-    const { name, handicap, homeClubId, headshotUrl, dateOfBirth, bio, managedByUserId, isActive } = req.body;
+    const { name, handicap, homeClubId, headshotUrl, broadcastImageUrl, dateOfBirth, bio, managedByUserId, isActive } = req.body;
     const updates: Record<string, any> = { updatedAt: new Date() };
     if (name !== undefined) updates.name = String(name).trim();
     if (handicap !== undefined) updates.handicap = handicap != null ? String(handicap) : null;
     if (homeClubId !== undefined) updates.homeClubId = homeClubId || null;
     if (headshotUrl !== undefined) updates.headshotUrl = headshotUrl || null;
+    if (broadcastImageUrl !== undefined) updates.broadcastImageUrl = broadcastImageUrl || null;
     if (dateOfBirth !== undefined) updates.dateOfBirth = dateOfBirth || null;
     if (bio !== undefined) updates.bio = bio || null;
     if (managedByUserId !== undefined) updates.managedByUserId = managedByUserId || null;
@@ -522,7 +555,7 @@ router.put("/players/:playerId", requireAuth, requireSelfOrEditor(false), async 
   }
 });
 
-const SELF_PROFILE_ALLOWED_FIELDS = new Set(["name", "headshotUrl", "dateOfBirth", "homeClubId", "bio"]);
+const SELF_PROFILE_ALLOWED_FIELDS = new Set(["name", "headshotUrl", "broadcastImageUrl", "dateOfBirth", "homeClubId", "bio"]);
 
 router.patch("/players/:playerId/profile", requireAuth, requireSelfOnly, async (req, res) => {
   try {
@@ -538,10 +571,11 @@ router.patch("/players/:playerId/profile", requireAuth, requireSelfOnly, async (
       });
       return;
     }
-    const { name, headshotUrl, dateOfBirth, homeClubId, bio } = body as Record<string, any>;
+    const { name, headshotUrl, broadcastImageUrl, dateOfBirth, homeClubId, bio } = body as Record<string, any>;
     const updates: Record<string, any> = { updatedAt: new Date() };
     if (name !== undefined) updates.name = String(name).trim();
     if (headshotUrl !== undefined) updates.headshotUrl = headshotUrl || null;
+    if (broadcastImageUrl !== undefined) updates.broadcastImageUrl = broadcastImageUrl || null;
     if (dateOfBirth !== undefined) updates.dateOfBirth = dateOfBirth || null;
     if (homeClubId !== undefined) updates.homeClubId = homeClubId || null;
     if (bio !== undefined) updates.bio = bio || null;

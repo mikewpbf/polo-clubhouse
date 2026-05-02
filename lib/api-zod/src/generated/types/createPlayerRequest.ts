@@ -11,6 +11,7 @@ export interface CreatePlayerRequest {
   handicap?: string | null;
   homeClubId?: string | null;
   headshotUrl?: string | null;
+  broadcastImageUrl?: string | null;
   dateOfBirth?: Date | null;
   bio?: string | null;
   managedByUserId?: string | null;

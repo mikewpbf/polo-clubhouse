@@ -160,4 +160,99 @@ describe("PUT /api/players/:playerId — managedByUserId authorization", () => {
     const unlinked = await request(app).get(`/api/players/${playerId}`);
     expect(unlinked.body.hasLinkedUser).toBe(false);
   });
+
+  // Broadcast aux image is private — only the linked owner and admins may read
+  // it. The field must be ABSENT (not just null) from public responses.
+  describe("broadcastImageUrl visibility", () => {
+    const BROADCAST = "https://cdn.example/broadcast-aux.jpg";
+
+    beforeEach(async () => {
+      await db.update(playersTable)
+        .set({ broadcastImageUrl: BROADCAST, managedByUserId: targetUserId })
+        .where(eq(playersTable.id, playerId));
+    });
+
+    it("anonymous GET /api/players/:id omits broadcastImageUrl entirely", async () => {
+      const res = await request(app).get(`/api/players/${playerId}`);
+      expect(res.status).toBe(200);
+      expect(res.body).not.toHaveProperty("broadcastImageUrl");
+      expect(res.body).toHaveProperty("headshotUrl");
+    });
+
+    it("spectator viewer (authed but unrelated) also omits broadcastImageUrl", async () => {
+      const stamp = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const passwordHash = await bcrypt.hash("test-pass", 4);
+      const [stranger] = await db.insert(usersTable).values({
+        email: `stranger-${stamp}@test.local`,
+        displayName: "Stranger",
+        role: "spectator",
+        passwordHash,
+      }).returning();
+      created.userIds.push(stranger.id);
+      const strangerToken = generateToken({
+        id: stranger.id, email: stranger.email!, displayName: stranger.displayName!, role: stranger.role!,
+      });
+
+      const res = await request(app)
+        .get(`/api/players/${playerId}`)
+        .set("Authorization", `Bearer ${strangerToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body).not.toHaveProperty("broadcastImageUrl");
+    });
+
+    it("non-home-club admin (other club) does NOT see broadcastImageUrl", async () => {
+      const res = await request(app)
+        .get(`/api/players/${playerId}`)
+        .set("Authorization", `Bearer ${otherAdminToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body).not.toHaveProperty("broadcastImageUrl");
+    });
+
+    it("home-club admin sees broadcastImageUrl", async () => {
+      const res = await request(app)
+        .get(`/api/players/${playerId}`)
+        .set("Authorization", `Bearer ${homeAdminToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.broadcastImageUrl).toBe(BROADCAST);
+    });
+
+    it("super_admin sees broadcastImageUrl", async () => {
+      const res = await request(app)
+        .get(`/api/players/${playerId}`)
+        .set("Authorization", `Bearer ${superToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.broadcastImageUrl).toBe(BROADCAST);
+    });
+
+    it("linked managed user (owner) sees broadcastImageUrl on /api/players/:id", async () => {
+      const ownerToken = generateToken({
+        id: targetUserId, email: `target@test.local`, displayName: "Target", role: "spectator",
+      });
+      const res = await request(app)
+        .get(`/api/players/${playerId}`)
+        .set("Authorization", `Bearer ${ownerToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.broadcastImageUrl).toBe(BROADCAST);
+    });
+
+    it("GET /api/players (list) never includes broadcastImageUrl on any item", async () => {
+      const res = await request(app).get(`/api/players`);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      const ours = (res.body as Array<{ id: string }>).find(p => p.id === playerId);
+      expect(ours).toBeDefined();
+      for (const p of res.body as Array<Record<string, unknown>>) {
+        expect(p).not.toHaveProperty("broadcastImageUrl");
+      }
+    });
+
+    it("GET /api/players/top never includes broadcastImageUrl", async () => {
+      const res = await request(app).get(`/api/players/top?limit=50`);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      for (const p of res.body as Array<Record<string, unknown>>) {
+        expect(p).not.toHaveProperty("broadcastImageUrl");
+      }
+    });
+  });
 });

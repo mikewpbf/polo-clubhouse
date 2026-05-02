@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { teamsTable, teamManagerAssignmentsTable, adminClubMembershipsTable, tournamentTeamsTable, matchesTable, matchEventsTable, teamOutDatesTable, userInvitesTable, playersTable, teamPlayersTable, usersTable, horsesTable, HORSE_SEX_OPTIONS, HORSE_COLOR_OPTIONS } from "@workspace/db/schema";
 import { eq, ilike, and, or, inArray } from "drizzle-orm";
 import { requireAuth, isSuperAdmin, requireSuperAdmin } from "../lib/auth";
+import { publicPlayer } from "../lib/playerPrivacy";
 import { invalidateMatchPreviewsForTeam } from "./match-previews";
 
 const router: IRouter = Router();
@@ -190,8 +191,10 @@ router.get("/teams/:teamId/players", async (req, res) => {
       ? await db.select().from(playersTable).where(inArray(playersTable.id, playerIds))
       : [];
     const tpMap = new Map(tps.map(t => [t.playerId, t]));
+    // Public roster: strip the private broadcast image URL — this endpoint has no
+    // auth guard and is the primary leak path identified during code review.
     const players = canonical.map(p => ({
-      ...p,
+      ...publicPlayer(p),
       position: tpMap.get(p.id)?.position ?? null,
       // isActive reflects whether this player is currently playing for this team
       // (team_players.is_active), NOT the global players.is_active flag.
@@ -225,7 +228,7 @@ router.post("/teams/:teamId/players", requireAuth, requireTeamAdminOrManager, as
       seasonYear: new Date().getUTCFullYear(),
       position: position || null,
     }).onConflictDoNothing();
-    res.status(201).json({ ...existing, position: position || null });
+    res.status(201).json({ ...publicPlayer(existing), position: position || null });
   } catch (e: any) {
     res.status(400).json({ message: e.message });
   }
@@ -293,7 +296,7 @@ router.put("/teams/:teamId/players/:playerId", requireAuth, requireTeamAdminOrMa
       if (!player) { res.status(404).json({ message: "Player not found" }); return; }
       const tp = await db.select().from(teamPlayersTable)
         .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId))).limit(1);
-      res.json({ ...player, isActive: tp[0]?.isActive ?? true, position: tp[0]?.position ?? null });
+      res.json({ ...publicPlayer(player), isActive: tp[0]?.isActive ?? true, position: tp[0]?.position ?? null });
       return;
     }
 
@@ -301,7 +304,7 @@ router.put("/teams/:teamId/players/:playerId", requireAuth, requireTeamAdminOrMa
     if (!player) { res.status(404).json({ message: "Player not found" }); return; }
     const tp = await db.select().from(teamPlayersTable)
       .where(and(eq(teamPlayersTable.teamId, teamId), eq(teamPlayersTable.playerId, playerId))).limit(1);
-    res.json({ ...player, isActive: tp[0]?.isActive ?? true, position: tp[0]?.position ?? null });
+    res.json({ ...publicPlayer(player), isActive: tp[0]?.isActive ?? true, position: tp[0]?.position ?? null });
   } catch (e: any) {
     res.status(400).json({ message: e.message });
   }

@@ -48,6 +48,7 @@ export function MyProfile() {
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [bio, setBio] = useState("");
   const [headshotUrl, setHeadshotUrl] = useState<string | null>(null);
+  const [broadcastImageUrl, setBroadcastImageUrl] = useState<string | null>(null);
 
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
@@ -58,6 +59,7 @@ export function MyProfile() {
       setDateOfBirth(linked.dateOfBirth ?? "");
       setBio(linked.bio ?? "");
       setHeadshotUrl(linked.headshotUrl ?? null);
+      setBroadcastImageUrl((linked as Player & { broadcastImageUrl?: string | null }).broadcastImageUrl ?? null);
     }
   }, [linked]);
 
@@ -97,6 +99,7 @@ export function MyProfile() {
           dateOfBirth: dateOfBirth || null,
           bio: bio || null,
           headshotUrl,
+          broadcastImageUrl,
         },
       });
       setSaveMsg("Saved");
@@ -121,6 +124,21 @@ export function MyProfile() {
               <ImageCropUpload value={headshotUrl} onChange={setHeadshotUrl} name={name || linked.name} size={96} />
               {headshotUrl && (
                 <button className="text-[11px] text-red-600 hover:underline" onClick={() => setHeadshotUrl(null)}>Remove</button>
+              )}
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <ImageCropUpload
+                value={broadcastImageUrl}
+                onChange={setBroadcastImageUrl}
+                name={name || linked.name}
+                shape="portrait"
+                size={72}
+              />
+              <div className="text-[10px] text-ink3 text-center max-w-[110px] leading-tight">
+                Broadcast aux image · <span className="font-medium">Not publicly visible</span>
+              </div>
+              {broadcastImageUrl && (
+                <button className="text-[11px] text-red-600 hover:underline" onClick={() => setBroadcastImageUrl(null)}>Remove</button>
               )}
             </div>
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">

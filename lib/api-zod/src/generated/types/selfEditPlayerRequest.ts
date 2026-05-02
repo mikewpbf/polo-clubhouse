@@ -9,6 +9,7 @@
 export interface SelfEditPlayerRequest {
   name?: string;
   headshotUrl?: string | null;
+  broadcastImageUrl?: string | null;
   dateOfBirth?: Date | null;
   homeClubId?: string | null;
   bio?: string | null;

@@ -3000,6 +3000,7 @@ export const CreatePlayerBody = zod.object({
   handicap: zod.string().nullish(),
   homeClubId: zod.string().uuid().nullish(),
   headshotUrl: zod.string().nullish(),
+  broadcastImageUrl: zod.string().nullish(),
   dateOfBirth: zod.date().nullish(),
   bio: zod.string().nullish(),
   managedByUserId: zod.string().uuid().nullish(),
@@ -3061,6 +3062,12 @@ export const GetPlayerProfileResponse = zod.object({
     .optional()
     .describe(
       "True when this player is linked to a user account (verified player).",
+    ),
+  broadcastImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Vertical (3:4 portrait) aux image used by broadcast graphics overlays.\nReturned only when the caller is the player's owner (linked user) or an\nadmin\/staff role. Omitted from public\/spectator response shapes.\n",
     ),
   age: zod.number().nullish(),
   stats: zod.object({
@@ -3142,6 +3149,7 @@ export const UpdatePlayerBody = zod.object({
   handicap: zod.string().nullish(),
   homeClubId: zod.string().uuid().nullish(),
   headshotUrl: zod.string().nullish(),
+  broadcastImageUrl: zod.string().nullish(),
   dateOfBirth: zod.date().nullish(),
   bio: zod.string().nullish(),
   managedByUserId: zod.string().uuid().nullish(),
@@ -3153,6 +3161,12 @@ export const UpdatePlayerResponse = zod.object({
   name: zod.string(),
   handicap: zod.string().nullish(),
   headshotUrl: zod.string().nullish(),
+  broadcastImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Vertical (3:4 portrait) aux image used by broadcast graphics overlays.\nReturned only when the caller is the player's owner (linked user) or an\nadmin\/staff role. Omitted from public\/spectator response shapes.\n",
+    ),
   dateOfBirth: zod.date().nullish(),
   homeClubId: zod.string().uuid().nullish(),
   bio: zod.string().nullish(),
@@ -3183,6 +3197,7 @@ export const UpdateMyProfileParams = zod.object({
 export const UpdateMyProfileBody = zod.object({
   name: zod.string().optional(),
   headshotUrl: zod.string().nullish(),
+  broadcastImageUrl: zod.string().nullish(),
   dateOfBirth: zod.date().nullish(),
   homeClubId: zod.string().uuid().nullish(),
   bio: zod.string().nullish(),
@@ -3193,6 +3208,12 @@ export const UpdateMyProfileResponse = zod.object({
   name: zod.string(),
   handicap: zod.string().nullish(),
   headshotUrl: zod.string().nullish(),
+  broadcastImageUrl: zod
+    .string()
+    .nullish()
+    .describe(
+      "Vertical (3:4 portrait) aux image used by broadcast graphics overlays.\nReturned only when the caller is the player's owner (linked user) or an\nadmin\/staff role. Omitted from public\/spectator response shapes.\n",
+    ),
   dateOfBirth: zod.date().nullish(),
   homeClubId: zod.string().uuid().nullish(),
   bio: zod.string().nullish(),
@@ -3244,6 +3265,12 @@ export const GetMyLinkedPlayerResponse = zod.union([
     name: zod.string(),
     handicap: zod.string().nullish(),
     headshotUrl: zod.string().nullish(),
+    broadcastImageUrl: zod
+      .string()
+      .nullish()
+      .describe(
+        "Vertical (3:4 portrait) aux image used by broadcast graphics overlays.\nReturned only when the caller is the player's owner (linked user) or an\nadmin\/staff role. Omitted from public\/spectator response shapes.\n",
+      ),
     dateOfBirth: zod.date().nullish(),
     homeClubId: zod.string().uuid().nullish(),
     bio: zod.string().nullish(),

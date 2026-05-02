@@ -7,6 +7,7 @@ import type { InferSelectModel } from "drizzle-orm";
 import { requireAuth, optionalAuth, isSuperAdmin, requireMatchWrite, requireMatchAdmin as requireMatchAdminFactory, resolveShareToken } from "../lib/auth";
 import { addSSEClient, emitMatchUpdate, emitMatchEnded } from "../lib/sse";
 import { invalidateMatchPreview } from "./match-previews";
+import { publicPlayer } from "../lib/playerPrivacy";
 import { scheduleMatchPreviewGeneration } from "../lib/serverMatchPreview";
 
 const router: IRouter = Router();
@@ -53,7 +54,9 @@ async function enrichMatch(m: MatchRow, includePlayers = false) {
       const linkedPlayers = await db.select().from(playersTable)
         .where(and(inArray(playersTable.id, linkedIds), eq(playersTable.isActive, true)));
       const positionByPlayer = new Map(links.map(l => [l.playerId, l.position]));
-      return linkedPlayers.map(p => ({ ...p, position: positionByPlayer.get(p.id) ?? null }));
+      // Match rosters appear on spectator-facing match detail responses, so the
+      // private broadcast image URL must be stripped here too.
+      return linkedPlayers.map(p => ({ ...publicPlayer(p), position: positionByPlayer.get(p.id) ?? null }));
     };
     if (m.homeTeamId) homePlayers = await loadRoster(m.homeTeamId);
     if (m.awayTeamId) awayPlayers = await loadRoster(m.awayTeamId);

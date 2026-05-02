@@ -835,6 +835,11 @@ export interface Player {
     name: string;
     handicap?: string | null;
     headshotUrl?: string | null;
+    /** Vertical (3:4 portrait) aux image used by broadcast graphics overlays.
+  Returned only when the caller is the player's owner (linked user) or an
+  admin/staff role. Omitted from public/spectator response shapes.
+   */
+    broadcastImageUrl?: string | null;
     dateOfBirth?: string | null;
     homeClubId?: string | null;
     bio?: string | null;
@@ -938,6 +943,11 @@ export interface PlayerProfile {
     managedByUserId?: string | null;
     /** True when this player is linked to a user account (verified player). */
     hasLinkedUser?: boolean;
+    /** Vertical (3:4 portrait) aux image used by broadcast graphics overlays.
+  Returned only when the caller is the player's owner (linked user) or an
+  admin/staff role. Omitted from public/spectator response shapes.
+   */
+    broadcastImageUrl?: string | null;
     age?: number | null;
     stats: PlayerStats;
     teams: PlayerTeamHistory[];
@@ -950,6 +960,7 @@ export interface CreatePlayerRequest {
     handicap?: string | null;
     homeClubId?: string | null;
     headshotUrl?: string | null;
+    broadcastImageUrl?: string | null;
     dateOfBirth?: string | null;
     bio?: string | null;
     managedByUserId?: string | null;
@@ -959,6 +970,7 @@ export interface UpdatePlayerRequest {
     handicap?: string | null;
     homeClubId?: string | null;
     headshotUrl?: string | null;
+    broadcastImageUrl?: string | null;
     dateOfBirth?: string | null;
     bio?: string | null;
     managedByUserId?: string | null;
@@ -967,6 +979,7 @@ export interface UpdatePlayerRequest {
 export interface SelfEditPlayerRequest {
     name?: string;
     headshotUrl?: string | null;
+    broadcastImageUrl?: string | null;
     dateOfBirth?: string | null;
     homeClubId?: string | null;
     bio?: string | null;

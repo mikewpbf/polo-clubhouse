@@ -57,6 +57,13 @@
       "when": 1777636684319,
       "tag": "0007_match_preview_image",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1777636684320,
+      "tag": "0008_player_broadcast_image",
+      "breakpoints": true
     }
   ]
 }

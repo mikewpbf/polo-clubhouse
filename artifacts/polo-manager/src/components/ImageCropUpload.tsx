@@ -3,31 +3,47 @@ import { ZoomIn, ZoomOut, Check, X, Move, Upload, Image as ImageIcon } from "luc
 import { uploadImageFile } from "@/lib/upload";
 import { PlayerHeadshot } from "@/components/PlayerHeadshot";
 
-const CROP_SIZE = 256;
+export type CropShape = "circle" | "square" | "portrait";
+
+const SQUARE_SIZE = 256;
+const PORTRAIT_W = 240;
+const PORTRAIT_H = 320;
+
+function getCropDims(shape: CropShape): { w: number; h: number } {
+  if (shape === "portrait") return { w: PORTRAIT_W, h: PORTRAIT_H };
+  return { w: SQUARE_SIZE, h: SQUARE_SIZE };
+}
 
 function getCroppedBlob(
   image: HTMLImageElement,
   offsetX: number,
   offsetY: number,
   scale: number,
-  cropShape: "circle" | "square"
+  shape: CropShape,
 ): Promise<Blob> {
+  const { w, h } = getCropDims(shape);
   const canvas = document.createElement("canvas");
-  canvas.width = CROP_SIZE;
-  canvas.height = CROP_SIZE;
+  canvas.width = w;
+  canvas.height = h;
   const ctx = canvas.getContext("2d")!;
-  if (cropShape === "circle") {
+  if (shape === "circle") {
     ctx.beginPath();
-    ctx.arc(CROP_SIZE / 2, CROP_SIZE / 2, CROP_SIZE / 2, 0, Math.PI * 2);
+    ctx.arc(w / 2, h / 2, w / 2, 0, Math.PI * 2);
     ctx.clip();
   }
   const scaledW = image.naturalWidth * scale;
   const scaledH = image.naturalHeight * scale;
-  ctx.drawImage(image, (CROP_SIZE - scaledW) / 2 + offsetX, (CROP_SIZE - scaledH) / 2 + offsetY, scaledW, scaledH);
+  ctx.drawImage(
+    image,
+    (w - scaledW) / 2 + offsetX,
+    (h - scaledH) / 2 + offsetY,
+    scaledW,
+    scaledH,
+  );
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => { if (blob) resolve(blob); else reject(new Error("Canvas toBlob failed")); },
-      "image/jpeg", 0.92
+      "image/jpeg", 0.92,
     );
   });
 }
@@ -51,7 +67,7 @@ interface ImageCropUploadProps {
   value: string | null;
   onChange: (url: string) => void;
   name?: string;
-  shape?: "circle" | "square";
+  shape?: CropShape;
   size?: number;
 }
 
@@ -127,7 +143,18 @@ export function ImageCropUpload({
 
   const handleCancel = () => { setModalOpen(false); setImageSrc(null); };
 
-  const borderRadius = shape === "circle" ? "50%" : "12px";
+  const borderRadius =
+    shape === "circle" ? "50%" :
+    shape === "portrait" ? "10px" :
+    "12px";
+
+  // Trigger button dimensions: portrait shapes render as a vertical rectangle so
+  // the placeholder/preview tells the user the saved image is tall, not square.
+  const triggerWidth  = shape === "portrait" ? size : size;
+  const triggerHeight = shape === "portrait" ? Math.round(size * (PORTRAIT_H / PORTRAIT_W)) : size;
+
+  // Modal preview dimensions follow the same ratio as the saved JPEG.
+  const cropDims = getCropDims(shape);
 
   return (
     <>
@@ -146,7 +173,7 @@ export function ImageCropUpload({
           type="button"
           onClick={openPicker}
           className="relative overflow-hidden border-2 border-line hover:border-g300 transition-colors cursor-pointer group"
-          style={{ width: size, height: size, borderRadius }}
+          style={{ width: triggerWidth, height: triggerHeight, borderRadius }}
         >
           {value ? (
             <img src={value} alt="Upload" className="w-full h-full object-cover" />
@@ -177,7 +204,7 @@ export function ImageCropUpload({
             <div className="bg-gray-900 flex items-center justify-center py-8 select-none">
               <div
                 className="relative overflow-hidden"
-                style={{ width: CROP_SIZE, height: CROP_SIZE, borderRadius }}
+                style={{ width: cropDims.w, height: cropDims.h, borderRadius }}
               >
                 <div
                   className="absolute inset-0 z-20 pointer-events-none"

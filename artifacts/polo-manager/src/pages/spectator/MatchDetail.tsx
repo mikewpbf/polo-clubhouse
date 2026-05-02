@@ -90,6 +90,10 @@ export function MatchDetail() {
   const pendingSeekRef = useRef<number | null>(null);
   const embedRef = useRef<HTMLDivElement>(null);
   const currentVideoIdRef = useRef<string | null>(null);
+  // Mirror of playerReadyRef as state so React re-renders the admin sync
+  // strip once the YouTube player is interactive (so chips don't appear
+  // before getCurrentTime/pauseVideo are usable).
+  const [playerReady, setPlayerReady] = useState(false);
 
   // Admin sync-strip state. `syncToast` shows the most recent action with an
   // Undo button; the previousAnchor is captured per-action so Undo restores it
@@ -197,6 +201,7 @@ export function MatchDetail() {
         events: {
           onReady: () => {
             playerReadyRef.current = true;
+            setPlayerReady(true);
             if (pendingSeekRef.current !== null) {
               playerRef.current.seekTo(pendingSeekRef.current, true);
               playerRef.current.playVideo();
@@ -229,10 +234,16 @@ export function MatchDetail() {
         try { playerRef.current.destroy(); } catch {}
         playerRef.current = null;
         playerReadyRef.current = false;
+        setPlayerReady(false);
         currentVideoIdRef.current = null;
       }
     };
   }, []);
+
+  // Reset readiness whenever the embedded video changes.
+  useEffect(() => {
+    setPlayerReady(false);
+  }, [videoId]);
 
   // Anchor candidates for the admin sync strip. Chukker starts come first
   // (one per chukker, in chronological order), then the most recent goals
@@ -346,7 +357,10 @@ export function MatchDetail() {
   const streamStartedAt: string | null = m!.streamStartedAt || null;
   const streamAnchorMs = streamStartedAt ? new Date(streamStartedAt).getTime() : null;
   const canAdminMatch: boolean = !!m!.canAdminMatch;
-  const showSyncStrip = canAdminMatch && hasVideo;
+  // Wait for the YouTube player to be ready before rendering the strip so
+  // admins can't click a chip before getCurrentTime/pauseVideo are usable.
+  const showSyncStrip = canAdminMatch && hasVideo && playerReady;
+  const noAnchorYet = streamAnchorMs === null;
 
   return (
     <SpectatorLayout>
@@ -382,37 +396,40 @@ export function MatchDetail() {
             <div className="flex items-center justify-between gap-2 mb-2">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-ink3">
                 Video Sync · Admin
+                {noAnchorYet && (
+                  <span className="ml-2 normal-case font-normal text-ink3">— pick an event to set the initial anchor</span>
+                )}
               </span>
-              {streamAnchorMs !== null ? (
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={(e) => handleNudge(e.shiftKey ? -0.5 : -5)}
-                    title="Shift anchor 5s earlier (hold Shift for 0.5s)"
-                    className="px-2 py-1 text-[11px] font-mono rounded border border-line2 hover:bg-g50 disabled:opacity-50"
-                    disabled={syncMutation.isPending}
-                  >−5s</button>
-                  <button
-                    onClick={(e) => handleNudge(e.shiftKey ? -0.5 : -1)}
-                    title="Shift anchor 1s earlier (hold Shift for 0.5s)"
-                    className="px-2 py-1 text-[11px] font-mono rounded border border-line2 hover:bg-g50 disabled:opacity-50"
-                    disabled={syncMutation.isPending}
-                  >−1s</button>
-                  <button
-                    onClick={(e) => handleNudge(e.shiftKey ? 0.5 : 1)}
-                    title="Shift anchor 1s later (hold Shift for 0.5s)"
-                    className="px-2 py-1 text-[11px] font-mono rounded border border-line2 hover:bg-g50 disabled:opacity-50"
-                    disabled={syncMutation.isPending}
-                  >+1s</button>
-                  <button
-                    onClick={(e) => handleNudge(e.shiftKey ? 0.5 : 5)}
-                    title="Shift anchor 5s later (hold Shift for 0.5s)"
-                    className="px-2 py-1 text-[11px] font-mono rounded border border-line2 hover:bg-g50 disabled:opacity-50"
-                    disabled={syncMutation.isPending}
-                  >+5s</button>
-                </div>
-              ) : (
-                <span className="text-[11px] text-ink3">Pick an event to set the initial anchor</span>
-              )}
+              <div className="flex items-center gap-1" title={noAnchorYet ? "Set an anchor first by clicking an event chip below." : undefined}>
+                <button
+                  onClick={(e) => handleNudge(e.shiftKey ? -0.5 : -5)}
+                  title="Shift anchor 5s earlier (hold Shift for 0.5s)"
+                  className="px-2 py-1 text-[11px] font-mono rounded border border-line2 hover:bg-g50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={syncMutation.isPending || noAnchorYet}
+                  data-testid="sync-nudge-minus-5"
+                >−5s</button>
+                <button
+                  onClick={(e) => handleNudge(e.shiftKey ? -0.5 : -1)}
+                  title="Shift anchor 1s earlier (hold Shift for 0.5s)"
+                  className="px-2 py-1 text-[11px] font-mono rounded border border-line2 hover:bg-g50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={syncMutation.isPending || noAnchorYet}
+                  data-testid="sync-nudge-minus-1"
+                >−1s</button>
+                <button
+                  onClick={(e) => handleNudge(e.shiftKey ? 0.5 : 1)}
+                  title="Shift anchor 1s later (hold Shift for 0.5s)"
+                  className="px-2 py-1 text-[11px] font-mono rounded border border-line2 hover:bg-g50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={syncMutation.isPending || noAnchorYet}
+                  data-testid="sync-nudge-plus-1"
+                >+1s</button>
+                <button
+                  onClick={(e) => handleNudge(e.shiftKey ? 0.5 : 5)}
+                  title="Shift anchor 5s later (hold Shift for 0.5s)"
+                  className="px-2 py-1 text-[11px] font-mono rounded border border-line2 hover:bg-g50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={syncMutation.isPending || noAnchorYet}
+                  data-testid="sync-nudge-plus-5"
+                >+5s</button>
+              </div>
             </div>
             {anchorCandidates.length > 0 ? (
               <div className="flex flex-wrap gap-2">

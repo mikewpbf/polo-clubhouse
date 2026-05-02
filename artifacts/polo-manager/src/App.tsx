@@ -40,6 +40,7 @@ import { OutDates } from "@/pages/my-team/OutDates";
 import { TeamSchedule } from "@/pages/my-team/Schedule";
 import { ScoreBugOverlay } from "@/pages/broadcast/ScoreBugOverlay";
 import { ScoreBugOverlay2 } from "@/pages/broadcast/ScoreBugOverlay2";
+import LineupOverlay from "@/pages/broadcast/LineupOverlay";
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,7 @@ function BroadcastRouter() {
       <Route path="/broadcast/scorebug/:matchId" component={ScoreBugOverlay} />
       <Route path="/broadcast/channel/:clubId/:channel" component={ScoreBugOverlay} />
       <Route path="/broadcast/scorebug2/:matchId" component={ScoreBugOverlay2} />
+      <Route path="/broadcast/lineup/:matchId/:teamSide">{() => <LineupOverlay />}</Route>
     </Switch>
   );
 }

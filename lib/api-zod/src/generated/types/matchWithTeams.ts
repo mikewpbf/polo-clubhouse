@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Field } from "./field";
+import type { MatchWithTeamsBroadcastStyle } from "./matchWithTeamsBroadcastStyle";
 import type { MatchWithTeamsStatus } from "./matchWithTeamsStatus";
 import type { Team } from "./team";
 import type { TournamentBrief } from "./tournamentBrief";
@@ -28,6 +29,8 @@ export interface MatchWithTeams {
   bracketPosition?: number | null;
   isLocked: boolean;
   notes?: string | null;
+  /** Which broadcast graphic the match's channel output should render. */
+  broadcastStyle?: MatchWithTeamsBroadcastStyle;
   homeTeam?: Team;
   awayTeam?: Team;
   field?: Field;

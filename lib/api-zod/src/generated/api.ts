@@ -667,6 +667,20 @@ export const GetTournamentResponse = zod.object({
       bracketPosition: zod.number().nullish(),
       isLocked: zod.boolean(),
       notes: zod.string().nullish(),
+      broadcastStyle: zod
+        .enum([
+          "option1",
+          "option2",
+          "stats",
+          "stats_mini",
+          "field",
+          "lineup_home",
+          "lineup_away",
+        ])
+        .nullish()
+        .describe(
+          "Which broadcast graphic the match's channel output should render.",
+        ),
       homeTeam: zod
         .object({
           id: zod.string().uuid(),
@@ -1068,6 +1082,20 @@ export const ListMatchesResponseItem = zod.object({
   bracketPosition: zod.number().nullish(),
   isLocked: zod.boolean(),
   notes: zod.string().nullish(),
+  broadcastStyle: zod
+    .enum([
+      "option1",
+      "option2",
+      "stats",
+      "stats_mini",
+      "field",
+      "lineup_home",
+      "lineup_away",
+    ])
+    .nullish()
+    .describe(
+      "Which broadcast graphic the match's channel output should render.",
+    ),
   homeTeam: zod
     .object({
       id: zod.string().uuid(),
@@ -1156,6 +1184,20 @@ export const GenerateScheduleResponse = zod.object({
       bracketPosition: zod.number().nullish(),
       isLocked: zod.boolean(),
       notes: zod.string().nullish(),
+      broadcastStyle: zod
+        .enum([
+          "option1",
+          "option2",
+          "stats",
+          "stats_mini",
+          "field",
+          "lineup_home",
+          "lineup_away",
+        ])
+        .nullish()
+        .describe(
+          "Which broadcast graphic the match's channel output should render.",
+        ),
       homeTeam: zod
         .object({
           id: zod.string().uuid(),
@@ -1356,6 +1398,20 @@ export const GetMatchResponse = zod.object({
   streamStartedAt: zod.date().nullish(),
   scoringLocation: zod.enum(["studio", "field"]),
   broadcastOffsetSeconds: zod.number(),
+  broadcastStyle: zod
+    .enum([
+      "option1",
+      "option2",
+      "stats",
+      "stats_mini",
+      "field",
+      "lineup_home",
+      "lineup_away",
+    ])
+    .nullish()
+    .describe(
+      "Which broadcast graphic the match's channel output should render.",
+    ),
   canAdminMatch: zod
     .boolean()
     .optional()
@@ -1409,6 +1465,20 @@ export const UpdateMatchResponse = zod.object({
   bracketPosition: zod.number().nullish(),
   isLocked: zod.boolean(),
   notes: zod.string().nullish(),
+  broadcastStyle: zod
+    .enum([
+      "option1",
+      "option2",
+      "stats",
+      "stats_mini",
+      "field",
+      "lineup_home",
+      "lineup_away",
+    ])
+    .nullish()
+    .describe(
+      "Which broadcast graphic the match's channel output should render.",
+    ),
   homeTeam: zod
     .object({
       id: zod.string().uuid(),
@@ -1499,6 +1569,20 @@ export const UpdateMatchScoreResponse = zod.object({
   bracketPosition: zod.number().nullish(),
   isLocked: zod.boolean(),
   notes: zod.string().nullish(),
+  broadcastStyle: zod
+    .enum([
+      "option1",
+      "option2",
+      "stats",
+      "stats_mini",
+      "field",
+      "lineup_home",
+      "lineup_away",
+    ])
+    .nullish()
+    .describe(
+      "Which broadcast graphic the match's channel output should render.",
+    ),
   homeTeam: zod
     .object({
       id: zod.string().uuid(),
@@ -1588,6 +1672,20 @@ export const UpdateMatchClockResponse = zod.object({
   bracketPosition: zod.number().nullish(),
   isLocked: zod.boolean(),
   notes: zod.string().nullish(),
+  broadcastStyle: zod
+    .enum([
+      "option1",
+      "option2",
+      "stats",
+      "stats_mini",
+      "field",
+      "lineup_home",
+      "lineup_away",
+    ])
+    .nullish()
+    .describe(
+      "Which broadcast graphic the match's channel output should render.",
+    ),
   homeTeam: zod
     .object({
       id: zod.string().uuid(),
@@ -1684,6 +1782,20 @@ export const UpdateMatchStatusResponse = zod.object({
   bracketPosition: zod.number().nullish(),
   isLocked: zod.boolean(),
   notes: zod.string().nullish(),
+  broadcastStyle: zod
+    .enum([
+      "option1",
+      "option2",
+      "stats",
+      "stats_mini",
+      "field",
+      "lineup_home",
+      "lineup_away",
+    ])
+    .nullish()
+    .describe(
+      "Which broadcast graphic the match's channel output should render.",
+    ),
   homeTeam: zod
     .object({
       id: zod.string().uuid(),
@@ -1769,6 +1881,20 @@ export const AdvanceChukkerResponse = zod.object({
   bracketPosition: zod.number().nullish(),
   isLocked: zod.boolean(),
   notes: zod.string().nullish(),
+  broadcastStyle: zod
+    .enum([
+      "option1",
+      "option2",
+      "stats",
+      "stats_mini",
+      "field",
+      "lineup_home",
+      "lineup_away",
+    ])
+    .nullish()
+    .describe(
+      "Which broadcast graphic the match's channel output should render.",
+    ),
   homeTeam: zod
     .object({
       id: zod.string().uuid(),
@@ -1989,6 +2115,66 @@ export const ResolveShareTokenResponse = zod
   .describe("Public payload returned when resolving a share token.");
 
 /**
+ * Broadcast surface for the Team Lineup graphic. Intentionally exposes
+each player's `broadcastImageUrl` so the on-air overlay can render the
+broadcast aux photo. Public/spectator surfaces still strip aux URLs.
+
+ * @summary Get the 4-player starting lineup for one side of a match
+ */
+export const GetMatchLineupParams = zod.object({
+  matchId: zod.coerce.string().uuid(),
+  teamSide: zod.enum(["home", "away"]),
+});
+
+export const GetMatchLineupResponse = zod.object({
+  tournament: zod
+    .object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+    })
+    .nullish(),
+  team: zod
+    .object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+      logoUrl: zod.string().nullish(),
+      totalHandicap: zod
+        .number()
+        .describe(
+          "Sum of numeric handicap values across the players in this lineup. Unparseable handicaps count as 0.",
+        ),
+    })
+    .nullish(),
+  players: zod.array(
+    zod.object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+      position: zod.number().nullish(),
+      handicap: zod.string().nullish(),
+      dateOfBirth: zod.date().nullish(),
+      homeClubName: zod.string().nullish(),
+      headshotUrl: zod.string().nullish(),
+      broadcastImageUrl: zod
+        .string()
+        .nullish()
+        .describe(
+          "Vertical (3:4 portrait) aux image used by the broadcast Team Lineup\ngraphic. Intentionally exposed on this broadcast surface — public\nspectator surfaces continue to strip this field.\n",
+        ),
+      tournamentGoals: zod
+        .number()
+        .describe(
+          "Goals this player has scored across all matches in this tournament.",
+        ),
+      avgGoalsPerMatch: zod
+        .number()
+        .describe(
+          "Tournament goals divided by tournament matches the player appeared in (rounded to 1 decimal). Returns 0 when the player has not appeared in any tournament match yet.",
+        ),
+    }),
+  ),
+});
+
+/**
  * @summary List all live matches
  */
 export const ListLiveMatchesResponseItem = zod.object({
@@ -2016,6 +2202,20 @@ export const ListLiveMatchesResponseItem = zod.object({
   bracketPosition: zod.number().nullish(),
   isLocked: zod.boolean(),
   notes: zod.string().nullish(),
+  broadcastStyle: zod
+    .enum([
+      "option1",
+      "option2",
+      "stats",
+      "stats_mini",
+      "field",
+      "lineup_home",
+      "lineup_away",
+    ])
+    .nullish()
+    .describe(
+      "Which broadcast graphic the match's channel output should render.",
+    ),
   homeTeam: zod
     .object({
       id: zod.string().uuid(),
@@ -2103,6 +2303,20 @@ export const ListTodayMatchesResponseItem = zod.object({
   bracketPosition: zod.number().nullish(),
   isLocked: zod.boolean(),
   notes: zod.string().nullish(),
+  broadcastStyle: zod
+    .enum([
+      "option1",
+      "option2",
+      "stats",
+      "stats_mini",
+      "field",
+      "lineup_home",
+      "lineup_away",
+    ])
+    .nullish()
+    .describe(
+      "Which broadcast graphic the match's channel output should render.",
+    ),
   homeTeam: zod
     .object({
       id: zod.string().uuid(),
@@ -2192,6 +2406,20 @@ export const ListUpcomingMatchesResponseItem = zod.object({
   bracketPosition: zod.number().nullish(),
   isLocked: zod.boolean(),
   notes: zod.string().nullish(),
+  broadcastStyle: zod
+    .enum([
+      "option1",
+      "option2",
+      "stats",
+      "stats_mini",
+      "field",
+      "lineup_home",
+      "lineup_away",
+    ])
+    .nullish()
+    .describe(
+      "Which broadcast graphic the match's channel output should render.",
+    ),
   homeTeam: zod
     .object({
       id: zod.string().uuid(),
@@ -2285,6 +2513,20 @@ export const GetAdminDashboardResponse = zod.object({
       bracketPosition: zod.number().nullish(),
       isLocked: zod.boolean(),
       notes: zod.string().nullish(),
+      broadcastStyle: zod
+        .enum([
+          "option1",
+          "option2",
+          "stats",
+          "stats_mini",
+          "field",
+          "lineup_home",
+          "lineup_away",
+        ])
+        .nullish()
+        .describe(
+          "Which broadcast graphic the match's channel output should render.",
+        ),
       homeTeam: zod
         .object({
           id: zod.string().uuid(),
@@ -2468,6 +2710,20 @@ export const GetMyTeamDashboardResponse = zod.object({
       bracketPosition: zod.number().nullish(),
       isLocked: zod.boolean(),
       notes: zod.string().nullish(),
+      broadcastStyle: zod
+        .enum([
+          "option1",
+          "option2",
+          "stats",
+          "stats_mini",
+          "field",
+          "lineup_home",
+          "lineup_away",
+        ])
+        .nullish()
+        .describe(
+          "Which broadcast graphic the match's channel output should render.",
+        ),
       homeTeam: zod
         .object({
           id: zod.string().uuid(),
@@ -2547,6 +2803,20 @@ export const GetMyTeamDashboardResponse = zod.object({
       bracketPosition: zod.number().nullish(),
       isLocked: zod.boolean(),
       notes: zod.string().nullish(),
+      broadcastStyle: zod
+        .enum([
+          "option1",
+          "option2",
+          "stats",
+          "stats_mini",
+          "field",
+          "lineup_home",
+          "lineup_away",
+        ])
+        .nullish()
+        .describe(
+          "Which broadcast graphic the match's channel output should render.",
+        ),
       homeTeam: zod
         .object({
           id: zod.string().uuid(),
@@ -2675,6 +2945,20 @@ export const GetMyTeamScheduleResponseItem = zod.object({
   bracketPosition: zod.number().nullish(),
   isLocked: zod.boolean(),
   notes: zod.string().nullish(),
+  broadcastStyle: zod
+    .enum([
+      "option1",
+      "option2",
+      "stats",
+      "stats_mini",
+      "field",
+      "lineup_home",
+      "lineup_away",
+    ])
+    .nullish()
+    .describe(
+      "Which broadcast graphic the match's channel output should render.",
+    ),
   homeTeam: zod
     .object({
       id: zod.string().uuid(),
@@ -2898,6 +3182,20 @@ export const GetWidgetFixturesResponse = zod.object({
       bracketPosition: zod.number().nullish(),
       isLocked: zod.boolean(),
       notes: zod.string().nullish(),
+      broadcastStyle: zod
+        .enum([
+          "option1",
+          "option2",
+          "stats",
+          "stats_mini",
+          "field",
+          "lineup_home",
+          "lineup_away",
+        ])
+        .nullish()
+        .describe(
+          "Which broadcast graphic the match's channel output should render.",
+        ),
       homeTeam: zod
         .object({
           id: zod.string().uuid(),

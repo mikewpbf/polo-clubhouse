@@ -2,6 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react
 import { StatsOverlay } from "./StatsOverlay";
 import { MiniStatsOverlay } from "./MiniStatsOverlay";
 import { FieldBugOverlay } from "./FieldBugOverlay";
+import LineupOverlay from "./LineupOverlay";
 import { getOnColorTheme, themed } from "../../lib/colorContrast";
 
 interface BroadcastTeam {
@@ -843,6 +844,22 @@ export function ScoreBugOverlay() {
           possession={data.possession}
           tournament={data.tournament}
         />
+        {showDelayBadge && <DelayBadge offsetSeconds={delayOffsetSeconds!} />}
+      </div>
+    );
+  }
+
+  if (style === "lineup_home" || style === "lineup_away") {
+    const teamSide = style === "lineup_home" ? "home" : "away";
+    return (
+      <div style={{
+        position: "fixed",
+        inset: 0,
+        transition: "opacity 0.6s ease",
+        opacity: isVisible ? 1 : 0,
+        pointerEvents: isVisible ? "auto" : "none",
+      }}>
+        <LineupOverlay matchId={data.id} teamSide={teamSide} />
         {showDelayBadge && <DelayBadge offsetSeconds={delayOffsetSeconds!} />}
       </div>
     );

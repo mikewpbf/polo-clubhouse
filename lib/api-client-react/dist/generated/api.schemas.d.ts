@@ -300,6 +300,19 @@ export declare const MatchWithTeamsStatus: {
     readonly postponed: "postponed";
     readonly cancelled: "cancelled";
 };
+/**
+ * Which broadcast graphic the match's channel output should render.
+ */
+export type MatchWithTeamsBroadcastStyle = (typeof MatchWithTeamsBroadcastStyle)[keyof typeof MatchWithTeamsBroadcastStyle] | null;
+export declare const MatchWithTeamsBroadcastStyle: {
+    readonly option1: "option1";
+    readonly option2: "option2";
+    readonly stats: "stats";
+    readonly stats_mini: "stats_mini";
+    readonly field: "field";
+    readonly lineup_home: "lineup_home";
+    readonly lineup_away: "lineup_away";
+};
 export interface TournamentBrief {
     id: string;
     name: string;
@@ -325,6 +338,8 @@ export interface MatchWithTeams {
     bracketPosition?: number | null;
     isLocked: boolean;
     notes?: string | null;
+    /** Which broadcast graphic the match's channel output should render. */
+    broadcastStyle?: MatchWithTeamsBroadcastStyle;
     homeTeam?: Team;
     awayTeam?: Team;
     field?: Field;
@@ -459,6 +474,40 @@ export interface UpdatePlayDateRequest {
     lunchStart?: string;
     lunchEnd?: string;
 }
+export interface MatchLineupTournament {
+    id: string;
+    name: string;
+}
+export interface MatchLineupTeam {
+    id: string;
+    name: string;
+    logoUrl?: string | null;
+    /** Sum of numeric handicap values across the players in this lineup. Unparseable handicaps count as 0. */
+    totalHandicap: number;
+}
+export interface MatchLineupPlayer {
+    id: string;
+    name: string;
+    position?: number | null;
+    handicap?: string | null;
+    dateOfBirth?: string | null;
+    homeClubName?: string | null;
+    headshotUrl?: string | null;
+    /** Vertical (3:4 portrait) aux image used by the broadcast Team Lineup
+  graphic. Intentionally exposed on this broadcast surface — public
+  spectator surfaces continue to strip this field.
+   */
+    broadcastImageUrl?: string | null;
+    /** Goals this player has scored across all matches in this tournament. */
+    tournamentGoals: number;
+    /** Tournament goals divided by tournament matches the player appeared in (rounded to 1 decimal). Returns 0 when the player has not appeared in any tournament match yet. */
+    avgGoalsPerMatch: number;
+}
+export interface MatchLineup {
+    tournament?: MatchLineupTournament | null;
+    team?: MatchLineupTeam | null;
+    players: MatchLineupPlayer[];
+}
 export type MatchDetailStatus = (typeof MatchDetailStatus)[keyof typeof MatchDetailStatus];
 export declare const MatchDetailStatus: {
     readonly scheduled: "scheduled";
@@ -472,6 +521,19 @@ export type MatchDetailScoringLocation = (typeof MatchDetailScoringLocation)[key
 export declare const MatchDetailScoringLocation: {
     readonly studio: "studio";
     readonly field: "field";
+};
+/**
+ * Which broadcast graphic the match's channel output should render.
+ */
+export type MatchDetailBroadcastStyle = (typeof MatchDetailBroadcastStyle)[keyof typeof MatchDetailBroadcastStyle] | null;
+export declare const MatchDetailBroadcastStyle: {
+    readonly option1: "option1";
+    readonly option2: "option2";
+    readonly stats: "stats";
+    readonly stats_mini: "stats_mini";
+    readonly field: "field";
+    readonly lineup_home: "lineup_home";
+    readonly lineup_away: "lineup_away";
 };
 export type MatchEventEventType = (typeof MatchEventEventType)[keyof typeof MatchEventEventType];
 export declare const MatchEventEventType: {
@@ -567,6 +629,8 @@ export interface MatchDetail {
     streamStartedAt?: string | null;
     scoringLocation: MatchDetailScoringLocation;
     broadcastOffsetSeconds: number;
+    /** Which broadcast graphic the match's channel output should render. */
+    broadcastStyle?: MatchDetailBroadcastStyle;
     /** True if the requesting user is a club admin of the tournament's club, or a super admin. Always false for unauthenticated requests and for share-token requests. */
     canAdminMatch?: boolean;
 }

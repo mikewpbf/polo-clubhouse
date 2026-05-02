@@ -55,6 +55,7 @@ import type {
   LoginRequest,
   MatchDetail,
   MatchEvent,
+  MatchLineup,
   MatchShareLink,
   MatchWithTeams,
   MessageResponse,
@@ -4574,6 +4575,111 @@ export function useResolveShareToken<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getResolveShareTokenQueryOptions(token, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Broadcast surface for the Team Lineup graphic. Intentionally exposes
+each player's `broadcastImageUrl` so the on-air overlay can render the
+broadcast aux photo. Public/spectator surfaces still strip aux URLs.
+
+ * @summary Get the 4-player starting lineup for one side of a match
+ */
+export const getGetMatchLineupUrl = (
+  matchId: string,
+  teamSide: "home" | "away",
+) => {
+  return `/api/matches/${matchId}/lineup/${teamSide}`;
+};
+
+export const getMatchLineup = async (
+  matchId: string,
+  teamSide: "home" | "away",
+  options?: RequestInit,
+): Promise<MatchLineup> => {
+  return customFetch<MatchLineup>(getGetMatchLineupUrl(matchId, teamSide), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMatchLineupQueryKey = (
+  matchId: string,
+  teamSide: "home" | "away",
+) => {
+  return [`/api/matches/${matchId}/lineup/${teamSide}`] as const;
+};
+
+export const getGetMatchLineupQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMatchLineup>>,
+  TError = ErrorType<void>,
+>(
+  matchId: string,
+  teamSide: "home" | "away",
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMatchLineup>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetMatchLineupQueryKey(matchId, teamSide);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMatchLineup>>> = ({
+    signal,
+  }) => getMatchLineup(matchId, teamSide, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(matchId && teamSide),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMatchLineup>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMatchLineupQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMatchLineup>>
+>;
+export type GetMatchLineupQueryError = ErrorType<void>;
+
+/**
+ * @summary Get the 4-player starting lineup for one side of a match
+ */
+
+export function useGetMatchLineup<
+  TData = Awaited<ReturnType<typeof getMatchLineup>>,
+  TError = ErrorType<void>,
+>(
+  matchId: string,
+  teamSide: "home" | "away",
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMatchLineup>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMatchLineupQueryOptions(
+    matchId,
+    teamSide,
+    options,
+  );
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Field } from "./field";
+import type { MatchDetailBroadcastStyle } from "./matchDetailBroadcastStyle";
 import type { MatchDetailScoringLocation } from "./matchDetailScoringLocation";
 import type { MatchDetailStatus } from "./matchDetailStatus";
 import type { MatchEvent } from "./matchEvent";
@@ -38,6 +39,8 @@ export interface MatchDetail {
   streamStartedAt?: Date | null;
   scoringLocation: MatchDetailScoringLocation;
   broadcastOffsetSeconds: number;
+  /** Which broadcast graphic the match's channel output should render. */
+  broadcastStyle?: MatchDetailBroadcastStyle;
   /** True if the requesting user is a club admin of the tournament's club, or a super admin. Always false for unauthenticated requests and for share-token requests. */
   canAdminMatch?: boolean;
 }

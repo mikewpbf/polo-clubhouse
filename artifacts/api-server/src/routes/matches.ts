@@ -1276,6 +1276,162 @@ router.get("/clubs/:clubId/broadcast/channel/:channel", async (req, res) => {
   }
 });
 
+// Broadcast surface: returns the 4-player starting lineup for one side of a
+// match. Intentionally exposes `broadcastImageUrl` because the new lineup
+// graphic renders the broadcast aux photo in OBS (see Task #110). All other
+// public surfaces still strip aux URLs via publicPlayer().
+router.get("/matches/:matchId/lineup/:teamSide", async (req, res) => {
+  try {
+    const matchId = String(req.params.matchId);
+    const teamSide = String(req.params.teamSide).toLowerCase();
+    if (teamSide !== "home" && teamSide !== "away") {
+      res.status(400).json({ message: "teamSide must be 'home' or 'away'" });
+      return;
+    }
+
+    const [match] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
+    if (!match) { res.status(404).json({ message: "Match not found" }); return; }
+
+    const teamId = teamSide === "home" ? match.homeTeamId : match.awayTeamId;
+    const [tournament] = await db.select().from(tournamentsTable).where(eq(tournamentsTable.id, match.tournamentId));
+
+    const team = teamId ? (await db.select().from(teamsTable).where(eq(teamsTable.id, teamId)))[0] : null;
+
+    if (!team) {
+      res.setHeader("Cache-Control", "no-store");
+      res.json({
+        tournament: tournament ? { id: tournament.id, name: tournament.name } : null,
+        team: null,
+        players: [],
+      });
+      return;
+    }
+
+    const seasonYear = new Date().getUTCFullYear();
+    const allLinks = await db.select().from(teamPlayersTable).where(and(
+      eq(teamPlayersTable.teamId, team.id),
+      eq(teamPlayersTable.seasonYear, seasonYear),
+      eq(teamPlayersTable.isActive, true),
+    ));
+    // Restrict to starting lineup positions 1..4. Anything outside that range
+    // (e.g. position 5 substitutes, or rows with a null position) is excluded
+    // per the Team Lineup graphic spec.
+    const links = allLinks.filter(l => l.position !== null && l.position >= 1 && l.position <= 4);
+    const linkedIds = links.map(l => l.playerId).filter((x): x is string => !!x);
+
+    let rosterPlayers: InferSelectModel<typeof playersTable>[] = [];
+    if (linkedIds.length > 0) {
+      rosterPlayers = await db.select().from(playersTable)
+        .where(and(inArray(playersTable.id, linkedIds), eq(playersTable.isActive, true)));
+    }
+    const positionByPlayer = new Map(links.map(l => [l.playerId, l.position]));
+
+    // Stable sort by position 1→4 (nulls last). Then take the first 4 — extras
+    // beyond position 4 (subs) are not surfaced on the lineup graphic.
+    const orderedPlayers = rosterPlayers
+      .map(p => ({ player: p, position: positionByPlayer.get(p.id) ?? null }))
+      .sort((a, b) => {
+        const ap = a.position;
+        const bp = b.position;
+        if (ap === null && bp === null) return 0;
+        if (ap === null) return 1;
+        if (bp === null) return -1;
+        return ap - bp;
+      })
+      .slice(0, 4);
+
+    const playerIds = orderedPlayers.map(o => o.player.id);
+
+    // Tournament goals: count goal events for each player across every match in
+    // this tournament. Mirrors the aggregation used by /tournaments/:id/top-scorers.
+    const tournamentMatches = await db.select({ id: matchesTable.id })
+      .from(matchesTable)
+      .where(eq(matchesTable.tournamentId, match.tournamentId));
+    const tournamentMatchIds = tournamentMatches.map(m => m.id);
+
+    const goalsByPlayer = new Map<string, number>();
+    const matchesByPlayer = new Map<string, Set<string>>();
+    if (playerIds.length > 0 && tournamentMatchIds.length > 0) {
+      const goalEvents = await db.select().from(matchEventsTable).where(and(
+        eq(matchEventsTable.eventType, "goal"),
+        inArray(matchEventsTable.matchId, tournamentMatchIds),
+        inArray(matchEventsTable.playerId, playerIds),
+      ));
+      for (const ev of goalEvents) {
+        if (!ev.playerId) continue;
+        goalsByPlayer.set(ev.playerId, (goalsByPlayer.get(ev.playerId) ?? 0) + 1);
+      }
+      // Matches the player actually appeared in (= matches that have any event
+      // for this player). Used as the denominator for avg goals/match. We only
+      // count events from this tournament's matches so an out-of-tournament
+      // appearance doesn't dilute the average.
+      const playerEvents = await db.select({
+        matchId: matchEventsTable.matchId,
+        playerId: matchEventsTable.playerId,
+      }).from(matchEventsTable).where(and(
+        inArray(matchEventsTable.matchId, tournamentMatchIds),
+        inArray(matchEventsTable.playerId, playerIds),
+      ));
+      for (const ev of playerEvents) {
+        if (!ev.playerId) continue;
+        let set = matchesByPlayer.get(ev.playerId);
+        if (!set) { set = new Set(); matchesByPlayer.set(ev.playerId, set); }
+        set.add(ev.matchId);
+      }
+    }
+
+    // Resolve each player's home club name for the meta line.
+    const homeClubIds = Array.from(new Set(
+      orderedPlayers.map(o => o.player.homeClubId).filter((x): x is string => !!x),
+    ));
+    const clubRows = homeClubIds.length > 0
+      ? await db.select().from(clubsTable).where(inArray(clubsTable.id, homeClubIds))
+      : [];
+    const clubNameById = new Map(clubRows.map(c => [c.id, c.name]));
+
+    const players = orderedPlayers.map(({ player, position }) => {
+      const goals = goalsByPlayer.get(player.id) ?? 0;
+      const matchesPlayed = matchesByPlayer.get(player.id)?.size ?? 0;
+      const avgGoalsPerMatch = matchesPlayed > 0
+        ? Math.round((goals / matchesPlayed) * 10) / 10
+        : 0;
+      return {
+        id: player.id,
+        name: player.name,
+        position,
+        handicap: player.handicap,
+        dateOfBirth: player.dateOfBirth,
+        homeClubName: player.homeClubId ? (clubNameById.get(player.homeClubId) ?? null) : null,
+        headshotUrl: player.headshotUrl,
+        broadcastImageUrl: player.broadcastImageUrl,
+        tournamentGoals: goals,
+        avgGoalsPerMatch,
+      };
+    });
+
+    // Total handicap = sum of numeric handicap values across the rendered
+    // players. Treat unparseable / missing values as 0.
+    const totalHandicap = players.reduce((sum, p) => {
+      const n = p.handicap === null || p.handicap === undefined ? NaN : Number(p.handicap);
+      return sum + (Number.isFinite(n) ? n : 0);
+    }, 0);
+
+    res.setHeader("Cache-Control", "no-store");
+    res.json({
+      tournament: tournament ? { id: tournament.id, name: tournament.name } : null,
+      team: {
+        id: team.id,
+        name: team.name,
+        logoUrl: team.logoUrl ?? null,
+        totalHandicap,
+      },
+      players,
+    });
+  } catch (e: any) {
+    res.status(500).json({ message: e.message });
+  }
+});
+
 router.put("/matches/:matchId/broadcast", requireMatchWrite("gfx", "full_control", "scoreboard"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
@@ -1286,8 +1442,8 @@ router.put("/matches/:matchId/broadcast", requireMatchWrite("gfx", "full_control
       updates.broadcastVisible = broadcastVisible;
     }
     if (broadcastStyle !== undefined) {
-      const allowedStyles = ["option1", "option2", "stats", "stats_mini", "field"];
-      if (!allowedStyles.includes(broadcastStyle)) { res.status(400).json({ message: "broadcastStyle must be option1, option2, stats, stats_mini, or field" }); return; }
+      const allowedStyles = ["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away"];
+      if (!allowedStyles.includes(broadcastStyle)) { res.status(400).json({ message: "broadcastStyle must be option1, option2, stats, stats_mini, field, lineup_home, or lineup_away" }); return; }
       updates.broadcastStyle = broadcastStyle;
     }
     if (broadcastResolution !== undefined) {

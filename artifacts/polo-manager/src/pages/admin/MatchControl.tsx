@@ -1229,12 +1229,14 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
               </button>
             </div>
 
-            <div className="flex gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {([
                 { label: "Scorebug", val: "option1" },
                 { label: "Stats", val: "stats" },
                 { label: "Mini Stats", val: "stats_mini" },
                 { label: "Field", val: "field" },
+                { label: "Lineup — Home", val: "lineup_home" },
+                { label: "Lineup — Away", val: "lineup_away" },
               ] as const).map((b) => {
                 const active = b.val === "option1" ? (match.broadcastStyle || "option1") === "option1" : match.broadcastStyle === b.val;
                 return (
@@ -1244,7 +1246,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                       setMatch(prev => prev ? { ...prev, broadcastStyle: b.val } : prev);
                       mutatePut(`/matches/${match.id}/broadcast`, { broadcastStyle: b.val });
                     }}
-                    className={`flex-1 py-2.5 px-2 rounded-[8px] font-sans font-medium text-[13px] transition-colors ${
+                    className={`py-2.5 px-2 rounded-[8px] font-sans font-medium text-[13px] transition-colors ${
                       active ? "bg-g700 text-white" : dk ? "" : "bg-g50 text-ink2 hover:bg-g100"
                     }`}
                     style={!active && dk ? { background: btnMuted, color: btnMutedText } : undefined}

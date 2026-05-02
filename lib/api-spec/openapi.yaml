@@ -1201,6 +1201,40 @@ paths:
               schema:
                 $ref: "#/components/schemas/ShareTokenError"
 
+  /matches/{matchId}/lineup/{teamSide}:
+    get:
+      operationId: getMatchLineup
+      tags: [matches]
+      summary: Get the 4-player starting lineup for one side of a match
+      description: |
+        Broadcast surface for the Team Lineup graphic. Intentionally exposes
+        each player's `broadcastImageUrl` so the on-air overlay can render the
+        broadcast aux photo. Public/spectator surfaces still strip aux URLs.
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: teamSide
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [home, away]
+      responses:
+        "200":
+          description: Lineup payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchLineup"
+        "400":
+          description: Invalid teamSide
+        "404":
+          description: Match not found
+
   /matches/live:
     get:
       operationId: listLiveMatches
@@ -2704,6 +2738,11 @@ components:
         notes:
           type: string
           nullable: true
+        broadcastStyle:
+          type: string
+          enum: [option1, option2, stats, stats_mini, field, lineup_home, lineup_away]
+          nullable: true
+          description: Which broadcast graphic the match's channel output should render.
         homeTeam:
           $ref: "#/components/schemas/Team"
         awayTeam:
@@ -2744,6 +2783,98 @@ components:
         - chukkersPerMatch
         - clubId
         - clubName
+
+    MatchLineupTournament:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+      required:
+        - id
+        - name
+
+    MatchLineupTeam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        logoUrl:
+          type: string
+          nullable: true
+        totalHandicap:
+          type: number
+          description: Sum of numeric handicap values across the players in this lineup. Unparseable handicaps count as 0.
+      required:
+        - id
+        - name
+        - totalHandicap
+
+    MatchLineupPlayer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        position:
+          type: integer
+          nullable: true
+        handicap:
+          type: string
+          nullable: true
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+        homeClubName:
+          type: string
+          nullable: true
+        headshotUrl:
+          type: string
+          nullable: true
+        broadcastImageUrl:
+          type: string
+          nullable: true
+          description: |
+            Vertical (3:4 portrait) aux image used by the broadcast Team Lineup
+            graphic. Intentionally exposed on this broadcast surface — public
+            spectator surfaces continue to strip this field.
+        tournamentGoals:
+          type: integer
+          description: Goals this player has scored across all matches in this tournament.
+        avgGoalsPerMatch:
+          type: number
+          description: Tournament goals divided by tournament matches the player appeared in (rounded to 1 decimal). Returns 0 when the player has not appeared in any tournament match yet.
+      required:
+        - id
+        - name
+        - tournamentGoals
+        - avgGoalsPerMatch
+
+    MatchLineup:
+      type: object
+      properties:
+        tournament:
+          allOf:
+            - $ref: "#/components/schemas/MatchLineupTournament"
+          nullable: true
+        team:
+          allOf:
+            - $ref: "#/components/schemas/MatchLineupTeam"
+          nullable: true
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchLineupPlayer"
+      required:
+        - players
 
     MatchDetail:
       type: object
@@ -2819,6 +2950,11 @@ components:
           enum: [studio, field]
         broadcastOffsetSeconds:
           type: number
+        broadcastStyle:
+          type: string
+          enum: [option1, option2, stats, stats_mini, field, lineup_home, lineup_away]
+          nullable: true
+          description: Which broadcast graphic the match's channel output should render.
         canAdminMatch:
           type: boolean
           description: True if the requesting user is a club admin of the tournament's club, or a super admin. Always false for unauthenticated requests and for share-token requests.

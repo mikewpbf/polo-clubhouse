@@ -1,5 +1,5 @@
 import type { QueryKey, UseMutationOptions, UseMutationResult, UseQueryOptions, UseQueryResult } from "@tanstack/react-query";
-import type { AcceptInviteRequest, AddTournamentTeamRequest, AdminDashboard, AssignTeamManagerRequest, AuthResponse, Club, ClubDetail, ClubMembership, CreateClubMembershipRequest, CreateClubRequest, CreateFieldRequest, CreateHorseRequest, CreatePlayDateRequest, CreatePlayerRequest, CreateShareLinkRequest, CreateTeamOutDateRequest, CreateTeamRequest, CreateTournamentRequest, Field, GenerateScheduleResponse, GetAdminDashboardParams, GetMyTeamScheduleParams, HealthStatus, Horse, InviteDetail, ListAllTournamentsParams, ListClubMembershipsParams, ListClubsParams, ListMatchesParams, ListPlayersParams, ListTeamsParams, ListTodayMatchesParams, ListTopPlayersParams, ListTournamentsParams, ListUpcomingMatchesParams, LoginRequest, MatchDetail, MatchEvent, MatchShareLink, MatchWithTeams, MessageResponse, MyTeamAssignment, PlayDate, Player, PlayerProfile, PlayerSummary, RecommendFormatRequest, RecommendFormatResponse, ResolveShareTokenResponse, RevokeMatchShareLink200, SelfEditPlayerRequest, ShareTokenError, SignupRequest, StandingsEntry, SyncMatchAnchorRequest, SyncMatchAnchorResponse, Team, TeamDetail, TeamManagerAssignment, TeamManagerDashboard, TeamOutDate, Tournament, TournamentDetail, TournamentTeamWithDetails, TournamentWithClub, UpdateClockRequest, UpdateClubRequest, UpdateFieldRequest, UpdateMatchRequest, UpdateMatchStatusRequest, UpdatePlayDateRequest, UpdatePlayerRequest, UpdateScoreRequest, UpdateTeamRequest, UpdateTournamentRequest, UpdateTournamentTeamRequest, UserWithRoles, WidgetFixtures } from "./api.schemas";
+import type { AcceptInviteRequest, AddTournamentTeamRequest, AdminDashboard, AssignTeamManagerRequest, AuthResponse, Club, ClubDetail, ClubMembership, CreateClubMembershipRequest, CreateClubRequest, CreateFieldRequest, CreateHorseRequest, CreatePlayDateRequest, CreatePlayerRequest, CreateShareLinkRequest, CreateTeamOutDateRequest, CreateTeamRequest, CreateTournamentRequest, Field, GenerateScheduleResponse, GetAdminDashboardParams, GetMyTeamScheduleParams, HealthStatus, Horse, InviteDetail, ListAllTournamentsParams, ListClubMembershipsParams, ListClubsParams, ListMatchesParams, ListPlayersParams, ListTeamsParams, ListTodayMatchesParams, ListTopPlayersParams, ListTournamentsParams, ListUpcomingMatchesParams, LoginRequest, MatchDetail, MatchEvent, MatchLineup, MatchShareLink, MatchWithTeams, MessageResponse, MyTeamAssignment, PlayDate, Player, PlayerProfile, PlayerSummary, RecommendFormatRequest, RecommendFormatResponse, ResolveShareTokenResponse, RevokeMatchShareLink200, SelfEditPlayerRequest, ShareTokenError, SignupRequest, StandingsEntry, SyncMatchAnchorRequest, SyncMatchAnchorResponse, Team, TeamDetail, TeamManagerAssignment, TeamManagerDashboard, TeamOutDate, Tournament, TournamentDetail, TournamentTeamWithDetails, TournamentWithClub, UpdateClockRequest, UpdateClubRequest, UpdateFieldRequest, UpdateMatchRequest, UpdateMatchStatusRequest, UpdatePlayDateRequest, UpdatePlayerRequest, UpdateScoreRequest, UpdateTeamRequest, UpdateTournamentRequest, UpdateTournamentTeamRequest, UserWithRoles, WidgetFixtures } from "./api.schemas";
 import { customFetch } from "../custom-fetch";
 import type { ErrorType, BodyType } from "../custom-fetch";
 type AwaitedInput<T> = PromiseLike<T> | T;
@@ -1347,6 +1347,33 @@ export type ResolveShareTokenQueryError = ErrorType<ShareTokenError>;
  */
 export declare function useResolveShareToken<TData = Awaited<ReturnType<typeof resolveShareToken>>, TError = ErrorType<ShareTokenError>>(token: string, options?: {
     query?: UseQueryOptions<Awaited<ReturnType<typeof resolveShareToken>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+};
+/**
+ * Broadcast surface for the Team Lineup graphic. Intentionally exposes
+each player's `broadcastImageUrl` so the on-air overlay can render the
+broadcast aux photo. Public/spectator surfaces still strip aux URLs.
+
+ * @summary Get the 4-player starting lineup for one side of a match
+ */
+export declare const getGetMatchLineupUrl: (matchId: string, teamSide: "home" | "away") => string;
+export declare const getMatchLineup: (matchId: string, teamSide: "home" | "away", options?: RequestInit) => Promise<MatchLineup>;
+export declare const getGetMatchLineupQueryKey: (matchId: string, teamSide: "home" | "away") => readonly [`/api/matches/${string}/lineup/home` | `/api/matches/${string}/lineup/away`];
+export declare const getGetMatchLineupQueryOptions: <TData = Awaited<ReturnType<typeof getMatchLineup>>, TError = ErrorType<void>>(matchId: string, teamSide: "home" | "away", options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getMatchLineup>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseQueryOptions<Awaited<ReturnType<typeof getMatchLineup>>, TError, TData> & {
+    queryKey: QueryKey;
+};
+export type GetMatchLineupQueryResult = NonNullable<Awaited<ReturnType<typeof getMatchLineup>>>;
+export type GetMatchLineupQueryError = ErrorType<void>;
+/**
+ * @summary Get the 4-player starting lineup for one side of a match
+ */
+export declare function useGetMatchLineup<TData = Awaited<ReturnType<typeof getMatchLineup>>, TError = ErrorType<void>>(matchId: string, teamSide: "home" | "away", options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getMatchLineup>>, TError, TData>;
     request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

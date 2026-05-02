@@ -258,19 +258,33 @@ export function MatchDetail() {
     const hasVid = !!(vId && (status === "live" || status === "halftime" || status === "final"));
     if (!canAdmin || !hasVid) return [];
     const evts: MatchEvent[] = (mm.events || []) as MatchEvent[];
+    const fmtClock = (iso: string) => {
+      try {
+        const d = new Date(iso);
+        return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+      } catch { return ""; }
+    };
     const chukkerStarts = evts
       .filter(e => e.eventType === "chukker_start")
       .slice()
       .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-      .map(e => ({
-        id: e.id,
-        label: `Ch.${e.chukker ?? "?"} Start`,
-        tooltip: `Pause the video at the moment Chukker ${e.chukker ?? "?"} starts, then click here.`,
-      }));
+      .map(e => {
+        const score = e.scoreSnapshot ? `${e.scoreSnapshot.home}-${e.scoreSnapshot.away}` : "";
+        const time = fmtClock(e.createdAt);
+        const extras = [score, time].filter(Boolean).join(" · ");
+        const label = `Ch.${e.chukker ?? "?"} Start${extras ? " · " + extras : ""}`;
+        return {
+          id: e.id,
+          label,
+          tooltip: `Pause the video at the moment Chukker ${e.chukker ?? "?"} starts (score ${score || "—"}, ${time}), then click here.`,
+        };
+      });
+    // Spec: include the most recent 2 goals as fallback after chukker starts.
     const goalChips = evts
       .filter(e => e.eventType === "goal" || e.eventType === "penalty_goal")
       .slice()
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 2)
       .map(e => {
         const score = e.scoreSnapshot ? `${e.scoreSnapshot.home}-${e.scoreSnapshot.away}` : "";
         const who = e.playerName ? ` · ${e.playerName}` : "";

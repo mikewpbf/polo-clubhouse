@@ -1,5 +1,5 @@
 import type { QueryKey, UseMutationOptions, UseMutationResult, UseQueryOptions, UseQueryResult } from "@tanstack/react-query";
-import type { AcceptInviteRequest, AddTournamentTeamRequest, AdminDashboard, AssignTeamManagerRequest, AuthResponse, Club, ClubDetail, ClubMembership, CreateClubMembershipRequest, CreateClubRequest, CreateFieldRequest, CreateHorseRequest, CreatePlayDateRequest, CreatePlayerRequest, CreateShareLinkRequest, CreateTeamOutDateRequest, CreateTeamRequest, CreateTournamentRequest, Field, GenerateScheduleResponse, GetAdminDashboardParams, GetMyTeamScheduleParams, HealthStatus, Horse, InviteDetail, ListAllTournamentsParams, ListClubMembershipsParams, ListClubsParams, ListMatchesParams, ListPlayersParams, ListTeamsParams, ListTodayMatchesParams, ListTopPlayersParams, ListTournamentsParams, ListUpcomingMatchesParams, LoginRequest, MatchDetail, MatchEvent, MatchLineup, MatchShareLink, MatchWithTeams, MessageResponse, MyTeamAssignment, PlayDate, Player, PlayerProfile, PlayerSummary, RecommendFormatRequest, RecommendFormatResponse, ResolveShareTokenResponse, RevokeMatchShareLink200, SelfEditPlayerRequest, ShareTokenError, SignupRequest, StandingsEntry, SyncMatchAnchorRequest, SyncMatchAnchorResponse, Team, TeamDetail, TeamManagerAssignment, TeamManagerDashboard, TeamOutDate, Tournament, TournamentDetail, TournamentTeamWithDetails, TournamentWithClub, UpdateClockRequest, UpdateClubRequest, UpdateFieldRequest, UpdateMatchRequest, UpdateMatchStatusRequest, UpdatePlayDateRequest, UpdatePlayerRequest, UpdateScoreRequest, UpdateTeamRequest, UpdateTournamentRequest, UpdateTournamentTeamRequest, UserWithRoles, WidgetFixtures } from "./api.schemas";
+import type { AcceptInviteRequest, AddTournamentTeamRequest, AdminDashboard, AssignTeamManagerRequest, AuthResponse, Club, ClubDetail, ClubMembership, CreateClubMembershipRequest, CreateClubRequest, CreateFieldRequest, CreateHorseRequest, CreatePlayDateRequest, CreatePlayerRequest, CreateShareLinkRequest, CreateTeamOutDateRequest, CreateTeamRequest, CreateTournamentRequest, Field, GenerateScheduleResponse, GetAdminDashboardParams, GetMyTeamScheduleParams, HealthStatus, Horse, InviteDetail, ListAllTournamentsParams, ListClubMembershipsParams, ListClubsParams, ListMatchesParams, ListPlayersParams, ListTeamsParams, ListTodayMatchesParams, ListTopPlayersParams, ListTournamentsParams, ListUpcomingMatchesParams, LoginRequest, MatchDetail, MatchEvent, MatchLineup, MatchPlayerStats, MatchShareLink, MatchWithTeams, MessageResponse, MyTeamAssignment, PlayDate, Player, PlayerProfile, PlayerSummary, RecommendFormatRequest, RecommendFormatResponse, ResolveShareTokenResponse, RevokeMatchShareLink200, SelfEditPlayerRequest, ShareTokenError, SignupRequest, StandingsEntry, SyncMatchAnchorRequest, SyncMatchAnchorResponse, Team, TeamDetail, TeamManagerAssignment, TeamManagerDashboard, TeamOutDate, Tournament, TournamentDetail, TournamentTeamWithDetails, TournamentWithClub, UpdateClockRequest, UpdateClubRequest, UpdateFieldRequest, UpdateMatchRequest, UpdateMatchStatusRequest, UpdatePlayDateRequest, UpdatePlayerRequest, UpdateScoreRequest, UpdateTeamRequest, UpdateTournamentRequest, UpdateTournamentTeamRequest, UserWithRoles, WidgetFixtures } from "./api.schemas";
 import { customFetch } from "../custom-fetch";
 import type { ErrorType, BodyType } from "../custom-fetch";
 type AwaitedInput<T> = PromiseLike<T> | T;
@@ -1347,6 +1347,34 @@ export type ResolveShareTokenQueryError = ErrorType<ShareTokenError>;
  */
 export declare function useResolveShareToken<TData = Awaited<ReturnType<typeof resolveShareToken>>, TError = ErrorType<ShareTokenError>>(token: string, options?: {
     query?: UseQueryOptions<Awaited<ReturnType<typeof resolveShareToken>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+};
+/**
+ * Broadcast surface for the Player Stats lower-third graphic. URL-gated
+only — no auth gate, same posture as the scorebug endpoint.
+Intentionally exposes the public `headshotUrl` for the on-air photo;
+the private `broadcastImageUrl` is never returned here.
+
+ * @summary Get per-player + per-tournament stats for the Player Stats lower-third graphic
+ */
+export declare const getGetMatchPlayerStatsUrl: (matchId: string, playerId: string) => string;
+export declare const getMatchPlayerStats: (matchId: string, playerId: string, options?: RequestInit) => Promise<MatchPlayerStats>;
+export declare const getGetMatchPlayerStatsQueryKey: (matchId: string, playerId: string) => readonly [`/api/matches/${string}/player-stats/${string}`];
+export declare const getGetMatchPlayerStatsQueryOptions: <TData = Awaited<ReturnType<typeof getMatchPlayerStats>>, TError = ErrorType<void>>(matchId: string, playerId: string, options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getMatchPlayerStats>>, TError, TData>;
+    request?: SecondParameter<typeof customFetch>;
+}) => UseQueryOptions<Awaited<ReturnType<typeof getMatchPlayerStats>>, TError, TData> & {
+    queryKey: QueryKey;
+};
+export type GetMatchPlayerStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getMatchPlayerStats>>>;
+export type GetMatchPlayerStatsQueryError = ErrorType<void>;
+/**
+ * @summary Get per-player + per-tournament stats for the Player Stats lower-third graphic
+ */
+export declare function useGetMatchPlayerStats<TData = Awaited<ReturnType<typeof getMatchPlayerStats>>, TError = ErrorType<void>>(matchId: string, playerId: string, options?: {
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getMatchPlayerStats>>, TError, TData>;
     request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

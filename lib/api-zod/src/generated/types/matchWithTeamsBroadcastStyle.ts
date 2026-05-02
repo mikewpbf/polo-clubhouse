@@ -21,4 +21,5 @@ export const MatchWithTeamsBroadcastStyle = {
   field: "field",
   lineup_home: "lineup_home",
   lineup_away: "lineup_away",
+  player_stats: "player_stats",
 } as const;

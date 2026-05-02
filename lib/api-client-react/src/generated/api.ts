@@ -56,6 +56,7 @@ import type {
   MatchDetail,
   MatchEvent,
   MatchLineup,
+  MatchPlayerStats,
   MatchShareLink,
   MatchWithTeams,
   MessageResponse,
@@ -4575,6 +4576,116 @@ export function useResolveShareToken<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getResolveShareTokenQueryOptions(token, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Broadcast surface for the Player Stats lower-third graphic. URL-gated
+only — no auth gate, same posture as the scorebug endpoint.
+Intentionally exposes the public `headshotUrl` for the on-air photo;
+the private `broadcastImageUrl` is never returned here.
+
+ * @summary Get per-player + per-tournament stats for the Player Stats lower-third graphic
+ */
+export const getGetMatchPlayerStatsUrl = (
+  matchId: string,
+  playerId: string,
+) => {
+  return `/api/matches/${matchId}/player-stats/${playerId}`;
+};
+
+export const getMatchPlayerStats = async (
+  matchId: string,
+  playerId: string,
+  options?: RequestInit,
+): Promise<MatchPlayerStats> => {
+  return customFetch<MatchPlayerStats>(
+    getGetMatchPlayerStatsUrl(matchId, playerId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetMatchPlayerStatsQueryKey = (
+  matchId: string,
+  playerId: string,
+) => {
+  return [`/api/matches/${matchId}/player-stats/${playerId}`] as const;
+};
+
+export const getGetMatchPlayerStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMatchPlayerStats>>,
+  TError = ErrorType<void>,
+>(
+  matchId: string,
+  playerId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMatchPlayerStats>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetMatchPlayerStatsQueryKey(matchId, playerId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getMatchPlayerStats>>
+  > = ({ signal }) =>
+    getMatchPlayerStats(matchId, playerId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(matchId && playerId),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMatchPlayerStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMatchPlayerStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMatchPlayerStats>>
+>;
+export type GetMatchPlayerStatsQueryError = ErrorType<void>;
+
+/**
+ * @summary Get per-player + per-tournament stats for the Player Stats lower-third graphic
+ */
+
+export function useGetMatchPlayerStats<
+  TData = Awaited<ReturnType<typeof getMatchPlayerStats>>,
+  TError = ErrorType<void>,
+>(
+  matchId: string,
+  playerId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMatchPlayerStats>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMatchPlayerStatsQueryOptions(
+    matchId,
+    playerId,
+    options,
+  );
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

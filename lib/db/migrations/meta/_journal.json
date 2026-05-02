@@ -71,6 +71,13 @@
       "when": 1777636684321,
       "tag": "0009_player_image_source_urls",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1777636684322,
+      "tag": "0010_match_broadcast_player_id",
+      "breakpoints": true
     }
   ]
 }

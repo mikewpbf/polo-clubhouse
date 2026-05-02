@@ -31,6 +31,7 @@ export const matchesTable = pgTable("matches", {
   broadcast4kOffsetX: integer("broadcast_4k_offset_x").default(0),
   broadcast4kOffsetY: integer("broadcast_4k_offset_y").default(0),
   broadcastChannel: varchar("broadcast_channel", { length: 8 }),
+  broadcastPlayerId: uuid("broadcast_player_id"),
   lastGoalScorerName: varchar("last_goal_scorer_name", { length: 255 }),
   lastGoalTeamSide: varchar("last_goal_team_side", { length: 10 }),
   lastGoalTimestamp: timestamp("last_goal_timestamp", { withTimezone: true }),

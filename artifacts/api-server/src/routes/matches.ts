@@ -1216,6 +1216,7 @@ async function buildBroadcastPayload(matchId: string) {
       broadcast4kOffsetX: match.broadcast4kOffsetX ?? 0,
       broadcast4kOffsetY: match.broadcast4kOffsetY ?? 0,
       broadcastChannel: match.broadcastChannel || null,
+      broadcastPlayerId: match.broadcastPlayerId || null,
       serverNow: new Date().toISOString(),
       lastGoalScorerName: liveLastGoalScorerName,
       lastGoalTeamSide: bSwap ? (match.lastGoalTeamSide === "home" ? "away" : match.lastGoalTeamSide === "away" ? "home" : match.lastGoalTeamSide) : match.lastGoalTeamSide,
@@ -1432,19 +1433,138 @@ router.get("/matches/:matchId/lineup/:teamSide", async (req, res) => {
   }
 });
 
+// Broadcast surface: returns the per-player + per-tournament stat payload that
+// drives the Player Stats lower-third graphic. URL-gated only (no auth gate),
+// same posture as the scorebug endpoint. Intentionally exposes `headshotUrl`
+// (the public photo) but never `broadcastImageUrl`.
+router.get("/matches/:matchId/player-stats/:playerId", async (req, res) => {
+  try {
+    const matchId = String(req.params.matchId);
+    const playerId = String(req.params.playerId);
+
+    const [match] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
+    if (!match) { res.status(404).json({ message: "Match not found" }); return; }
+
+    const [player] = await db.select().from(playersTable).where(eq(playersTable.id, playerId));
+    if (!player) { res.status(404).json({ message: "Player not found" }); return; }
+
+    // Verify the player is on either team's current-season roster for this match.
+    const seasonYear = new Date().getUTCFullYear();
+    const teamIds = [match.homeTeamId, match.awayTeamId].filter((x): x is string => !!x);
+    if (teamIds.length === 0) { res.status(404).json({ message: "Player not on this match's roster" }); return; }
+    const rosterLinks = await db.select().from(teamPlayersTable).where(and(
+      eq(teamPlayersTable.playerId, playerId),
+      eq(teamPlayersTable.seasonYear, seasonYear),
+      eq(teamPlayersTable.isActive, true),
+      inArray(teamPlayersTable.teamId, teamIds),
+    ));
+    if (rosterLinks.length === 0) {
+      res.status(404).json({ message: "Player not on this match's roster" }); return;
+    }
+
+    const playerTeamId = rosterLinks[0].teamId;
+    const team = playerTeamId ? (await db.select().from(teamsTable).where(eq(teamsTable.id, playerTeamId)))[0] : null;
+    const teamSide: "home" | "away" | null =
+      playerTeamId === match.homeTeamId ? "home" : playerTeamId === match.awayTeamId ? "away" : null;
+
+    const [tournament] = await db.select().from(tournamentsTable).where(eq(tournamentsTable.id, match.tournamentId));
+
+    // Match-scoped per-player stats.
+    const matchEvents = await db.select().from(matchEventsTable).where(and(
+      eq(matchEventsTable.matchId, matchId),
+      eq(matchEventsTable.playerId, playerId),
+    ));
+    const matchGoals = matchEvents.filter(e => e.eventType === "goal").length;
+    const matchRawShotsOnGoal = matchEvents.filter(e => e.eventType === "shot_on_goal").length;
+    const matchPenaltyGoals = matchEvents.filter(e => e.eventType === "penalty_goal").length;
+    const matchThrowInsWon = matchEvents.filter(e => e.eventType === "throw_in_won").length;
+    // Match the team-stats convention used by MiniStats / Stats overlays:
+    // "Shots on Goal" = raw shot_on_goal events PLUS goals and penalty goals
+    // (those are also shots that hit the goal). Keeps the math single-sourced.
+    const matchShotsOnGoal = matchRawShotsOnGoal + matchGoals + matchPenaltyGoals;
+
+    // Tournament-scoped stats: aggregate across every match in this tournament.
+    const tournamentMatches = await db.select({ id: matchesTable.id })
+      .from(matchesTable)
+      .where(eq(matchesTable.tournamentId, match.tournamentId));
+    const tournamentMatchIds = tournamentMatches.map(m => m.id);
+
+    let tGoals = 0;
+    let tRawShots = 0;
+    let tPenaltyGoals = 0;
+    const matchesAppeared = new Set<string>();
+    if (tournamentMatchIds.length > 0) {
+      const tEvents = await db.select().from(matchEventsTable).where(and(
+        inArray(matchEventsTable.matchId, tournamentMatchIds),
+        eq(matchEventsTable.playerId, playerId),
+      ));
+      for (const ev of tEvents) {
+        matchesAppeared.add(ev.matchId);
+        if (ev.eventType === "goal") tGoals++;
+        else if (ev.eventType === "shot_on_goal") tRawShots++;
+        else if (ev.eventType === "penalty_goal") tPenaltyGoals++;
+      }
+    }
+    // Same convention as the team-stats overlay: total shots on goal includes
+    // raw shot events PLUS goals and penalty goals (each goal is a shot that
+    // went in). Conversion = (goals + penalty goals) / total shots.
+    const tShotsOnGoal = tRawShots + tGoals + tPenaltyGoals;
+    const conversion = tShotsOnGoal > 0 ? Math.round(((tGoals + tPenaltyGoals) / tShotsOnGoal) * 100) : 0;
+    const matchesPlayed = matchesAppeared.size;
+    const avgPerMatch = matchesPlayed > 0 ? Math.round((tGoals / matchesPlayed) * 10) / 10 : 0;
+
+    res.setHeader("Cache-Control", "no-store");
+    res.json({
+      tournamentName: tournament?.name ?? null,
+      player: {
+        id: player.id,
+        name: player.name,
+        headshotUrl: player.headshotUrl,
+        teamSide,
+      },
+      team: team ? {
+        id: team.id,
+        name: team.name,
+        logoUrl: team.logoUrl ?? null,
+        primaryColor: team.primaryColor ?? null,
+      } : null,
+      match: {
+        goals: matchGoals,
+        shotsOnGoal: matchShotsOnGoal,
+        penaltyGoals: matchPenaltyGoals,
+        throwInsWon: matchThrowInsWon,
+      },
+      tournament: {
+        goals: tGoals,
+        avgPerMatch,
+        shotsOnGoal: tShotsOnGoal,
+        conversion,
+      },
+    });
+  } catch (e: any) {
+    res.status(500).json({ message: e.message });
+  }
+});
+
 router.put("/matches/:matchId/broadcast", requireMatchWrite("gfx", "full_control", "scoreboard"), async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
-    const { broadcastVisible, broadcastStyle, broadcastResolution, broadcast4kScale, broadcast4kOffsetX, broadcast4kOffsetY, broadcastChannel } = req.body;
+    const { broadcastVisible, broadcastStyle, broadcastResolution, broadcast4kScale, broadcast4kOffsetX, broadcast4kOffsetY, broadcastChannel, broadcastPlayerId } = req.body;
     const updates: Record<string, any> = {};
     if (broadcastVisible !== undefined) {
       if (typeof broadcastVisible !== "boolean") { res.status(400).json({ message: "broadcastVisible must be boolean" }); return; }
       updates.broadcastVisible = broadcastVisible;
     }
     if (broadcastStyle !== undefined) {
-      const allowedStyles = ["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away"];
-      if (!allowedStyles.includes(broadcastStyle)) { res.status(400).json({ message: "broadcastStyle must be option1, option2, stats, stats_mini, field, lineup_home, or lineup_away" }); return; }
+      const allowedStyles = ["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"];
+      if (!allowedStyles.includes(broadcastStyle)) { res.status(400).json({ message: "broadcastStyle must be option1, option2, stats, stats_mini, field, lineup_home, lineup_away, or player_stats" }); return; }
       updates.broadcastStyle = broadcastStyle;
+    }
+    if (broadcastPlayerId !== undefined) {
+      if (broadcastPlayerId !== null && typeof broadcastPlayerId !== "string") {
+        res.status(400).json({ message: "broadcastPlayerId must be a uuid string or null" }); return;
+      }
+      updates.broadcastPlayerId = broadcastPlayerId;
     }
     if (broadcastResolution !== undefined) {
       const allowedRes = ["1080p", "4k"];
@@ -1517,6 +1637,7 @@ router.put("/matches/:matchId/broadcast", requireMatchWrite("gfx", "full_control
       broadcast4kOffsetX: match.broadcast4kOffsetX ?? 0,
       broadcast4kOffsetY: match.broadcast4kOffsetY ?? 0,
       broadcastChannel: match.broadcastChannel || null,
+      broadcastPlayerId: match.broadcastPlayerId || null,
       releasedFromMatchId,
     });
   } catch (e: any) {

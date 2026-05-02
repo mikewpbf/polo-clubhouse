@@ -74,6 +74,7 @@ interface MatchData {
   round: string | null;
   broadcastVisible?: boolean;
   broadcastStyle?: string;
+  broadcastPlayerId?: string | null;
   broadcastResolution?: string;
   broadcast4kScale?: number;
   broadcast4kOffsetX?: number;
@@ -1258,6 +1259,61 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
             </div>
           </div>
         </div>
+
+        <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[12px] font-sans font-medium uppercase tracking-wider" style={dk ? { color: textMuted } : undefined}>Player Stats Graphic</span>
+            {match.broadcastStyle === "player_stats" && match.broadcastPlayerId && (
+              <button
+                onClick={() => {
+                  setMatch(prev => prev ? { ...prev, broadcastStyle: "option1", broadcastPlayerId: null } : prev);
+                  mutatePut(`/matches/${match.id}/broadcast`, { broadcastStyle: "option1", broadcastPlayerId: null });
+                }}
+                className="text-[11px] font-medium px-2 py-1 rounded bg-g100 hover:bg-g200"
+                style={dk ? { background: btnMuted, color: btnMutedText } : undefined}
+              >
+                Hide
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {([
+              { side: "home" as const, team: match.homeTeam, players: homePlayers },
+              { side: "away" as const, team: match.awayTeam, players: awayPlayers },
+            ]).map(col => (
+              <div key={col.side}>
+                <div className="text-[10px] font-medium uppercase tracking-wider mb-1.5" style={{ color: dk ? textMuted : "#888" }}>
+                  {col.team?.shortName || col.team?.name || (col.side === "home" ? "Home" : "Away")}
+                </div>
+                <div className="flex flex-col gap-1">
+                  {col.players.length === 0 && (
+                    <div className="text-[11px] italic" style={{ color: dk ? textMuted : "#999" }}>No roster</div>
+                  )}
+                  {col.players.map(p => {
+                    const active = match.broadcastStyle === "player_stats" && match.broadcastPlayerId === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          setMatch(prev => prev ? { ...prev, broadcastStyle: "player_stats", broadcastPlayerId: p.id } : prev);
+                          mutatePut(`/matches/${match.id}/broadcast`, { broadcastStyle: "player_stats", broadcastPlayerId: p.id });
+                        }}
+                        className={`flex items-center gap-2 py-1.5 px-2 rounded-[8px] text-left text-[12px] font-medium transition-colors ${
+                          active ? "bg-g700 text-white" : dk ? "" : "bg-g50 text-ink2 hover:bg-g100"
+                        }`}
+                        style={!active && dk ? { background: btnMuted, color: btnMutedText } : undefined}
+                      >
+                        <span className="font-mono opacity-70 w-4 text-center">{p.position ?? "—"}</span>
+                        <span className="truncate flex-1">{p.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {!isScoreboardShare && (
         <div className={`rounded-[12px] p-4 ${dk ? "" : "bg-white card-shadow"}`} style={dk ? { background: bgCard, border: borderCard } : undefined}>
           <span className="text-[12px] font-sans font-medium uppercase tracking-wider block mb-3" style={dk ? { color: textMuted } : undefined}>Match Status</span>

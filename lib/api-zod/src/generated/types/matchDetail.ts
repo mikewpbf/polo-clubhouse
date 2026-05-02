@@ -41,6 +41,8 @@ export interface MatchDetail {
   broadcastOffsetSeconds: number;
   /** Which broadcast graphic the match's channel output should render. */
   broadcastStyle?: MatchDetailBroadcastStyle;
+  /** When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen. */
+  broadcastPlayerId?: string | null;
   /** True if the requesting user is a club admin of the tournament's club, or a super admin. Always false for unauthenticated requests and for share-token requests. */
   canAdminMatch?: boolean;
 }

@@ -3,6 +3,7 @@ import { StatsOverlay } from "./StatsOverlay";
 import { MiniStatsOverlay } from "./MiniStatsOverlay";
 import { FieldBugOverlay } from "./FieldBugOverlay";
 import LineupOverlay from "./LineupOverlay";
+import PlayerStatsOverlay from "./PlayerStatsOverlay";
 import { getOnColorTheme, themed } from "../../lib/colorContrast";
 
 interface BroadcastTeam {
@@ -33,6 +34,7 @@ interface BroadcastData {
   serverNow?: string;
   broadcastVisible: boolean;
   broadcastStyle: string;
+  broadcastPlayerId?: string | null;
   broadcastResolution?: string;
   broadcast4kScale?: number;
   broadcast4kOffsetX?: number;
@@ -844,6 +846,21 @@ export function ScoreBugOverlay() {
           possession={data.possession}
           tournament={data.tournament}
         />
+        {showDelayBadge && <DelayBadge offsetSeconds={delayOffsetSeconds!} />}
+      </div>
+    );
+  }
+
+  if (style === "player_stats" && data.broadcastPlayerId) {
+    return (
+      <div style={{
+        position: "fixed",
+        inset: 0,
+        transition: "opacity 0.6s ease",
+        opacity: isVisible ? 1 : 0,
+        pointerEvents: isVisible ? "auto" : "none",
+      }}>
+        <PlayerStatsOverlay matchId={data.id} playerId={data.broadcastPlayerId} />
         {showDelayBadge && <DelayBadge offsetSeconds={delayOffsetSeconds!} />}
       </div>
     );

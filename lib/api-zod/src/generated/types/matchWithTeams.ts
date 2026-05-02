@@ -31,6 +31,8 @@ export interface MatchWithTeams {
   notes?: string | null;
   /** Which broadcast graphic the match's channel output should render. */
   broadcastStyle?: MatchWithTeamsBroadcastStyle;
+  /** When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen. */
+  broadcastPlayerId?: string | null;
   homeTeam?: Team;
   awayTeam?: Team;
   field?: Field;

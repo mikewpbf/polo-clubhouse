@@ -419,6 +419,23 @@ export declare const matchesTable: import("drizzle-orm/pg-core").PgTableWithColu
         }, {}, {
             length: 8;
         }>;
+        broadcastPlayerId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "broadcast_player_id";
+            tableName: "matches";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         lastGoalScorerName: import("drizzle-orm/pg-core").PgColumn<{
             name: "last_goal_scorer_name";
             tableName: "matches";
@@ -629,6 +646,7 @@ export declare const insertMatchSchema: z.ZodObject<{
     broadcast4kOffsetX: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     broadcast4kOffsetY: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     broadcastChannel: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    broadcastPlayerId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     lastGoalScorerName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     lastGoalTeamSide: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     lastGoalTimestamp: z.ZodOptional<z.ZodNullable<z.ZodDate>>;

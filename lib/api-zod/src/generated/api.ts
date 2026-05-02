@@ -676,10 +676,18 @@ export const GetTournamentResponse = zod.object({
           "field",
           "lineup_home",
           "lineup_away",
+          "player_stats",
         ])
         .nullish()
         .describe(
           "Which broadcast graphic the match's channel output should render.",
+        ),
+      broadcastPlayerId: zod
+        .string()
+        .uuid()
+        .nullish()
+        .describe(
+          "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
         ),
       homeTeam: zod
         .object({
@@ -1091,10 +1099,18 @@ export const ListMatchesResponseItem = zod.object({
       "field",
       "lineup_home",
       "lineup_away",
+      "player_stats",
     ])
     .nullish()
     .describe(
       "Which broadcast graphic the match's channel output should render.",
+    ),
+  broadcastPlayerId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
     ),
   homeTeam: zod
     .object({
@@ -1193,10 +1209,18 @@ export const GenerateScheduleResponse = zod.object({
           "field",
           "lineup_home",
           "lineup_away",
+          "player_stats",
         ])
         .nullish()
         .describe(
           "Which broadcast graphic the match's channel output should render.",
+        ),
+      broadcastPlayerId: zod
+        .string()
+        .uuid()
+        .nullish()
+        .describe(
+          "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
         ),
       homeTeam: zod
         .object({
@@ -1407,10 +1431,18 @@ export const GetMatchResponse = zod.object({
       "field",
       "lineup_home",
       "lineup_away",
+      "player_stats",
     ])
     .nullish()
     .describe(
       "Which broadcast graphic the match's channel output should render.",
+    ),
+  broadcastPlayerId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
     ),
   canAdminMatch: zod
     .boolean()
@@ -1474,10 +1506,18 @@ export const UpdateMatchResponse = zod.object({
       "field",
       "lineup_home",
       "lineup_away",
+      "player_stats",
     ])
     .nullish()
     .describe(
       "Which broadcast graphic the match's channel output should render.",
+    ),
+  broadcastPlayerId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
     ),
   homeTeam: zod
     .object({
@@ -1578,10 +1618,18 @@ export const UpdateMatchScoreResponse = zod.object({
       "field",
       "lineup_home",
       "lineup_away",
+      "player_stats",
     ])
     .nullish()
     .describe(
       "Which broadcast graphic the match's channel output should render.",
+    ),
+  broadcastPlayerId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
     ),
   homeTeam: zod
     .object({
@@ -1681,10 +1729,18 @@ export const UpdateMatchClockResponse = zod.object({
       "field",
       "lineup_home",
       "lineup_away",
+      "player_stats",
     ])
     .nullish()
     .describe(
       "Which broadcast graphic the match's channel output should render.",
+    ),
+  broadcastPlayerId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
     ),
   homeTeam: zod
     .object({
@@ -1791,10 +1847,18 @@ export const UpdateMatchStatusResponse = zod.object({
       "field",
       "lineup_home",
       "lineup_away",
+      "player_stats",
     ])
     .nullish()
     .describe(
       "Which broadcast graphic the match's channel output should render.",
+    ),
+  broadcastPlayerId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
     ),
   homeTeam: zod
     .object({
@@ -1890,10 +1954,18 @@ export const AdvanceChukkerResponse = zod.object({
       "field",
       "lineup_home",
       "lineup_away",
+      "player_stats",
     ])
     .nullish()
     .describe(
       "Which broadcast graphic the match's channel output should render.",
+    ),
+  broadcastPlayerId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
     ),
   homeTeam: zod
     .object({
@@ -2115,6 +2187,57 @@ export const ResolveShareTokenResponse = zod
   .describe("Public payload returned when resolving a share token.");
 
 /**
+ * Broadcast surface for the Player Stats lower-third graphic. URL-gated
+only — no auth gate, same posture as the scorebug endpoint.
+Intentionally exposes the public `headshotUrl` for the on-air photo;
+the private `broadcastImageUrl` is never returned here.
+
+ * @summary Get per-player + per-tournament stats for the Player Stats lower-third graphic
+ */
+export const GetMatchPlayerStatsParams = zod.object({
+  matchId: zod.coerce.string().uuid(),
+  playerId: zod.coerce.string().uuid(),
+});
+
+export const GetMatchPlayerStatsResponse = zod.object({
+  tournamentName: zod.string().nullish(),
+  player: zod.object({
+    id: zod.string().uuid(),
+    name: zod.string(),
+    headshotUrl: zod.string().nullish(),
+    teamSide: zod.enum(["home", "away"]).nullish(),
+  }),
+  team: zod
+    .object({
+      id: zod.string().uuid(),
+      name: zod.string(),
+      logoUrl: zod.string().nullish(),
+      primaryColor: zod.string().nullish(),
+    })
+    .nullish(),
+  match: zod.object({
+    goals: zod.number(),
+    shotsOnGoal: zod.number(),
+    penaltyGoals: zod.number(),
+    throwInsWon: zod.number(),
+  }),
+  tournament: zod.object({
+    goals: zod.number(),
+    avgPerMatch: zod
+      .number()
+      .describe(
+        "Tournament goals divided by tournament matches the player appeared in (rounded to 1 decimal). Returns 0 when the player has not appeared in any tournament match yet.",
+      ),
+    shotsOnGoal: zod.number(),
+    conversion: zod
+      .number()
+      .describe(
+        "(goals + penalty goals) \/ shotsOnGoal as integer percent. Returns 0 when shotsOnGoal is 0.",
+      ),
+  }),
+});
+
+/**
  * Broadcast surface for the Team Lineup graphic. Intentionally exposes
 each player's `broadcastImageUrl` so the on-air overlay can render the
 broadcast aux photo. Public/spectator surfaces still strip aux URLs.
@@ -2211,10 +2334,18 @@ export const ListLiveMatchesResponseItem = zod.object({
       "field",
       "lineup_home",
       "lineup_away",
+      "player_stats",
     ])
     .nullish()
     .describe(
       "Which broadcast graphic the match's channel output should render.",
+    ),
+  broadcastPlayerId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
     ),
   homeTeam: zod
     .object({
@@ -2312,10 +2443,18 @@ export const ListTodayMatchesResponseItem = zod.object({
       "field",
       "lineup_home",
       "lineup_away",
+      "player_stats",
     ])
     .nullish()
     .describe(
       "Which broadcast graphic the match's channel output should render.",
+    ),
+  broadcastPlayerId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
     ),
   homeTeam: zod
     .object({
@@ -2415,10 +2554,18 @@ export const ListUpcomingMatchesResponseItem = zod.object({
       "field",
       "lineup_home",
       "lineup_away",
+      "player_stats",
     ])
     .nullish()
     .describe(
       "Which broadcast graphic the match's channel output should render.",
+    ),
+  broadcastPlayerId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
     ),
   homeTeam: zod
     .object({
@@ -2522,10 +2669,18 @@ export const GetAdminDashboardResponse = zod.object({
           "field",
           "lineup_home",
           "lineup_away",
+          "player_stats",
         ])
         .nullish()
         .describe(
           "Which broadcast graphic the match's channel output should render.",
+        ),
+      broadcastPlayerId: zod
+        .string()
+        .uuid()
+        .nullish()
+        .describe(
+          "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
         ),
       homeTeam: zod
         .object({
@@ -2719,10 +2874,18 @@ export const GetMyTeamDashboardResponse = zod.object({
           "field",
           "lineup_home",
           "lineup_away",
+          "player_stats",
         ])
         .nullish()
         .describe(
           "Which broadcast graphic the match's channel output should render.",
+        ),
+      broadcastPlayerId: zod
+        .string()
+        .uuid()
+        .nullish()
+        .describe(
+          "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
         ),
       homeTeam: zod
         .object({
@@ -2812,10 +2975,18 @@ export const GetMyTeamDashboardResponse = zod.object({
           "field",
           "lineup_home",
           "lineup_away",
+          "player_stats",
         ])
         .nullish()
         .describe(
           "Which broadcast graphic the match's channel output should render.",
+        ),
+      broadcastPlayerId: zod
+        .string()
+        .uuid()
+        .nullish()
+        .describe(
+          "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
         ),
       homeTeam: zod
         .object({
@@ -2954,10 +3125,18 @@ export const GetMyTeamScheduleResponseItem = zod.object({
       "field",
       "lineup_home",
       "lineup_away",
+      "player_stats",
     ])
     .nullish()
     .describe(
       "Which broadcast graphic the match's channel output should render.",
+    ),
+  broadcastPlayerId: zod
+    .string()
+    .uuid()
+    .nullish()
+    .describe(
+      "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
     ),
   homeTeam: zod
     .object({
@@ -3191,10 +3370,18 @@ export const GetWidgetFixturesResponse = zod.object({
           "field",
           "lineup_home",
           "lineup_away",
+          "player_stats",
         ])
         .nullish()
         .describe(
           "Which broadcast graphic the match's channel output should render.",
+        ),
+      broadcastPlayerId: zod
+        .string()
+        .uuid()
+        .nullish()
+        .describe(
+          "When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.",
         ),
       homeTeam: zod
         .object({

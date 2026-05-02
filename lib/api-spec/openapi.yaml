@@ -1201,6 +1201,39 @@ paths:
               schema:
                 $ref: "#/components/schemas/ShareTokenError"
 
+  /matches/{matchId}/player-stats/{playerId}:
+    get:
+      operationId: getMatchPlayerStats
+      tags: [matches]
+      summary: Get per-player + per-tournament stats for the Player Stats lower-third graphic
+      description: |
+        Broadcast surface for the Player Stats lower-third graphic. URL-gated
+        only — no auth gate, same posture as the scorebug endpoint.
+        Intentionally exposes the public `headshotUrl` for the on-air photo;
+        the private `broadcastImageUrl` is never returned here.
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: playerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Player stats payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MatchPlayerStats"
+        "404":
+          description: Match or player not found, or player is not on either side's roster for this match.
+
   /matches/{matchId}/lineup/{teamSide}:
     get:
       operationId: getMatchLineup
@@ -2740,9 +2773,14 @@ components:
           nullable: true
         broadcastStyle:
           type: string
-          enum: [option1, option2, stats, stats_mini, field, lineup_home, lineup_away]
+          enum: [option1, option2, stats, stats_mini, field, lineup_home, lineup_away, player_stats]
           nullable: true
           description: Which broadcast graphic the match's channel output should render.
+        broadcastPlayerId:
+          type: string
+          format: uuid
+          nullable: true
+          description: When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.
         homeTeam:
           $ref: "#/components/schemas/Team"
         awayTeam:
@@ -2876,6 +2914,75 @@ components:
       required:
         - players
 
+    MatchPlayerStats:
+      type: object
+      properties:
+        tournamentName:
+          type: string
+          nullable: true
+        player:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            headshotUrl:
+              type: string
+              nullable: true
+            teamSide:
+              type: string
+              enum: [home, away]
+              nullable: true
+          required: [id, name]
+        team:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              format: uuid
+            name:
+              type: string
+            logoUrl:
+              type: string
+              nullable: true
+            primaryColor:
+              type: string
+              nullable: true
+          required: [id, name]
+        match:
+          type: object
+          properties:
+            goals:
+              type: integer
+            shotsOnGoal:
+              type: integer
+            penaltyGoals:
+              type: integer
+            throwInsWon:
+              type: integer
+          required: [goals, shotsOnGoal, penaltyGoals, throwInsWon]
+        tournament:
+          type: object
+          properties:
+            goals:
+              type: integer
+            avgPerMatch:
+              type: number
+              description: Tournament goals divided by tournament matches the player appeared in (rounded to 1 decimal). Returns 0 when the player has not appeared in any tournament match yet.
+            shotsOnGoal:
+              type: integer
+            conversion:
+              type: integer
+              description: (goals + penalty goals) / shotsOnGoal as integer percent. Returns 0 when shotsOnGoal is 0.
+          required: [goals, avgPerMatch, shotsOnGoal, conversion]
+      required:
+        - player
+        - match
+        - tournament
+
     MatchDetail:
       type: object
       properties:
@@ -2952,9 +3059,14 @@ components:
           type: number
         broadcastStyle:
           type: string
-          enum: [option1, option2, stats, stats_mini, field, lineup_home, lineup_away]
+          enum: [option1, option2, stats, stats_mini, field, lineup_home, lineup_away, player_stats]
           nullable: true
           description: Which broadcast graphic the match's channel output should render.
+        broadcastPlayerId:
+          type: string
+          format: uuid
+          nullable: true
+          description: When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen.
         canAdminMatch:
           type: boolean
           description: True if the requesting user is a club admin of the tournament's club, or a super admin. Always false for unauthenticated requests and for share-token requests.

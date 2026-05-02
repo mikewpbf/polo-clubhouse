@@ -365,6 +365,7 @@ export const MatchWithTeamsBroadcastStyle = {
   field: "field",
   lineup_home: "lineup_home",
   lineup_away: "lineup_away",
+  player_stats: "player_stats",
 } as const;
 
 export interface TournamentBrief {
@@ -395,6 +396,8 @@ export interface MatchWithTeams {
   notes?: string | null;
   /** Which broadcast graphic the match's channel output should render. */
   broadcastStyle?: MatchWithTeamsBroadcastStyle;
+  /** When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen. */
+  broadcastPlayerId?: string | null;
   homeTeam?: Team;
   awayTeam?: Team;
   field?: Field;
@@ -588,6 +591,53 @@ export interface MatchLineup {
   players: MatchLineupPlayer[];
 }
 
+export type MatchPlayerStatsPlayerTeamSide =
+  | (typeof MatchPlayerStatsPlayerTeamSide)[keyof typeof MatchPlayerStatsPlayerTeamSide]
+  | null;
+
+export const MatchPlayerStatsPlayerTeamSide = {
+  home: "home",
+  away: "away",
+} as const;
+
+export type MatchPlayerStatsPlayer = {
+  id: string;
+  name: string;
+  headshotUrl?: string | null;
+  teamSide?: MatchPlayerStatsPlayerTeamSide;
+};
+
+export type MatchPlayerStatsTeam = {
+  id: string;
+  name: string;
+  logoUrl?: string | null;
+  primaryColor?: string | null;
+} | null;
+
+export type MatchPlayerStatsMatch = {
+  goals: number;
+  shotsOnGoal: number;
+  penaltyGoals: number;
+  throwInsWon: number;
+};
+
+export type MatchPlayerStatsTournament = {
+  goals: number;
+  /** Tournament goals divided by tournament matches the player appeared in (rounded to 1 decimal). Returns 0 when the player has not appeared in any tournament match yet. */
+  avgPerMatch: number;
+  shotsOnGoal: number;
+  /** (goals + penalty goals) / shotsOnGoal as integer percent. Returns 0 when shotsOnGoal is 0. */
+  conversion: number;
+};
+
+export interface MatchPlayerStats {
+  tournamentName?: string | null;
+  player: MatchPlayerStatsPlayer;
+  team?: MatchPlayerStatsTeam;
+  match: MatchPlayerStatsMatch;
+  tournament: MatchPlayerStatsTournament;
+}
+
 export type MatchDetailStatus =
   (typeof MatchDetailStatus)[keyof typeof MatchDetailStatus];
 
@@ -623,6 +673,7 @@ export const MatchDetailBroadcastStyle = {
   field: "field",
   lineup_home: "lineup_home",
   lineup_away: "lineup_away",
+  player_stats: "player_stats",
 } as const;
 
 export type MatchEventEventType =
@@ -732,6 +783,8 @@ export interface MatchDetail {
   broadcastOffsetSeconds: number;
   /** Which broadcast graphic the match's channel output should render. */
   broadcastStyle?: MatchDetailBroadcastStyle;
+  /** When broadcastStyle is `player_stats`, identifies which player's lower-third graphic is currently on screen. */
+  broadcastPlayerId?: string | null;
   /** True if the requesting user is a club admin of the tournament's club, or a super admin. Always false for unauthenticated requests and for share-token requests. */
   canAdminMatch?: boolean;
 }

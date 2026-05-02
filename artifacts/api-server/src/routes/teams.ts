@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { teamsTable, teamManagerAssignmentsTable, adminClubMembershipsTable, tournamentTeamsTable, matchesTable, matchEventsTable, teamOutDatesTable, userInvitesTable, playersTable, teamPlayersTable, usersTable, horsesTable, HORSE_SEX_OPTIONS, HORSE_COLOR_OPTIONS } from "@workspace/db/schema";
 import { eq, ilike, and, or, inArray } from "drizzle-orm";
 import { requireAuth, isSuperAdmin, requireSuperAdmin } from "../lib/auth";
+import { invalidateMatchPreviewsForTeam } from "./match-previews";
 
 const router: IRouter = Router();
 
@@ -120,6 +121,17 @@ router.put("/teams/:teamId", requireAuth, requireTeamAdminOrManager, async (req,
     if (logoUrl !== undefined) updates.logoUrl = logoUrl;
     if (scoreboardName !== undefined) updates.scoreboardName = scoreboardName || null;
     const [team] = await db.update(teamsTable).set(updates).where(eq(teamsTable.id, teamId)).returning();
+    // If anything that appears on the OG preview card changed, drop the
+    // cached preview image on every match this team plays in. The next
+    // admin view of those matches will trigger a fresh client-side snap.
+    const previewFieldsChanged =
+      updates.name !== undefined ||
+      updates.shortName !== undefined ||
+      updates.logoUrl !== undefined ||
+      updates.primaryColor !== undefined;
+    if (previewFieldsChanged) {
+      await invalidateMatchPreviewsForTeam(teamId).catch(() => { /* don't block edit */ });
+    }
     res.json(team);
   } catch (e: any) {
     res.status(400).json({ message: e.message });

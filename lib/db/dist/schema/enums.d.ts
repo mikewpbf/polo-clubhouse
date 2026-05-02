@@ -6,5 +6,5 @@ export declare const clubMembershipRoleEnum: import("drizzle-orm/pg-core").PgEnu
 export declare const assignmentStatusEnum: import("drizzle-orm/pg-core").PgEnum<["pending_invite", "active", "revoked"]>;
 export declare const scoringLocationEnum: import("drizzle-orm/pg-core").PgEnum<["studio", "field"]>;
 export declare const matchEventTypeEnum: import("drizzle-orm/pg-core").PgEnum<["goal", "score_correction", "chukker_start", "chukker_end", "match_start", "match_end", "clock_start", "clock_pause", "penalty", "horse_change", "safety", "injury_timeout", "bowl_in", "knock_in", "foul", "penalty_goal", "shot_on_goal", "penalty_in", "penalty_out", "throw_in_won", "foul_committed", "fouls_won"]>;
-export declare const sharePageTypeEnum: import("drizzle-orm/pg-core").PgEnum<["score", "stats", "gfx"]>;
+export declare const sharePageTypeEnum: import("drizzle-orm/pg-core").PgEnum<["stats", "gfx", "scoreboard", "full_control"]>;
 //# sourceMappingURL=enums.d.ts.map

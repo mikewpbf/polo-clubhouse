@@ -561,6 +561,40 @@ export declare const matchesTable: import("drizzle-orm/pg-core").PgTableWithColu
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        previewImageUrl: import("drizzle-orm/pg-core").PgColumn<{
+            name: "preview_image_url";
+            tableName: "matches";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        previewImageUpdatedAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "preview_image_updated_at";
+            tableName: "matches";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
     };
     dialect: "pg";
 }>;
@@ -606,6 +640,8 @@ export declare const insertMatchSchema: z.ZodObject<{
         field: "field";
     }>>;
     broadcastOffsetSeconds: z.ZodOptional<z.ZodString>;
+    previewImageUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    previewImageUpdatedAt: z.ZodOptional<z.ZodNullable<z.ZodDate>>;
 }, {
     out: {};
     in: {};

@@ -74,6 +74,30 @@ export class ObjectStorageService {
     return new Response(webStream, { headers });
   }
 
+  // Upload a buffer to a stable public key under the `public/` prefix.
+  // Used for auto-generated assets (e.g. match link-preview images) where we
+  // want the same key to be overwritten in place rather than allocating a new
+  // upload UUID each time. Returns the canonical public-objects URL path
+  // (relative — callers are expected to prepend host/base as needed).
+  async uploadPublicObject(
+    filePath: string,
+    body: Buffer | Uint8Array,
+    contentType: string,
+  ): Promise<{ key: string; url: string }> {
+    const cfg = getR2Config();
+    const key = `${PUBLIC_PREFIX}${filePath}`;
+    await getR2Client().send(
+      new PutObjectCommand({
+        Bucket: cfg.bucket,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+        CacheControl: "public, max-age=300",
+      }),
+    );
+    return { key, url: `/api/storage/public-objects/${filePath}` };
+  }
+
   async getObjectEntityUploadURL(): Promise<string> {
     const cfg = getR2Config();
     const objectId = randomUUID();

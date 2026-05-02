@@ -41,14 +41,14 @@ export declare const matchShareLinksTable: import("drizzle-orm/pg-core").PgTable
             tableName: "match_share_links";
             dataType: "string";
             columnType: "PgEnumColumn";
-            data: "score" | "stats" | "gfx";
+            data: "stats" | "gfx" | "scoreboard" | "full_control";
             driverParam: string;
             notNull: true;
             hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: ["score", "stats", "gfx"];
+            enumValues: ["stats", "gfx", "scoreboard", "full_control"];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
@@ -132,7 +132,7 @@ export declare const matchShareLinksTable: import("drizzle-orm/pg-core").PgTable
             columnType: "PgTimestamp";
             data: Date;
             driverParam: string;
-            notNull: false;
+            notNull: true;
             hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { toPng } from "html-to-image";
 import { PageLoading } from "@/components/LoadingBar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, Loader2, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Download, Loader2, Image as ImageIcon, RefreshCw } from "lucide-react";
 import { getStoredToken, useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
@@ -14,6 +14,11 @@ import {
   type GraphicData,
   type GraphicTeam,
 } from "@/components/MatchGraphicTemplates";
+import {
+  snapMatchPreviewInBackground,
+  backfillMissingMatchPreviews,
+} from "@/lib/matchPreviewSnap";
+import { imageToBase64 } from "@/lib/matchPreviewShared";
 
 async function apiFetch(path: string) {
   const token = getStoredToken();
@@ -27,66 +32,6 @@ async function apiFetch(path: string) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Request failed");
   return data;
-}
-
-async function blobToDataUrl(blob: Blob): Promise<string | null> {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = () => resolve(null);
-    reader.readAsDataURL(blob);
-  });
-}
-
-async function imageToBase64(url: string): Promise<string | null> {
-  const headers: Record<string, string> = {};
-  if (url.startsWith("/api")) {
-    const token = getStoredToken();
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  try {
-    const response = await fetch(url, { headers });
-    if (response.ok) {
-      const result = await blobToDataUrl(await response.blob());
-      if (result) return result;
-    }
-  } catch {}
-
-  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-  if (!url.startsWith("/api") && !url.startsWith(`${base}/api`)) {
-    try {
-      const proxyUrl = `${base}/api/image-proxy?url=${encodeURIComponent(url)}`;
-      const token = getStoredToken();
-      const proxyHeaders: Record<string, string> = {};
-      if (token) proxyHeaders["Authorization"] = `Bearer ${token}`;
-      const response = await fetch(proxyUrl, { headers: proxyHeaders });
-      if (response.ok) {
-        const result = await blobToDataUrl(await response.blob());
-        if (result) return result;
-      }
-    } catch {}
-  }
-
-  try {
-    return await new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) { resolve(null); return; }
-        ctx.drawImage(img, 0, 0);
-        resolve(canvas.toDataURL("image/png"));
-      };
-      img.onerror = () => resolve(null);
-      img.src = url;
-    });
-  } catch {
-    return null;
-  }
 }
 
 interface MatchData {
@@ -119,6 +64,8 @@ export function MatchGraphics() {
   const [template, setTemplate] = useState<TemplateName>("bold-diagonal");
   const [orientation, setOrientation] = useState<GraphicOrientation>("horizontal");
   const [exporting, setExporting] = useState(false);
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillProgress, setBackfillProgress] = useState<{ done: number; total: number } | null>(null);
 
   const [headline, setHeadline] = useState("");
   const [subheadline, setSubheadline] = useState("");
@@ -185,6 +132,13 @@ export function MatchGraphics() {
         ]);
         setHomeTeamData(home);
         setAwayTeamData(away);
+
+        // Refresh the link-preview PNG used by OG cards in iMessage/WhatsApp/
+        // Slack/Discord whenever an admin opens this page. Fire-and-forget;
+        // the main UI flow doesn't depend on the result. The auto-snap uses
+        // its own off-screen render — it does not interfere with the visible
+        // editor or the user's manual download workflow.
+        snapMatchPreviewInBackground(data.id);
       } catch {
         toast({ title: "Failed to load match data", variant: "destructive" });
       } finally {
@@ -268,6 +222,46 @@ export function MatchGraphics() {
               {match.tournament ? ` - ${match.tournament.name}` : ""}
             </p>
           </div>
+          {/* Backfill tool: runs the headless snap+upload for every match in
+              the system that has no stored OG preview image yet. Lives here
+              because it shares the same off-screen renderer as the per-match
+              auto-snap on this page; surfacing it elsewhere would mean
+              duplicating that rendering pipeline. */}
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={backfilling}
+            onClick={async () => {
+              setBackfilling(true);
+              setBackfillProgress({ done: 0, total: 0 });
+              try {
+                const result = await backfillMissingMatchPreviews((done, total) =>
+                  setBackfillProgress({ done, total }),
+                );
+                if (result.total === 0) {
+                  toast({ title: "No matches missing previews — all caught up." });
+                } else {
+                  toast({
+                    title: `Backfill complete: ${result.succeeded}/${result.total} matches updated`,
+                    description: result.failed ? `${result.failed} failed (likely permissions or network).` : undefined,
+                  });
+                }
+              } catch {
+                toast({ title: "Backfill failed", variant: "destructive" });
+              } finally {
+                setBackfilling(false);
+                setBackfillProgress(null);
+              }
+            }}
+            className="shrink-0"
+          >
+            {backfilling ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+            {backfilling
+              ? backfillProgress && backfillProgress.total > 0
+                ? `Snapping ${backfillProgress.done}/${backfillProgress.total}`
+                : "Looking for matches…"
+              : "Backfill missing previews"}
+          </Button>
         </div>
 
         <div className="flex gap-6 flex-col lg:flex-row">

@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { fieldsTable, adminClubMembershipsTable, fieldWeatherCacheTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { requireAuth, requireClubAdmin, isSuperAdmin } from "../lib/auth";
+import { invalidateMatchPreviewsForField } from "./match-previews";
 
 const router: IRouter = Router();
 
@@ -74,6 +75,12 @@ router.put("/fields/:fieldId", requireAuth, requireFieldClubAdmin, async (req, r
     if (surfaceType !== undefined) updates.surfaceType = surfaceType;
     if (isActive !== undefined) updates.isActive = isActive;
     const [field] = await db.update(fieldsTable).set(updates).where(eq(fieldsTable.id, fieldId)).returning();
+    // Field name renders on the BoldDiagonal OG preview card (location row),
+    // so a rename invalidates every match on this field. Auto-backfill on
+    // the next admin page mount produces fresh PNGs.
+    if (updates.name !== undefined) {
+      await invalidateMatchPreviewsForField(fieldId).catch(() => { /* don't block edit */ });
+    }
     res.json(field);
   } catch (e: any) {
     res.status(400).json({ message: e.message });

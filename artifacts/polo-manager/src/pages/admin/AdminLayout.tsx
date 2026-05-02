@@ -1,11 +1,22 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Calendar, Users, Building2, Trophy, Activity, LogOut, Home, Shield, Sparkles, Settings, UserCircle } from "lucide-react";
+import { triggerAdminPreviewAutoBackfill } from "@/lib/matchPreviewSnap";
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const [location] = useLocation();
+
+  // Auto-resnap: any admin opening any admin page kicks off a one-pass
+  // background backfill of matches whose preview was nulled out by an
+  // upstream edit (team logo/name/color, tournament name, field name).
+  // Once-per-session and idle-scheduled — see matchPreviewSnap.tsx.
+  useEffect(() => {
+    if (!user) return;
+    const isAdmin = user.role === "super_admin" || (user.clubMemberships?.length ?? 0) > 0;
+    if (isAdmin) triggerAdminPreviewAutoBackfill();
+  }, [user]);
 
   const hasClub = (user?.clubMemberships?.length ?? 0) > 0;
   const isSuperAdmin = user?.role === "super_admin";

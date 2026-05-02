@@ -12,6 +12,7 @@ import { Plus, Trophy, Calendar, X, Trash2, Pencil, Users, Sparkles, Check, Load
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { TournamentExportButton } from "@/components/TournamentExportImage";
+import { snapMatchPreviewInBackground } from "@/lib/matchPreviewSnap";
 
 interface TournamentItem {
   id: string;
@@ -619,12 +620,19 @@ function MatchForm({
         round: round || null,
         streamUrl: streamUrl || null,
       };
+      let savedMatchId: string | null = null;
       if (match) {
         await apiFetch(`/matches/${match.id}`, { method: "PUT", body: JSON.stringify(body) });
+        savedMatchId = match.id;
       } else {
-        await apiFetch(`/tournaments/${tournamentId}/matches`, { method: "POST", body: JSON.stringify(body) });
+        const created = await apiFetch(`/tournaments/${tournamentId}/matches`, { method: "POST", body: JSON.stringify(body) });
+        savedMatchId = (created && typeof created === "object" && "id" in created) ? String((created as { id: unknown }).id) : null;
       }
       toast({ title: match ? "Match updated" : "Match added" });
+      // Refresh the per-match link-preview PNG used by OG cards in
+      // iMessage/WhatsApp/Slack/Discord. Fire-and-forget — never blocks the
+      // user-visible save flow, and silently no-ops on failure.
+      if (savedMatchId) snapMatchPreviewInBackground(savedMatchId);
       onSave();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to save match";

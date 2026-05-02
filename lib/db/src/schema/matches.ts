@@ -39,6 +39,8 @@ export const matchesTable = pgTable("matches", {
   streamStartedAt: timestamp("stream_started_at", { withTimezone: true }),
   scoringLocation: scoringLocationEnum("scoring_location").notNull().default("studio"),
   broadcastOffsetSeconds: numeric("broadcast_offset_seconds", { precision: 6, scale: 2 }).notNull().default("0"),
+  previewImageUrl: text("preview_image_url"),
+  previewImageUpdatedAt: timestamp("preview_image_updated_at", { withTimezone: true }),
 });
 
 export const insertMatchSchema = createInsertSchema(matchesTable).omit({ id: true });

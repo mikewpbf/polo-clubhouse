@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { tournamentsTable, tournamentTeamsTable, teamsTable, matchesTable, playDatesTable, clubsTable, fieldsTable, adminClubMembershipsTable, matchEventsTable, teamOutDatesTable, teamManagerAssignmentsTable, userInvitesTable, playersTable, horsesTable, teamPlayersTable } from "@workspace/db/schema";
 import { eq, and, ilike, count, inArray, desc, asc } from "drizzle-orm";
 import { requireAuth, optionalAuth, isSuperAdmin, requireSuperAdmin } from "../lib/auth";
+import { invalidateMatchPreviewsForTournament } from "./match-previews";
 import OpenAI from "openai";
 
 const router: IRouter = Router();
@@ -171,6 +172,13 @@ router.put("/tournaments/:tournamentId", requireAuth, requireAdminForTournamentI
       delete body.sponsoredRank;
     }
     const [tournament] = await db.update(tournamentsTable).set(body).where(eq(tournamentsTable.id, tournamentId)).returning();
+    // Tournament name appears on the BoldDiagonal preview card, so any
+    // tournament edit invalidates cached previews for every match in the
+    // tournament. Cheap (single UPDATE) and avoids stale OG cards in chat
+    // apps after a rename.
+    if (body.name !== undefined) {
+      await invalidateMatchPreviewsForTournament(tournamentId).catch(() => { /* don't block edit */ });
+    }
     res.json(tournament);
   } catch (e: any) {
     res.status(400).json({ message: e.message });

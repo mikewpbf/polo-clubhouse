@@ -1165,7 +1165,7 @@ async function buildBroadcastPayload(matchId: string) {
       clockIsRunning: match.clockIsRunning,
       broadcastVisible: match.broadcastVisible,
       broadcastStyle: match.broadcastStyle,
-      broadcastResolution: match.broadcastResolution || "1080p",
+      broadcastResolution: match.broadcastResolution || "4k",
       broadcast4kScale: match.broadcast4kScale ?? 100,
       broadcast4kOffsetX: match.broadcast4kOffsetX ?? 0,
       broadcast4kOffsetY: match.broadcast4kOffsetY ?? 0,

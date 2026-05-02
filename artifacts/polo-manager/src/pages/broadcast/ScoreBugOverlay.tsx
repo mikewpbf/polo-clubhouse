@@ -647,7 +647,7 @@ export function ScoreBugOverlay() {
   const oyOverride = urlParams.get("oy");
   const hideDelay = urlParams.get("hideDelay") === "1";
 
-  const effectiveResolution = resOverride || data?.broadcastResolution || "1080p";
+  const effectiveResolution = resOverride || data?.broadcastResolution || "4k";
   const is4K = effectiveResolution === "4k";
 
   const parseNumOverride = (v: string | null, fallback: number) => {

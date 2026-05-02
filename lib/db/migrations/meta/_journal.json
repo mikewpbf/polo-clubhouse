@@ -43,6 +43,13 @@
       "when": 1746129600000,
       "tag": "0005_share_page_type_scoreboard_full_control",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1746216000000,
+      "tag": "0006_broadcast_resolution_default_4k",
+      "breakpoints": true
     }
   ]
 }

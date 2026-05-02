@@ -1324,7 +1324,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
             <Monitor className="w-4 h-4" style={dk ? { color: textMuted } : undefined} />
             <span className="text-[12px] font-sans font-medium uppercase tracking-wider flex-1 text-left" style={dk ? { color: textMuted } : undefined}>Output Resolution</span>
             <span className="text-[11px] font-sans font-medium" style={{ color: dk ? textMuted : "#888" }}>
-              {((match as any).broadcastResolution || "1080p") === "4k" ? "4K" : "1080P"}
+              {((match as any).broadcastResolution || "4k") === "4k" ? "4K" : "1080P"}
             </span>
             <ChevronRight className={`w-4 h-4 transition-transform ${outputResOpen ? "rotate-90" : ""}`} style={dk ? { color: textMuted } : undefined} />
           </button>
@@ -1336,7 +1336,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                   { label: "1080P", val: "1080p" },
                   { label: "4K", val: "4k" },
                 ] as const).map((r) => {
-                  const current = (match as any).broadcastResolution || "1080p";
+                  const current = (match as any).broadcastResolution || "4k";
                   const active = current === r.val;
                   return (
                     <button
@@ -1356,7 +1356,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                 })}
               </div>
 
-              {(match.broadcastResolution || "1080p") === "4k" && (
+              {(match.broadcastResolution || "4k") === "4k" && (
                 <FourKAdjustments
                   matchId={match.id}
                   scale={match.broadcast4kScale ?? 100}
@@ -1807,7 +1807,7 @@ function ClockAdjuster({
 
 function BroadcastPreview({ matchId, dark, broadcastStyle, broadcastVisible, broadcastResolution, broadcast4kScale, broadcast4kOffsetX, broadcast4kOffsetY, open, onClose }: { matchId: string; dark: boolean; broadcastStyle?: string; broadcastVisible?: boolean; broadcastResolution?: string; broadcast4kScale?: number; broadcast4kOffsetX?: number; broadcast4kOffsetY?: number; open: boolean; onClose: () => void }) {
   const [posRight, setPosRight] = useState<number | null>(null);
-  const is4K = (broadcastResolution || "1080p") === "4k";
+  const is4K = (broadcastResolution || "4k") === "4k";
   const scaleParam = broadcast4kScale ?? 100;
   const oxParam = broadcast4kOffsetX ?? 0;
   const oyParam = broadcast4kOffsetY ?? 0;

@@ -26,7 +26,7 @@ export const matchesTable = pgTable("matches", {
   notes: text("notes"),
   broadcastVisible: boolean("broadcast_visible").default(false),
   broadcastStyle: varchar("broadcast_style", { length: 20 }).default("option1"),
-  broadcastResolution: varchar("broadcast_resolution", { length: 10 }).default("1080p"),
+  broadcastResolution: varchar("broadcast_resolution", { length: 10 }).default("4k"),
   broadcast4kScale: integer("broadcast_4k_scale").default(100),
   broadcast4kOffsetX: integer("broadcast_4k_offset_x").default(0),
   broadcast4kOffsetY: integer("broadcast_4k_offset_y").default(0),

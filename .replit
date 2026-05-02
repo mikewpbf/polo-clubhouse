@@ -24,7 +24,7 @@ integrations = ["resend:1.0.0"]
 
 [postMerge]
 path = "scripts/post-merge.sh"
-timeoutMs = 20000
+timeoutMs = 90000
 
 [nix]
 channel = "stable-25_05"
@@ -37,6 +37,9 @@ RESEND_API_KEY = "re_8JUVn9AM_XpVmhf1kjAq8Ebut89kiWjR3"
 JWT_SECRET = "386d199b62c0dbfbea2d638d2d8dadc7442d1d7f581f8d3716e54c370b8ab33f"
 R2_ENDPOINT = "https://aebb8383815187b6ace9e3c8e5850edc.r2.cloudflarestorage.com"
 R2_BUCKET = "polo-clubhouse-uploads"
+LIVE_DEPLOYMENT_URL = "https://poloclubhouse.app"
+LIVE_MATCH_ID = "e4c2468d-f315-48da-9835-8afc8eae9479"
+LIVE_SHARE_TOKEN_REVOKED = "HRlViHLcrgd5zBbkY_eoBFtyBsrc8KDc"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-29b2e828-cd3f-451f-bad4-c2d1a2f2c66f"

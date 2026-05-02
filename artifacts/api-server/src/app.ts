@@ -38,12 +38,20 @@ app.use("/api", router);
 // In production the bundled api-server also serves the polo-manager SPA.
 // build.mjs copies polo-manager/dist/public into api-server/dist/public,
 // so at runtime the static dir sits next to the bundle.
+//
+// The OG SSR middleware is mounted unconditionally in production so chat
+// crawlers still get a valid link-preview card even on a partial deploy
+// where the SPA bundle failed to copy. Only the static-file serving and
+// the SPA catch-all are gated on the static dir actually existing — in
+// the degraded state humans see a 404 on app routes instead of every
+// shared link rendering with no preview at all.
 if (process.env.NODE_ENV === "production") {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const staticDir = path.resolve(__dirname, "public");
 
+  app.use(ogMetaMiddleware);
+
   if (existsSync(staticDir)) {
-    app.use(ogMetaMiddleware);
     app.use(express.static(staticDir));
     app.get("/*splat", (req: Request, res: Response, next: NextFunction) => {
       // Anything under /api is the API surface — let the router 404 it as JSON.
@@ -53,7 +61,7 @@ if (process.env.NODE_ENV === "production") {
   } else {
     logger.warn(
       { staticDir },
-      "Static SPA dir not found alongside bundle; running API-only.",
+      "Static SPA dir not found alongside bundle; running API-only with OG previews still active.",
     );
   }
 }

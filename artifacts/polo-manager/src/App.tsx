@@ -36,6 +36,7 @@ import { OutDates } from "@/pages/my-team/OutDates";
 import { TeamSchedule } from "@/pages/my-team/Schedule";
 import { ScoreBugOverlay } from "@/pages/broadcast/ScoreBugOverlay";
 import { ScoreBugOverlay2 } from "@/pages/broadcast/ScoreBugOverlay2";
+import { Scoreboard } from "@/pages/broadcast/Scoreboard";
 import { PossessionTracker } from "@/pages/possession/PossessionTracker";
 
 const queryClient = new QueryClient();
@@ -87,6 +88,7 @@ function BroadcastRouter() {
       <Route path="/broadcast/scorebug/:matchId" component={ScoreBugOverlay} />
       <Route path="/broadcast/channel/:clubId/:channel" component={ScoreBugOverlay} />
       <Route path="/broadcast/scorebug2/:matchId" component={ScoreBugOverlay2} />
+      <Route path="/scoreboard/channel/:clubId/:channel" component={Scoreboard} />
       <Route path="/possession/:matchId" component={PossessionTracker} />
     </Switch>
   );
@@ -97,7 +99,7 @@ function AppContent() {
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
   const relativePath = basePath ? path.replace(basePath, "") : path;
   
-  if (relativePath.startsWith("/broadcast/") || relativePath.startsWith("/possession/")) {
+  if (relativePath.startsWith("/broadcast/") || relativePath.startsWith("/scoreboard/") || relativePath.startsWith("/possession/")) {
     return <BroadcastRouter />;
   }
 

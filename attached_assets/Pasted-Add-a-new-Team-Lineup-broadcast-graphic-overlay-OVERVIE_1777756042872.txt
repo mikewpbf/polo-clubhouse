@@ -1,0 +1,130 @@
+Add a new "Team Lineup" broadcast graphic overlay.
+
+OVERVIEW
+A new full-screen broadcast graphic that shows one team's starting lineup — 
+4 large vertical player cards in a row inside a charcoal panel. Used pre-match 
+and during chukker breaks to introduce a team. Same style language as the 
+existing full_stats overlay (StatsOverlay.tsx).
+
+FILE LOCATIONS (follow existing patterns)
+- New broadcast page: artifacts/polo-manager/src/pages/broadcast/LineupOverlay.tsx
+- Route added in App.tsx alongside the existing broadcast routes 
+  (/broadcast/scorebug/:matchId, /broadcast/stats/:matchId etc.). 
+  New route: /broadcast/lineup/:matchId/:teamSide where teamSide is 
+  "home" or "away".
+- Add to the GFX Control admin page (or current Match Graphics page if GFX 
+  Control isn't built yet): a new graphic option "Team Lineup — Home" and 
+  "Team Lineup — Away" that toggles visibility and is selectable as the 
+  active broadcast graphic, same way ScoreBug, MiniStats, FullStats, and 
+  FieldBug are exposed today.
+
+VISUAL STYLE
+Match the existing full_stats overlay (StatsOverlay.tsx) exactly:
+- Charcoal panel: background #2a2a2e, border-radius 24, generous padding, 
+  soft drop shadow (0 24px 60px rgba(0,0,0,0.25)).
+- Panel width approximately 780px on a 1920px canvas — same width as the 
+  full_stats panel.
+- Inter font for everything except numerics, which use the same monospace 
+  fallback used elsewhere ('JetBrains Mono', 'SF Mono', monospace) where 
+  consistent with existing overlays.
+- White text on charcoal. Use rgba(255,255,255,0.4–0.55) for muted/secondary 
+  copy. No team-color gradients, no tinted backgrounds — keep it minimal 
+  like full_stats.
+
+LAYOUT (top to bottom)
+1. Header
+   - Tournament name, all caps, letter-spacing 3px, fontSize 16, fontWeight 800.
+   - Subtitle "STARTING LINEUP" in muted gray below it (10px, letter-spacing 
+     2.5px).
+
+2. Team identity row, centered, padding above and below
+   - Team logo bubble (circular, 56px, white background with team initials 
+     fallback if no logo — use the existing logo-bubble pattern from 
+     ScoreBugOverlay).
+   - Team name, uppercase, fontSize 30, fontWeight 800.
+   - Team total handicap divider on the right (e.g., "22 GOALS"), muted, 
+     uppercase 14px.
+   - Bottom border: 1px solid rgba(255,255,255,0.08).
+
+3. Four player cards in a CSS grid (grid-template-columns: repeat(4, 1fr), 
+   gap 12px)
+   Each card:
+   - background: rgba(255,255,255,0.04), border-radius 12, overflow hidden.
+   - Player headshot at the top of the card. Aspect ratio 4:5 (portrait), 
+     full card width. object-fit: cover. If no headshot, render a gradient 
+     gray placeholder (#4a4a4e → #34343a) with the player's initials at 44px 
+     in muted white.
+   - Position badge ("No. 1" through "No. 4") absolutely positioned at top-
+     left of the headshot, semi-transparent black pill with backdrop-filter 
+     blur, white uppercase 11px text.
+   - Soft gradient at bottom of headshot for legibility 
+     (transparent 60% → rgba(0,0,0,0.4) at 100%).
+   - Below the headshot, card body padded 12px 10px 14px, centered text:
+     • First name (smaller, muted, uppercase, 13px)
+     • Last name (larger, white, uppercase, 17px, fontWeight 800)
+     • Handicap block: big number (32px, fontWeight 800) and uppercase 
+       "GOALS" label next to it, muted.
+     • Meta row: "Age N · Home Club" in 11px muted text.
+     • Divider (1px solid rgba(255,255,255,0.08)) above a 2-column stats grid:
+        ┌─ stat: Tournament Goals ──┬─ stat: Avg per Match ──┐
+        Stat value: 16px white fontWeight 800. 
+        Stat label: 8px uppercase, letter-spacing 1px, line-height 1.2, 
+        max-width ~64px so two-word labels wrap cleanly under the number.
+
+DATA REQUIREMENTS
+The page receives :matchId and :teamSide and must fetch:
+- Match: tournament name (for header), home and away team IDs.
+- Team (the side requested): name, logoUrl, total handicap, current roster 
+  in position order (1, 2, 3, 4) via team_players for the match's season.
+- Per-player: name, headshotUrl, dateOfBirth (compute age), home club name, 
+  individual handicap, and computed:
+   • Tournament Goals — count of match_events of type 'goal' for this 
+     player_id in matches in this tournament.
+   • Avg per Match — Tournament Goals / count of matches in this tournament 
+     where this player was rostered. Round to one decimal.
+
+Reuse the existing GET /players/:playerId endpoint where helpful, OR add a 
+single new endpoint GET /matches/:matchId/lineup/:teamSide that returns the 
+4-player payload in one round trip. The latter is preferred so the broadcast 
+overlay loads fast — broadcast surfaces should make as few requests as 
+possible.
+
+Add streamStartedAt logic? No — this graphic does not interact with the 
+jump-to-video feature.
+
+ADMIN UI ON GFX CONTROL (or Match Graphics)
+- Two new toggles in the existing graphic-selector list: "Team Lineup — 
+  Home" and "Team Lineup — Away".
+- Selecting one sets that as the active broadcast graphic for the match 
+  (same field/mechanism that switches between scorebug, ministats, full 
+  stats today). Match's broadcastStyle column gets new enum values: 
+  'lineup_home' | 'lineup_away'.
+- Preview thumbnail in the admin matches the existing thumbnail pattern.
+
+CONSTRAINTS
+- Match the visual style of full_stats overlay precisely. Use the same 
+  panel chrome, same fonts, same muted-text conventions.
+- Real headshots fill the headshot frame edge-to-edge (object-fit: cover). 
+  Faces look correct in 4:5; do not use 1:1.
+- 4 players is fixed. If a team's roster has fewer or more, render only 
+  position 1–4. If the roster is empty for that match, render a clear 
+  empty state ("No lineup set for this team").
+- Add the broadcastStyle enum migration.
+- Update the OpenAPI spec at lib/api-spec for the new endpoint and enum 
+  values, then run pnpm --filter @workspace/api-spec run codegen.
+- Run pnpm run typecheck and existing tests after.
+- Add tests for the new lineup endpoint: returns players in position order, 
+  computes Tournament Goals correctly, computes Avg per Match correctly 
+  with division by zero guard.
+
+EXECUTION ORDER
+1. Migration: extend broadcastStyle enum to include lineup_home, lineup_away.
+2. New API endpoint GET /matches/:matchId/lineup/:teamSide.
+3. OpenAPI spec update + codegen.
+4. New file: artifacts/polo-manager/src/pages/broadcast/LineupOverlay.tsx 
+   matching the visual spec above.
+5. Route registration in App.tsx.
+6. Admin selector UI: add the two new options to whichever page handles 
+   broadcast graphic selection today.
+7. Run typecheck and tests. Visual QA on a real match with a populated 
+   roster.

@@ -1,0 +1,178 @@
+Add a new "Player Stats" broadcast graphic — a lower-third overlay that 
+spotlights one individual player's match and tournament stats. One per 
+player on each team, selectable from the GFX Control page.
+
+OVERVIEW
+A lower-third broadcast graphic, same footprint as the existing mini_stats 
+overlay (~990px wide, sitting at the bottom of the 1920px broadcast canvas). 
+The player's headshot pops above the top edge of the bar for visual lift. 
+Used during play to highlight a specific player.
+
+FILE LOCATIONS (follow existing patterns)
+- New broadcast page: 
+  artifacts/polo-manager/src/pages/broadcast/PlayerStatsOverlay.tsx
+- Route in App.tsx alongside other broadcast routes. Pattern:
+    /broadcast/player-stats/:matchId/:playerId
+- Add to the GFX Control admin page (the one being built in the Match 
+  Control restructure). The GFX Control page should expose a per-player 
+  selector for this graphic (see ADMIN UI below).
+- Match's broadcastStyle enum gains a new value: 'player_stats'. Track the 
+  active player_id with a new column matches.broadcast_player_id 
+  (uuid, nullable, FK → players).
+
+VISUAL STYLE
+Match the existing mini_stats overlay (MiniStatsOverlay.tsx) for chrome and 
+dimensions, and full_stats (StatsOverlay.tsx) for typography conventions:
+- Charcoal panel: background #2a2a2e, border-radius 16, box-shadow 
+  0 12px 36px rgba(0,0,0,0.45).
+- Width ~990px on a 1920 canvas; centered horizontally; bottom margin ~36px.
+- Header strip at top of panel: rgba(0,0,0,0.25), 12px 28px padding, 
+  uppercase 12px text, letter-spacing 2.5px. Format:
+    "[TOURNAMENT NAME] · PLAYER STATS"
+  Tournament name in muted white (rgba 0.55), label in solid white.
+- Inter font everywhere. Numerics use the same monospace fallback used in 
+  other broadcast overlays.
+- White text on charcoal, with rgba(255,255,255,0.4–0.55) for muted copy.
+- No team-color gradients, no tinted backgrounds — minimal style like 
+  mini_stats and full_stats.
+
+LAYOUT (left to right)
+1. Headshot, popping ABOVE the panel
+   - Absolutely positioned, left: 24px, bottom: 16px (anchored to the bottom 
+     of the panel so it extends above the top edge by ~50px).
+   - Size: 168px wide × 220px tall (4:5 portrait roughly).
+   - Border-radius: 14.
+   - Background fallback: linear-gradient(180deg, #4a4a4e 0%, #34343a 100%).
+   - object-fit: cover so faces fill the frame edge-to-edge.
+   - Subtle outer treatment: 
+     box-shadow: 0 10px 24px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.06).
+   - Inset gradient bottom for legibility against light photos:
+     linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.55) 100%).
+   - If headshot_url is null, render a centered placeholder with the 
+     player's initials at 60px in muted white (rgba 0.45).
+
+2. Right of the headshot, the panel content area:
+
+   2a. Identity row (top of content area)
+       - Player name on the left: 26px, fontWeight 800, uppercase, 
+         letterSpacing 0.8px, white.
+       - Team identity on the right (margin-left: auto): small team logo 
+         bubble (24px circle, white background with team initials fallback) 
+         + team name in 11px uppercase muted white (rgba 0.6), 
+         letterSpacing 1.2px.
+       - DO NOT show position number, position pill, or handicap pill in 
+         this row — keep it just name + team.
+       - Bottom border: 1px solid rgba(255,255,255,0.08), with 12px margin 
+         below.
+
+   2b. Stats row (below identity row): two equal-width groups separated by 
+       a hairline vertical divider (rgba 0.08).
+       
+       Left group: "THIS MATCH" (group label at top, 9px uppercase 
+       letterSpacing 1.8px muted)
+       Four stat cells in a row, equal width:
+         - Goals
+         - Shots on Goal
+         - Penalty Goals
+         - Throw-ins Won
+       
+       Right group: "THIS TOURNAMENT" (same label style)
+       Four stat cells:
+         - Goals
+         - Avg per Match
+         - Shots on Goal
+         - Conversion
+       
+       Each stat cell:
+         - Centered.
+         - Number on top: 22px fontWeight 800 white, line-height 1.
+         - Label underneath: 8px uppercase fontWeight 700, 
+           letterSpacing 0.8px, color rgba 0.45, line-height 1.2, 
+           max-width 64px so two-word labels wrap cleanly.
+       
+   The grid should size so all 8 stat cells are visible without scrolling 
+   on a 1920×1080 broadcast canvas.
+
+DATA REQUIREMENTS
+The page receives :matchId and :playerId. It must fetch in a single round 
+trip (broadcast graphics should make minimum requests):
+
+Add a new endpoint:
+  GET /matches/:matchId/player-stats/:playerId
+returning:
+  {
+    tournamentName: string,
+    player: { id, name, headshotUrl, teamId, teamName, teamLogoUrl },
+    match: {
+      goals, shotsOnGoal, penaltyGoals, throwInsWon
+    },
+    tournament: {
+      goals, avgPerMatch (number, 1 decimal), shotsOnGoal,
+      conversion (number, integer percent — goals / shotsOnGoal × 100, 
+        rounded to integer; 0 when shotsOnGoal is 0)
+    }
+  }
+
+Computation rules:
+- All match stats: count match_events for this match where player_id 
+  matches and event_type matches the stat (e.g., 'goal', 'shot_on_goal', 
+  'penalty_goal', 'throw_in_won').
+- All tournament stats: same queries scoped to tournament.matches instead 
+  of one match.
+- Avg per Match: tournament goals / count of distinct matches in this 
+  tournament where this player appears in team_players for the season. 
+  Round to 1 decimal. If denominator is 0, return 0.0.
+- Conversion: tournament goals / tournament shotsOnGoal × 100, rounded 
+  to integer percent. If shotsOnGoal is 0, return 0.
+
+Note: shotsOnGoal must already be tracked at the player level via 
+match_events. If it isn't, this is a separate prerequisite — the prompt 
+should flag and stop rather than make up data. Verify before building.
+
+ADMIN UI ON GFX CONTROL
+Add a new section to the GFX Control page titled "Player Stats Graphic".
+
+UI behavior:
+- Two columns or sections, one per team (Home / Away).
+- For each team, list the team's roster (players from team_players for 
+  this match's season, in position order 1–4). Each row shows the player's 
+  small headshot/initials, name, and a button "Show on broadcast".
+- Clicking a player's button:
+    1. PATCH /matches/:matchId with broadcastStyle = 'player_stats' AND 
+       broadcastPlayerId = that player's id.
+    2. Updates the live broadcast graphic immediately.
+- The currently-active player (if any) is visually distinct (filled state) 
+  so the operator sees who is on screen at a glance.
+- A "Hide" button clears broadcastStyle (or sets it back to whatever the 
+  prior style was — match the existing pattern other graphic toggles use).
+- This is in addition to the existing graphic options (scorebug, 
+  mini_stats, full_stats, field_bug, lineup_home, lineup_away).
+
+CONSTRAINTS
+- Match the visual style of mini_stats and full_stats overlays precisely.
+- Real headshots fill the headshot frame edge-to-edge (object-fit: cover). 
+  Placeholder for missing images uses the player's initials at 60px on the 
+  gradient background.
+- Update OpenAPI spec at lib/api-spec for the new endpoint, broadcastStyle 
+  enum value, and broadcast_player_id field, then run 
+  pnpm --filter @workspace/api-spec run codegen.
+- Run pnpm run typecheck and existing tests after.
+- Add tests for the new endpoint:
+  • Returns correct match-scoped stats for a seeded player.
+  • Returns correct tournament-scoped stats.
+  • Conversion rounds to integer; returns 0 when shotsOnGoal is 0.
+  • Avg per Match rounds to 1 decimal; returns 0.0 when no matches.
+  • Returns 404 if player is not on either team for this match.
+
+EXECUTION ORDER
+1. Verify shot_on_goal is tracked at the player level in match_events. 
+   If not, STOP and report — do not build with placeholder data.
+2. Migration: add broadcast_player_id column to matches; extend 
+   broadcastStyle enum with 'player_stats'.
+3. New API endpoint GET /matches/:matchId/player-stats/:playerId.
+4. OpenAPI spec update + codegen.
+5. New file PlayerStatsOverlay.tsx matching the visual spec above.
+6. Route registration in App.tsx.
+7. GFX Control admin section with per-team roster and "Show on broadcast" 
+   buttons.
+8. Run typecheck and tests. Visual QA on a real match.

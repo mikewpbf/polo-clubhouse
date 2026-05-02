@@ -361,9 +361,11 @@ router.get("/matches/:matchId", optionalAuth, async (req, res) => {
     // Compute whether the requesting user can administer this match (used by
     // the spectator page to decide whether to render admin-only controls like
     // the video sync strip). Always false for unauthenticated requests and
-    // for share-token-only access.
+    // for any request that carries a share token (operators in share mode must
+    // never see admin-only UI even if they happen to also be logged in).
     let canAdminMatch = false;
-    if (req.user) {
+    const hasShareToken = !!(req.header("x-share-token") || req.query.shareToken);
+    if (req.user && !hasShareToken) {
       if (isSuperAdmin(req.user)) {
         canAdminMatch = true;
       } else {
@@ -1523,10 +1525,13 @@ router.post("/matches/:matchId/sync-anchor", requireAuth, requireMatchAdmin, asy
       res.status(400).json({ message: "mode must be 'event', 'nudge', or 'restore'" }); return;
     }
 
-    // Sanity check: don't allow an anchor more than a minute in the future
-    // (would mean every event has a negative offset and the video is unwatchable).
-    if (newAnchor && newAnchor.getTime() > Date.now() + 60_000) {
-      res.status(400).json({ message: "Resulting anchor is too far in the future. Double-check the chosen event and the paused video position." }); return;
+    // Reject any anchor that would land in the future of "now". The stream has
+    // already started by definition, so a future anchor produces negative
+    // video offsets for every event — meaning the timeline points to moments
+    // that haven't happened yet on the recording. Allow a tiny 1s grace for
+    // clock skew between the admin's device and the server.
+    if (newAnchor && newAnchor.getTime() > Date.now() + 1_000) {
+      res.status(400).json({ message: "Resulting anchor would be in the future, which would push events to negative video positions. Pause the video on the moment you actually saw the event, then click the chip again." }); return;
     }
 
     await db.update(matchesTable).set({ streamStartedAt: newAnchor }).where(eq(matchesTable.id, matchId));

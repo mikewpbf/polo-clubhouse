@@ -468,6 +468,11 @@ export declare const MatchDetailStatus: {
     readonly postponed: "postponed";
     readonly cancelled: "cancelled";
 };
+export type MatchDetailScoringLocation = (typeof MatchDetailScoringLocation)[keyof typeof MatchDetailScoringLocation];
+export declare const MatchDetailScoringLocation: {
+    readonly studio: "studio";
+    readonly field: "field";
+};
 export type MatchEventEventType = (typeof MatchEventEventType)[keyof typeof MatchEventEventType];
 export declare const MatchEventEventType: {
     readonly goal: "goal";
@@ -478,6 +483,41 @@ export declare const MatchEventEventType: {
     readonly match_end: "match_end";
     readonly clock_start: "clock_start";
     readonly clock_pause: "clock_pause";
+    readonly penalty: "penalty";
+    readonly horse_change: "horse_change";
+    readonly safety: "safety";
+    readonly injury_timeout: "injury_timeout";
+    readonly bowl_in: "bowl_in";
+    readonly knock_in: "knock_in";
+    readonly foul: "foul";
+    readonly penalty_goal: "penalty_goal";
+    readonly shot_on_goal: "shot_on_goal";
+    readonly penalty_in: "penalty_in";
+    readonly penalty_out: "penalty_out";
+    readonly throw_in_won: "throw_in_won";
+    readonly foul_committed: "foul_committed";
+    readonly fouls_won: "fouls_won";
+};
+/**
+ * Yardage distance. Only valid on penalty_in events.
+ */
+export type MatchEventDistance = (typeof MatchEventDistance)[keyof typeof MatchEventDistance] | null;
+export declare const MatchEventDistance: {
+    readonly NUMBER_20: "20";
+    readonly NUMBER_30: "30";
+    readonly NUMBER_40: "40";
+};
+/**
+ * Foul severity. Only valid on foul_committed events.
+ */
+export type MatchEventSeverity = (typeof MatchEventSeverity)[keyof typeof MatchEventSeverity] | null;
+export declare const MatchEventSeverity: {
+    readonly NUMBER_1: "1";
+    readonly NUMBER_2: "2";
+    readonly NUMBER_3: "3";
+    readonly NUMBER_4: "4";
+    readonly "5a": "5a";
+    readonly "5b": "5b";
 };
 export type MatchEventScoreSnapshot = {
     [key: string]: unknown;
@@ -487,9 +527,17 @@ export interface MatchEvent {
     matchId: string;
     eventType: MatchEventEventType;
     teamId?: string | null;
+    /** For per-player stat events (penalty_in, penalty_out, throw_in_won, foul_committed, fouls_won) the player who triggered the event. */
+    playerId?: string | null;
+    playerName?: string | null;
+    /** Yardage distance. Only valid on penalty_in events. */
+    distance?: MatchEventDistance;
+    /** Foul severity. Only valid on foul_committed events. */
+    severity?: MatchEventSeverity;
     chukker?: number | null;
     clockSeconds?: number | null;
     scoreSnapshot?: MatchEventScoreSnapshot;
+    description?: string | null;
     createdBy?: string | null;
     createdAt?: string;
 }
@@ -516,7 +564,17 @@ export interface MatchDetail {
     field?: Field;
     tournament?: TournamentBrief;
     events: MatchEvent[];
+    streamStartedAt?: string | null;
+    scoringLocation: MatchDetailScoringLocation;
+    broadcastOffsetSeconds: number;
+    /** True if the requesting user is a club admin of the tournament's club, or a super admin. Always false for unauthenticated requests and for share-token requests. */
+    canAdminMatch?: boolean;
 }
+export type UpdateMatchRequestScoringLocation = (typeof UpdateMatchRequestScoringLocation)[keyof typeof UpdateMatchRequestScoringLocation];
+export declare const UpdateMatchRequestScoringLocation: {
+    readonly studio: "studio";
+    readonly field: "field";
+};
 export interface UpdateMatchRequest {
     homeTeamId?: string;
     awayTeamId?: string;
@@ -525,6 +583,40 @@ export interface UpdateMatchRequest {
     round?: string;
     isLocked?: boolean;
     notes?: string;
+    streamStartedAt?: string | null;
+    scoringLocation?: UpdateMatchRequestScoringLocation;
+    broadcastOffsetSeconds?: number;
+}
+/**
+ * "event" back-calculates the anchor from a chosen event + the video position;
+"nudge" shifts the existing anchor by N seconds;
+"restore" sets the anchor to a specific ISO datetime or null (Undo).
+
+ */
+export type SyncMatchAnchorRequestMode = (typeof SyncMatchAnchorRequestMode)[keyof typeof SyncMatchAnchorRequestMode];
+export declare const SyncMatchAnchorRequestMode: {
+    readonly event: "event";
+    readonly nudge: "nudge";
+    readonly restore: "restore";
+};
+export interface SyncMatchAnchorRequest {
+    /** "event" back-calculates the anchor from a chosen event + the video position;
+  "nudge" shifts the existing anchor by N seconds;
+  "restore" sets the anchor to a specific ISO datetime or null (Undo).
+   */
+    mode: SyncMatchAnchorRequestMode;
+    /** Required when mode=event. Must belong to this match. */
+    eventId?: string;
+    /** Required when mode=event. Current YouTube player position when the admin clicked the chip. */
+    videoSeconds?: number;
+    /** Required when mode=nudge. Positive = events appear earlier in the video, negative = later. */
+    shiftSeconds?: number;
+    /** Required when mode=restore. ISO datetime to restore the anchor to, or null to clear it. */
+    restoreToIso?: string | null;
+}
+export interface SyncMatchAnchorResponse {
+    streamStartedAt: string | null;
+    previousStreamStartedAt: string | null;
 }
 export interface UpdateScoreRequest {
     homeScore: number;
@@ -550,6 +642,54 @@ export declare const UpdateMatchStatusRequestStatus: {
 };
 export interface UpdateMatchStatusRequest {
     status: UpdateMatchStatusRequestStatus;
+}
+export type MatchShareLinkPageType = (typeof MatchShareLinkPageType)[keyof typeof MatchShareLinkPageType];
+export declare const MatchShareLinkPageType: {
+    readonly stats: "stats";
+    readonly gfx: "gfx";
+};
+export interface MatchShareLink {
+    id: string;
+    matchId: string;
+    pageType: MatchShareLinkPageType;
+    token: string;
+    createdAt: string;
+    expiresAt?: string | null;
+    revokedAt?: string | null;
+    /** True when the link is neither revoked nor expired. */
+    active: boolean;
+}
+export type CreateShareLinkRequestPageType = (typeof CreateShareLinkRequestPageType)[keyof typeof CreateShareLinkRequestPageType];
+export declare const CreateShareLinkRequestPageType: {
+    readonly stats: "stats";
+    readonly gfx: "gfx";
+};
+export interface CreateShareLinkRequest {
+    pageType: CreateShareLinkRequestPageType;
+}
+export type ResolveShareTokenResponsePageType = (typeof ResolveShareTokenResponsePageType)[keyof typeof ResolveShareTokenResponsePageType];
+export declare const ResolveShareTokenResponsePageType: {
+    readonly stats: "stats";
+    readonly gfx: "gfx";
+};
+/**
+ * Public payload returned when resolving a share token.
+ */
+export interface ResolveShareTokenResponse {
+    matchId: string;
+    pageType: ResolveShareTokenResponsePageType;
+    expiresAt?: string | null;
+}
+export type ShareTokenErrorReason = (typeof ShareTokenErrorReason)[keyof typeof ShareTokenErrorReason];
+export declare const ShareTokenErrorReason: {
+    readonly not_found: "not_found";
+    readonly revoked: "revoked";
+    readonly expired: "expired";
+    readonly match_missing: "match_missing";
+};
+export interface ShareTokenError {
+    message: string;
+    reason: ShareTokenErrorReason;
 }
 export type ScheduleWarningType = (typeof ScheduleWarningType)[keyof typeof ScheduleWarningType];
 export declare const ScheduleWarningType: {
@@ -730,6 +870,8 @@ export interface PlayerTeamHistory {
     teamName: string;
     teamLogoUrl?: string | null;
     seasonYear: number;
+    /** Whether the player is currently active on this team's roster. */
+    isActive: boolean;
 }
 export interface Horse {
     id: string;
@@ -862,6 +1004,9 @@ export type ListMatchesParams = {
     date?: string;
     fieldId?: string;
     teamId?: string;
+};
+export type RevokeMatchShareLink200 = {
+    message?: string;
 };
 export type ListTodayMatchesParams = {
     clubId?: string;

@@ -1,0 +1,48 @@
+#96 - Video Timeline Sync Anchor
+
+What & Why
+
+Make it easy to align the embedded YouTube video with the match timeline. Today the only knob is the stream_started_at wall-clock anchor, which is set once (usually when the match goes Live) and then drifts because of stream latency, post-game trim, and clock differences between devices. Admins are left with an "almost right but not quite" feel.
+
+This adds a dedicated admin-only sync strip under the video player on the public Match Detail page. The strip surfaces a small set of unmistakable in-game moments — every chukker start plus the latest goals — as one-click anchor candidates. The admin pauses the video at the moment they see one of those events, clicks the matching chip, and the system back-calculates a perfect stream_started_at. A small nudge widget and Undo round it out for fine adjustments.
+
+Done looks like
+
+Below the video on the public Match Detail page, a thin horizontal strip is visible only to club admins of the tournament's club and to super-admins (no spectator, no logged-out user, no admin from a different club ever sees it).
+The strip shows up to ~6 chips total: every chukker_start event for the match (e.g. Ch.2 Start · 14:23) plus the most recent 2 goals (e.g. Goal · J.Smith · 2-1). Goals are added as a fallback only if there is room; chukker starts always come first.
+Each chip shows enough context for the admin to recognise the moment on the video without ambiguity (chukker number, scorer name where relevant, score-at-the-time).
+Workflow: admin watches the YouTube video, pauses at the moment they see (for example) Chukker 3 start, clicks that chip → the timeline immediately re-aligns and a small confirmation toast appears: Synced to "Ch.3 Start". Undo.
+Clicking Undo within 10 seconds restores the previous stream_started_at value.
+A tiny −5s / −1s / +1s / +5s nudge group sits next to the chip strip. Each press shifts stream_started_at by that many seconds and persists immediately. Holding Shift while clicking nudges by ±0.5s.
+Sync and nudge actions both write through a single new endpoint and update the match payload so other open spectator tabs reflect the new alignment within a few seconds.
+Non-admins continue to see the existing read-only timeline with click-to-seek behaviour exactly as today; nothing about their UI changes.
+Out of scope
+
+Per-viewer client-side latency override (a different feature; can be added later if needed).
+Two-point calibration / playback-rate correction.
+Any change to the existing live broadcast offset (broadcast_offset_seconds / scoring_location); that is a separate concern and stays untouched.
+Auto-detecting the right anchor (still a human judgement call — admin must pause and click).
+Editing or trimming the underlying YouTube video.
+Steps
+
+Backend — sync endpoint — Add POST /matches/:matchId/sync-anchor gated by requireMatchAdmin(). Accept either { mode: "event", eventId, videoSeconds } (computes stream_started_at = event.createdAt − videoSeconds*1000) or { mode: "nudge", shiftSeconds } (shifts the existing anchor by N seconds; rejects when no anchor exists). Validate the event belongs to this match. Return the new streamStartedAt plus the previous value so the client can offer Undo. Emit a match update so other tabs refetch.
+Backend — viewer permission flag — Add a canAdminMatch boolean to the GET /matches/:matchId response, computed using the existing userCanAdminMatch() helper plus the super-admin check. Defaults to false for unauthenticated requests and for share-token requests. This is the single signal the spectator page needs to know whether to render the sync strip.
+OpenAPI + codegen — Add the new endpoint and the canAdminMatch field to the Match response in the OpenAPI spec, then run codegen to regenerate the typed React Query hooks.
+Spectator MatchDetail — admin sync strip — When the match payload's canAdminMatch is true AND a video is embedded AND the player is ready, render a thin strip directly under the video iframe. Build the chip list from the loaded events: include every chukker_start event in chronological order, then append goals (most recent first) until the strip holds at most 6 chips. Each chip's label and tooltip identify the moment unambiguously (chukker, score-at-event, scorer name for goals). Clicking a chip pauses the player if playing, reads player.getCurrentTime(), calls the new endpoint in event mode, and on success refetches the match and shows a confirmation toast with an Undo action that lasts 10 seconds.
+Spectator MatchDetail — nudge controls — Next to the chip strip, render −5s / −1s / +1s / +5s buttons (and respect Shift+click for ±0.5s). Each button calls the endpoint in nudge mode and refetches. Disable the buttons when no streamStartedAt is set yet.
+Spectator MatchDetail — Undo handler — Maintain a small ref of the previous anchor value returned by each sync/nudge call. The Undo toast button POSTs the previous value back via a one-shot mode: "set" branch of the same endpoint (or a separate restore field) and clears the toast.
+Tests — End-to-end tests covering: (a) a spectator without club-admin rights does NOT see the strip on a match whose tournament belongs to a different club; (b) a club admin DOES see the strip for their club's match; (c) clicking a chukker-start chip updates stream_started_at such that all timeline events re-align; (d) Undo restores the prior value; (e) a +5s nudge increases video offsets for every event by exactly 5 seconds.
+Architectural notes
+
+The strip lives entirely on the existing /match/:id spectator route — no new admin-only page, no extra routing. Visibility is purely permission-driven via the new canAdminMatch field.
+All writes go through one endpoint so audit, rate-limiting and broadcast-update emission stay in one place.
+Reuse requireMatchAdmin() and userCanAdminMatch() exactly as-is; no new permission concept is introduced.
+The chip strip never lets the admin pick an event whose createdAt is before the current video position — clicking such a chip is allowed (the math still works) but the resulting anchor would be in the future of the stream; the endpoint should reject negative resulting offsets and surface a clear error.
+Relevant files
+
+artifacts/api-server/src/routes/matches.ts:1130-1270
+artifacts/api-server/src/lib/auth.ts:140-180
+artifacts/polo-manager/src/pages/spectator/MatchDetail.tsx:130-220,510-600
+lib/db/src/schema/matches.ts
+lib/db/src/schema/match-events.ts
+lib/api-spec/openapi.yaml

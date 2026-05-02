@@ -10,6 +10,7 @@ import {
   tournamentsTable,
   matchesTable,
   teamsTable,
+  fieldsTable,
 } from "@workspace/db/schema";
 import { generateToken } from "../lib/auth";
 
@@ -254,5 +255,104 @@ describe("POST /api/matches/:matchId/preview-image", () => {
       .set("Content-Type", "image/png")
       .send(FAKE_PNG);
     expect(res.status).toBe(404);
+  });
+
+  // ─── Invalidation on match-row edits ───────────────────────────────────────
+  // PUT /api/matches/:matchId is the path admins (and gfx share-token holders
+  // editing stream URLs) hit when reassigning a match's scheduled time, field,
+  // or teams. Those values appear on the BoldDiagonal OG card, so the cached
+  // preview must be dropped — otherwise iMessage / Slack / WhatsApp would keep
+  // showing the stale card. These tests pin down which fields trigger
+  // invalidation and which (e.g. stream URL, notes) do not.
+  describe("PUT /api/matches/:matchId invalidates cached previews", () => {
+    async function seedPreview(): Promise<void> {
+      // Pre-populate previewImageUrl/updatedAt so we can assert that the next
+      // PUT clears them. Bypasses the upload route to keep the test focused
+      // on the invalidation hook rather than the snap pipeline.
+      await db.update(matchesTable)
+        .set({
+          previewImageUrl: `/api/storage/public-objects/match-previews/${matchId}.png`,
+          previewImageUpdatedAt: new Date(),
+        })
+        .where(eq(matchesTable.id, matchId));
+    }
+
+    it("clears previewImageUrl when scheduledAt changes", async () => {
+      await seedPreview();
+      const res = await request(app)
+        .put(`/api/matches/${matchId}`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ scheduledAt: new Date(Date.now() + 2 * 60 * 60_000).toISOString() });
+      expect(res.status).toBe(200);
+
+      const [row] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
+      expect(row.previewImageUrl).toBeNull();
+      expect(row.previewImageUpdatedAt).toBeNull();
+    });
+
+    it("clears previewImageUrl when fieldId changes", async () => {
+      await seedPreview();
+      // Need a real field row since fieldId is a FK. Reuse the match's club.
+      const [match] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
+      const [tournament] = await db.select().from(tournamentsTable).where(eq(tournamentsTable.id, match.tournamentId));
+      const stamp = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const [field] = await db.insert(fieldsTable)
+        .values({ name: `MP Field ${stamp}`, clubId: tournament.clubId! })
+        .returning();
+
+      try {
+        const res = await request(app)
+          .put(`/api/matches/${matchId}`)
+          .set("Authorization", `Bearer ${adminToken}`)
+          .send({ fieldId: field.id });
+        expect(res.status).toBe(200);
+
+        const [row] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
+        expect(row.previewImageUrl).toBeNull();
+        expect(row.previewImageUpdatedAt).toBeNull();
+      } finally {
+        await db.update(matchesTable).set({ fieldId: null }).where(eq(matchesTable.id, matchId));
+        await db.delete(fieldsTable).where(eq(fieldsTable.id, field.id));
+      }
+    });
+
+    it("clears previewImageUrl when homeTeamId or awayTeamId changes", async () => {
+      await seedPreview();
+      const [match] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
+      const [tournament] = await db.select().from(tournamentsTable).where(eq(tournamentsTable.id, match.tournamentId));
+      const stamp = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const [altTeam] = await db.insert(teamsTable)
+        .values({ name: `Alt Team ${stamp}`, clubId: tournament.clubId })
+        .returning();
+      created.teamIds.push(altTeam.id);
+
+      const res = await request(app)
+        .put(`/api/matches/${matchId}`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ homeTeamId: altTeam.id });
+      expect(res.status).toBe(200);
+
+      const [row] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
+      expect(row.previewImageUrl).toBeNull();
+      expect(row.previewImageUpdatedAt).toBeNull();
+    });
+
+    it("does NOT clear previewImageUrl when only non-preview fields change (notes, streamUrl)", async () => {
+      // notes and streamUrl don't appear on the BoldDiagonal card, so a write
+      // to them must leave the cached preview intact — otherwise we'd burn an
+      // unnecessary client snap on every notes edit.
+      await seedPreview();
+      const [before] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
+
+      const res = await request(app)
+        .put(`/api/matches/${matchId}`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ notes: "ref note", streamUrl: "https://example.com/s" });
+      expect(res.status).toBe(200);
+
+      const [after] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
+      expect(after.previewImageUrl).toBe(before.previewImageUrl);
+      expect(after.previewImageUpdatedAt?.getTime()).toBe(before.previewImageUpdatedAt?.getTime());
+    });
   });
 });

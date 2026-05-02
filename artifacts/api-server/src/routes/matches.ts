@@ -6,6 +6,7 @@ import { eq, and, gte, lte, gt, desc, asc, isNull, inArray, sql } from "drizzle-
 import type { InferSelectModel } from "drizzle-orm";
 import { requireAuth, optionalAuth, isSuperAdmin, requireMatchWrite, requireMatchAdmin as requireMatchAdminFactory, resolveShareToken } from "../lib/auth";
 import { addSSEClient, emitMatchUpdate, emitMatchEnded } from "../lib/sse";
+import { invalidateMatchPreview } from "./match-previews";
 
 const router: IRouter = Router();
 
@@ -412,6 +413,22 @@ router.put("/matches/:matchId", requireMatchWrite("gfx", "full_control", "scoreb
       if (broadcastOffsetSeconds !== undefined && typeof broadcastOffsetSeconds === "number") updates.broadcastOffsetSeconds = String(broadcastOffsetSeconds);
     }
     const [match] = await db.update(matchesTable).set(updates).where(eq(matchesTable.id, matchId)).returning();
+    // Drop the cached link-preview PNG when any field that appears on the
+    // BoldDiagonal OG card changed on the match itself: scheduled time, field
+    // assignment, or either team. The team/tournament/field-rename hooks in
+    // teams.ts/tournaments.ts/fields.ts cover renames of the underlying
+    // entities; this covers reassignment of those entities on a single match
+    // (e.g. moving a match to a different field or shifting its kickoff).
+    // Once invalidated, the next admin-page mount triggers a fresh client-
+    // side snap via triggerAdminPreviewAutoBackfill.
+    const previewFieldsChanged =
+      updates.homeTeamId !== undefined ||
+      updates.awayTeamId !== undefined ||
+      updates.fieldId !== undefined ||
+      updates.scheduledAt !== undefined;
+    if (previewFieldsChanged) {
+      await invalidateMatchPreview(matchId).catch(() => { /* don't block edit */ });
+    }
     emitMatchUpdate(matchId);
     const enriched = await enrichMatch(match);
     res.json(enriched);

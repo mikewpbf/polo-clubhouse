@@ -49,6 +49,18 @@ export async function invalidateMatchPreviewsForField(fieldId: string): Promise<
     .where(eq(matchesTable.fieldId, fieldId));
 }
 
+// Single-match invalidation used by routes that mutate fields shown on the
+// BoldDiagonal preview card directly on the match row — currently scheduled
+// time, field assignment, and home/away team selection (PUT /matches/:matchId).
+// The team/tournament/field-rename helpers above cover the indirect case
+// where an entity referenced by many matches changes; this one covers the
+// case where an admin reassigns a field/time/team on a single match.
+export async function invalidateMatchPreview(matchId: string): Promise<void> {
+  await db.update(matchesTable)
+    .set({ previewImageUrl: null, previewImageUpdatedAt: null })
+    .where(eq(matchesTable.id, matchId));
+}
+
 // Per-match write authorization: super-admin OR admin of the tournament's club.
 // Mirrors the requireMatchAdmin pattern used elsewhere; kept local because the
 // preview-image endpoint runs *before* express.json (raw body parser), so we

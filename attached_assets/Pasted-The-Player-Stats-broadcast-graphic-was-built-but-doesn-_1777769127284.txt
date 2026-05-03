@@ -1,0 +1,79 @@
+The Player Stats broadcast graphic was built but doesn't match the visual 
+spec. The attached HTML mockup (player-stats-graphic-v4.html) is the 
+source of truth — rebuild PlayerStatsOverlay.tsx to match it exactly when 
+rendered with real player data.
+
+FILE TO UPDATE
+artifacts/polo-manager/src/pages/broadcast/PlayerStatsOverlay.tsx
+
+CRITICAL FIXES from the current implementation:
+
+1. Panel background: use the SAME gradient as StatsOverlay.tsx and the 
+   updated LineupOverlay:
+     linear-gradient(180deg, rgba(12,12,16,0.82) 0%, rgba(18,18,24,0.86) 100%)
+   Do NOT use a solid color. All three graphics — full stats, lineup, 
+   player stats — should share this exact background so they read as the 
+   same family.
+
+2. This is a LOWER-THIRD graphic, not full-screen. Approximate width 
+   990px, anchored to the bottom of the broadcast canvas (~36px from the 
+   bottom edge), centered horizontally. Same footprint pattern as the 
+   existing mini_stats overlay.
+
+3. Headshot pops ABOVE the top edge of the panel. Absolutely positioned 
+   inside the panel container at left: 24px, bottom: 16px (so it extends 
+   above the top edge by ~50px). Size: 168px wide × 220px tall, 
+   border-radius 14, object-fit cover. Fallback: gradient 
+   #4a4a4e → #34343a with player initials at 60px muted white. Subtle 
+   outer treatment: box-shadow 0 10px 24px rgba(0,0,0,0.5), 
+   0 0 0 2px rgba(255,255,255,0.06). Inset legibility gradient at bottom: 
+   linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.55) 100%).
+
+4. Identity row contains ONLY the player name and team identity. NO 
+   position pill, NO handicap pill — those should not appear here.
+   - Player name on the left: 26px fontWeight 800 uppercase 
+     letterSpacing 0.8px white
+   - Team identity on the right (margin-left: auto): 24px white circular 
+     team logo bubble + team name in 11px uppercase 
+     color rgba(255,255,255,0.6) letterSpacing 1.2px
+   - Bottom border: 1px solid rgba(255,255,255,0.08), 12px margin below
+
+5. Stats are split into two equal-width groups separated by a hairline 
+   vertical divider (rgba 0.08):
+
+   Group label format: 9px uppercase fontWeight 700 
+   letterSpacing 1.8px color rgba(255,255,255,0.4)
+
+   LEFT group "THIS MATCH":
+     Goals · Shots on Goal · Penalty Goals · Throw-ins Won
+
+   RIGHT group "THIS TOURNAMENT":
+     Goals · Avg per Match · Shots on Goal · Conversion (integer % with %)
+
+   Each stat cell:
+     Number on top: 22px fontWeight 800 white line-height 1
+     Label underneath: 8px uppercase fontWeight 700 letterSpacing 0.8px 
+     line-height 1.2 max-width 64px color rgba(255,255,255,0.45)
+     Centered (number above its wrapping label).
+
+   Stat labels are FULL TEXT — "Tournament Goals", "Avg per Match", 
+   "Shots on Goal" — not abbreviated.
+
+6. Header strip at top of panel:
+     background rgba(0,0,0,0.25)
+     padding 12px 28px
+     border-bottom 1px solid rgba(255,255,255,0.06)
+     centered text: "[TOURNAMENT NAME] · PLAYER STATS"
+     12px uppercase fontWeight 700 letterSpacing 2.5px
+     Tournament name in muted white (rgba 0.55), "PLAYER STATS" in 
+     solid white, separator dot in rgba 0.35.
+
+CONSTRAINTS
+- The attached mockup HTML wins. If anything in this prompt conflicts 
+  with the mockup, follow the mockup.
+- Do NOT change the API endpoint, the GFX Control selector UI, or any 
+  data wiring — only rebuild the visual layer of PlayerStatsOverlay.tsx.
+- After changes, run pnpm run typecheck and existing tests.
+- Confirm visually by activating the player stats graphic for a real 
+  player on a real match and comparing side-by-side to the attached 
+  mockup.

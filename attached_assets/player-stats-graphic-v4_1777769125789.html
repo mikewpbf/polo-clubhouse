@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Player Stats Lower Third — Polo Clubhouse</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body {
+    margin: 0;
+    background: #0d1117;
+    font-family: 'Inter', 'Helvetica Neue', sans-serif;
+    color: #e5e5e5;
+    padding: 0;
+    min-height: 100vh;
+  }
+
+  /* 16:9 broadcast frame at 1280px wide */
+  .preview-frame {
+    width: 1280px;
+    height: 720px;
+    margin: 40px auto;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.25) 100%),
+      linear-gradient(180deg, #1a3d1a 0%, #2d5a2d 60%, #3a6b3a 100%);
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.5);
+  }
+  .field-texture {
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        rgba(0,0,0,0) 0px,
+        rgba(0,0,0,0) 80px,
+        rgba(255,255,255,0.04) 80px,
+        rgba(255,255,255,0.04) 81px
+      );
+    opacity: 0.6;
+  }
+  .frame-label {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    margin-bottom: 32px;
+  }
+
+  /* Lower-third bar — same footprint as mini_stats */
+  .lower-third {
+    position: absolute;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 990px;
+    background: linear-gradient(180deg, rgba(12,12,16,0.82) 0%, rgba(18,18,24,0.86) 100%);
+    border-radius: 16px;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.45);
+    overflow: visible;
+    padding: 0;
+  }
+
+  /* The headshot rises above the lower third */
+  .headshot-pop {
+    position: absolute;
+    left: 24px;
+    bottom: 16px;
+    width: 168px;
+    height: 220px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #4a4a4e 0%, #34343a 100%);
+    overflow: hidden;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.06);
+    z-index: 2;
+  }
+  .headshot-pop img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .headshot-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.45);
+    font-size: 60px;
+    font-weight: 800;
+    letter-spacing: 3px;
+  }
+  /* Soft gradient at bottom of image for legibility against any photo */
+  .headshot-pop::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.55) 100%);
+    pointer-events: none;
+  }
+
+  /* The header strip at the top of the panel */
+  .panel-header {
+    background: rgba(0,0,0,0.25);
+    border-radius: 16px 16px 0 0;
+    padding: 12px 28px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .header-text {
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+  }
+  .header-text .muted {
+    color: rgba(255,255,255,0.55);
+  }
+  .header-text .sep {
+    margin: 0 10px;
+    color: rgba(255,255,255,0.35);
+  }
+
+  /* Main row: image space + identity + stats columns */
+  .panel-body {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    align-items: stretch;
+    min-height: 168px;
+  }
+
+  .identity-and-stats {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    padding: 14px 28px 16px 24px;
+  }
+
+  /* Player identity row */
+  .identity-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 12px;
+  }
+  .player-name {
+    font-size: 26px;
+    font-weight: 800;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    line-height: 1;
+  }
+  .position-pill {
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.7);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .team-mini {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    color: rgba(255,255,255,0.6);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+  }
+  .team-logo-small {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    color: #2a2a2e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 800;
+  }
+  .handicap-mini {
+    background: rgba(255,255,255,0.08);
+    padding: 3px 8px;
+    border-radius: 5px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+  }
+
+  /* Stats row — two groups side-by-side: This Match | This Tournament */
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+  .stats-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stats-group-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .stat-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 3px;
+  }
+  .stat-v {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+  }
+  .stat-l {
+    font-size: 8px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    line-height: 1.2;
+    max-width: 64px;
+  }
+
+  /* Vertical divider between the two stat groups */
+  .stats-row > .stats-group:first-child {
+    position: relative;
+  }
+  .stats-row > .stats-group:first-child::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    right: -14px;
+    width: 1px;
+    background: rgba(255,255,255,0.08);
+  }
+</style>
+</head>
+<body>
+
+<p class="frame-label" style="margin-top: 24px;">Player Stats Lower Third — preview at 1280×720</p>
+
+<div class="preview-frame">
+  <div class="field-texture"></div>
+
+  <div class="lower-third">
+
+    <!-- Headshot pops up above the lower third -->
+    <div class="headshot-pop">
+      <div class="headshot-placeholder">PM</div>
+    </div>
+
+    <div class="panel-header">
+      <span class="header-text">
+        <span class="muted">2026 U.S. Open Polo Championship®</span>
+        <span class="sep">·</span>
+        Player Stats
+      </span>
+    </div>
+
+    <div class="panel-body">
+      <div></div>
+
+      <div class="identity-and-stats">
+        <div class="identity-row">
+          <span class="player-name">Pablo MacDonough</span>
+          <div class="team-mini">
+            <div class="team-logo-small">DUS</div>
+            <span>DUS Polo</span>
+          </div>
+        </div>
+
+        <div class="stats-row">
+
+          <div class="stats-group">
+            <div class="stats-group-label">This Match</div>
+            <div class="stats-grid">
+              <div class="stat-cell"><span class="stat-v">4</span><span class="stat-l">Goals</span></div>
+              <div class="stat-cell"><span class="stat-v">6</span><span class="stat-l">Shots on Goal</span></div>
+              <div class="stat-cell"><span class="stat-v">1</span><span class="stat-l">Penalty Goals</span></div>
+              <div class="stat-cell"><span class="stat-v">5</span><span class="stat-l">Throw-ins Won</span></div>
+            </div>
+          </div>
+
+          <div class="stats-group">
+            <div class="stats-group-label">This Tournament</div>
+            <div class="stats-grid">
+              <div class="stat-cell"><span class="stat-v">19</span><span class="stat-l">Goals</span></div>
+              <div class="stat-cell"><span class="stat-v">4.6</span><span class="stat-l">Avg per Match</span></div>
+              <div class="stat-cell"><span class="stat-v">31</span><span class="stat-l">Shots on Goal</span></div>
+              <div class="stat-cell"><span class="stat-v">61%</span><span class="stat-l">Conversion</span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

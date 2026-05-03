@@ -43,28 +43,19 @@ router.get("/storage/public-objects/*filePath", async (req: Request, res: Respon
       return;
     }
 
-    const response = await objectStorageService.downloadObject(file);
-
-    res.status(response.status);
-    response.headers.forEach((value, key) => {
-      // The /public-objects endpoint is, by definition, unauthenticated and
-      // public. Some objects come back from storage with a stale or
-      // accidentally-private Cache-Control depending on how they were
-      // uploaded; we must NOT forward that, because Facebook / WhatsApp /
-      // iMessage / LinkedIn refuse to render OG link-preview thumbnails
-      // sourced from images served with `Cache-Control: private`. Strip the
-      // upstream value here and set a public, CDN-friendly one below.
-      if (key.toLowerCase() === "cache-control") return;
-      res.setHeader(key, value);
-    });
-    res.setHeader("Cache-Control", "public, max-age=3600, immutable");
-
-    if (response.body) {
-      const nodeStream = Readable.fromWeb(response.body as ReadableStream<Uint8Array>);
-      nodeStream.pipe(res);
-    } else {
-      res.end();
-    }
+    // 302 redirect to a presigned R2 URL instead of streaming the bytes
+    // through Express. This is critical for OG link-preview thumbnails:
+    // our Express app sits behind Google Frontend, which auto-injects a
+    // `Set-Cookie: GAESA=...` session-affinity cookie on every response.
+    // That cookie (a) forces caches to downgrade Cache-Control from
+    // `public` to `private` and (b) causes Apple's LinkPresentation
+    // (iMessage / Safari) and some other scrapers to refuse rendering the
+    // image as a thumbnail. By redirecting straight to R2, the scraper
+    // fetches the image from R2's CDN with clean public cache headers and
+    // no GAESA cookie.
+    const presignedUrl = await objectStorageService.getObjectDownloadURL(file, 3600);
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.redirect(302, presignedUrl);
   } catch (error) {
     console.error("Error serving public object", error);
     res.status(500).json({ error: "Failed to serve public object" });

@@ -98,6 +98,24 @@ export class ObjectStorageService {
     return { key, url: `/api/storage/public-objects/${filePath}` };
   }
 
+  // Build a short-lived presigned GET URL for an object stored in R2. We use
+  // this for the /public-objects endpoint to 302-redirect FB/iMessage/WhatsApp
+  // scrapers directly to R2, bypassing our Express app — which is fronted by
+  // Google Frontend, which auto-injects a `Set-Cookie: GAESA=...` session
+  // affinity cookie. That cookie causes scrapers (especially Apple
+  // LinkPresentation) to refuse rendering the image as a link-preview thumb,
+  // and also forces caches to downgrade `Cache-Control: public` to `private`.
+  async getObjectDownloadURL(
+    obj: StoredObject,
+    expiresInSec: number = 3600,
+  ): Promise<string> {
+    return getSignedUrl(
+      getR2Client(),
+      new GetObjectCommand({ Bucket: obj.bucket, Key: obj.key }),
+      { expiresIn: expiresInSec },
+    );
+  }
+
   async getObjectEntityUploadURL(): Promise<string> {
     const cfg = getR2Config();
     const objectId = randomUUID();

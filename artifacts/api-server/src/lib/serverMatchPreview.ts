@@ -8,8 +8,52 @@ import {
 } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { Resvg } from "@resvg/resvg-js";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { ObjectStorageService } from "./objectStorage";
 import { logger } from "./logger";
+
+// Resolve DejaVu font files. Production deploy containers do NOT ship
+// system fonts, so build.mjs copies the .ttf files into dist/fonts/
+// next to the bundle. In dev we fall back to the Nix-provided system
+// path. If neither resolves, resvg's loadSystemFonts:true scan is the
+// last line of defence — but on a slim container that scan finds
+// nothing and every <text> element renders blank, producing the
+// "card with shapes but no text/logos" bug.
+function resolveFontFiles(): string[] {
+  // import.meta.url isn't available in CJS test bundles; guard it.
+  let bundleDir: string | null = null;
+  try {
+    bundleDir = path.dirname(fileURLToPath(import.meta.url));
+  } catch {
+    bundleDir = null;
+  }
+  const candidates: string[][] = [];
+  if (bundleDir) {
+    // Production: dist/fonts/ sits next to the bundled .mjs file.
+    candidates.push([
+      path.join(bundleDir, "fonts", "DejaVuSans.ttf"),
+      path.join(bundleDir, "fonts", "DejaVuSans-Bold.ttf"),
+    ]);
+    // Production with nested layout (lib/serverMatchPreview.mjs → ../fonts/).
+    candidates.push([
+      path.join(bundleDir, "..", "fonts", "DejaVuSans.ttf"),
+      path.join(bundleDir, "..", "fonts", "DejaVuSans-Bold.ttf"),
+    ]);
+  }
+  // Dev: NixOS / Replit dev container.
+  candidates.push([
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+  ]);
+  for (const set of candidates) {
+    if (set.every((p) => existsSync(p))) return set;
+  }
+  return [];
+}
+
+const FONT_FILES: string[] = resolveFontFiles();
 
 // Server-side fallback preview-image generator.
 //
@@ -195,10 +239,7 @@ export function renderMatchPreviewPng(data: ServerPreviewSourceData): Buffer {
       // back to system scanning only if those files aren't present.
       loadSystemFonts: true,
       defaultFontFamily: "DejaVu Sans",
-      fontFiles: [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-      ],
+      fontFiles: FONT_FILES,
     },
   });
   return resvg.render().asPng();

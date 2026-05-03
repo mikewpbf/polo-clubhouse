@@ -139,6 +139,31 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
     if (err.code !== "ENOENT") throw err;
   }
 
+  // Copy DejaVu fonts alongside the bundle so serverMatchPreview can render
+  // text into match-preview PNGs in production. The deploy container does
+  // NOT ship system fonts, so without bundling these the resvg renderer
+  // silently produces text-less cards (background + colored shapes only),
+  // which is what broke iMessage / FB link-preview thumbnails. We pick
+  // them up from the dev container's Nix-provided system path at build
+  // time and copy them into dist/fonts/ for runtime loading.
+  const fontsDest = path.resolve(distDir, "fonts");
+  const fontSources = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+  ];
+  try {
+    await cp(path.dirname(fontSources[0]), fontsDest, {
+      recursive: true,
+      filter: (src) => fontSources.includes(src) || src.endsWith(path.basename(path.dirname(fontSources[0]))),
+    });
+    console.log(`Copied DejaVu fonts -> ${path.relative(artifactDir, fontsDest)}`);
+  } catch (err) {
+    console.warn(
+      `Failed to copy DejaVu fonts from ${path.dirname(fontSources[0])}: ${err.message}. ` +
+        `Match-preview PNGs will render without text in production.`,
+    );
+  }
+
   // Copy the polo-manager SPA build alongside the api-server bundle so it can
   // be served by Express in production. The api-server's app.ts looks for a
   // sibling `public/` dir and falls back to API-only if it's missing.

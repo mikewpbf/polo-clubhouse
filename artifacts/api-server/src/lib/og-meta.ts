@@ -1,4 +1,6 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction, RequestHandler } from "express";
+import { readFileSync, existsSync } from "fs";
+import path from "path";
 import { db } from "@workspace/db";
 import {
   matchesTable,
@@ -30,14 +32,17 @@ interface OgData {
   type?: string;
 }
 
-function renderHtml(og: OgData): string {
+// Build just the <meta>/<title> tag block (no <html>/<head> wrappers) so it
+// can be injected into the SPA's index.html for every request — bots AND
+// real users. We can't reliably gate on User-Agent because Apple's
+// LinkPresentation (iMessage / Messages on macOS) uses a vanilla Safari UA
+// indistinguishable from a real browser, and skipping injection there is
+// what caused iMessage to fall back to the generic site card.
+function renderMetaTags(og: OgData): string {
   const t = escapeHtml(og.title);
   const d = escapeHtml(og.description);
   const u = escapeHtml(og.url);
   const img = og.image ? escapeHtml(og.image) : "";
-  // Declaring og:image:width / height / type / alt makes Facebook, iMessage,
-  // WhatsApp, LinkedIn, and others much more likely to render the thumbnail
-  // synchronously instead of falling back to the bare-domain card.
   const imgMeta = img
     ? `<meta property="og:image" content="${img}">
 <meta property="og:image:secure_url" content="${img}">
@@ -46,11 +51,7 @@ ${og.imageWidth ? `<meta property="og:image:width" content="${og.imageWidth}">` 
 ${og.imageHeight ? `<meta property="og:image:height" content="${og.imageHeight}">` : ""}
 <meta property="og:image:alt" content="${t}">`
     : "";
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>${t}</title>
+  return `<title>${t}</title>
 <meta name="description" content="${d}">
 <meta property="og:site_name" content="Polo Clubhouse">
 <meta property="og:title" content="${t}">
@@ -62,7 +63,21 @@ ${imgMeta}
 <meta name="twitter:title" content="${t}">
 <meta name="twitter:description" content="${d}">
 ${img ? `<meta name="twitter:image" content="${img}">
-<meta name="twitter:image:alt" content="${t}">` : ""}
+<meta name="twitter:image:alt" content="${t}">` : ""}`;
+}
+
+// Bare-bones HTML response used when the SPA's index.html isn't available
+// on disk (degraded deploy). Bots get a valid OG card; humans see the
+// title/headline as plain text.
+function renderHtml(og: OgData): string {
+  const t = escapeHtml(og.title);
+  const d = escapeHtml(og.description);
+  const u = escapeHtml(og.url);
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+${renderMetaTags(og)}
 </head>
 <body>
 <h1>${t}</h1>
@@ -388,6 +403,63 @@ export function ogMetaMiddleware(req: Request, res: Response, next: NextFunction
       res.send(renderHtml(og));
     })
     .catch(() => next());
+}
+
+// SPA-OG injection middleware.
+//
+// Mounts BEFORE express.static and the SPA catch-all. For HTML navigation
+// requests on OG-eligible paths (/match/:id, /tournaments/:id, etc.) it
+// reads the SPA's index.html, splices the OG/Twitter <meta> tags into the
+// <head>, and serves the modified HTML — for *every* client, not just
+// known scraper UAs. This fixes iMessage, Apple Messages, and any other
+// preview client that uses a vanilla Safari-style User-Agent.
+//
+// Real users still get the SPA shell (script + link tags untouched) so
+// React hydrates normally; the only difference is a ~1KB block of meta
+// tags in the head. The page-load cost is one DB round-trip and one
+// in-memory string splice.
+//
+// We deliberately do NOT cache the SPA index.html in memory at module
+// load: the file is rewritten by every deploy, and reading it per
+// request (a few KB from local disk) is cheaper than dealing with stale
+// caches across rolling deploys. If this ever shows up in profiles we
+// can mtime-check it.
+export function spaOgInjectionMiddleware(staticDir: string): RequestHandler {
+  const indexPath = path.join(staticDir, "index.html");
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (req.method !== "GET") return next();
+    if (req.path.startsWith("/api/")) return next();
+    if (req.path.match(/\.(js|css|png|jpe?g|svg|ico|webp|gif|woff2?|ttf|map|json|txt|xml)$/i)) return next();
+    // Only HTML navigations — XHR/fetch requests with explicit Accept
+    // headers should not be intercepted.
+    const accept = req.get("accept") || "";
+    if (accept && !accept.includes("text/html") && !accept.includes("*/*")) return next();
+    if (!existsSync(indexPath)) return next();
+
+    buildOg(req)
+      .then((og) => {
+        if (!og) return next();
+        let html: string;
+        try {
+          html = readFileSync(indexPath, "utf8");
+        } catch {
+          return next();
+        }
+        const tags = renderMetaTags(og);
+        // Strip the SPA's static <title> so our dynamic one wins, then
+        // splice the OG block in just before </head>.
+        const stripped = html.replace(/<title>[^<]*<\/title>\s*/i, "");
+        const injected = stripped.includes("</head>")
+          ? stripped.replace("</head>", `${tags}\n</head>`)
+          : stripped.replace(/<head([^>]*)>/i, `<head$1>\n${tags}`);
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        // Short cache so a tournament/match update propagates within
+        // minutes; scrapers that re-fetch will see fresh meta.
+        res.setHeader("Cache-Control", "public, max-age=120");
+        res.send(injected);
+      })
+      .catch(() => next());
+  };
 }
 
 // Exported for tests so they can exercise the buildOg path without needing to

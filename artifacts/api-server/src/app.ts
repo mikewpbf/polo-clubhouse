@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { ogMetaMiddleware } from "./lib/og-meta";
+import { ogMetaMiddleware, spaOgInjectionMiddleware } from "./lib/og-meta";
 import { attachApiKey, unauthRateLimiter, userRateLimiter, apiKeyRateLimiter } from "./lib/rateLimit";
 import { optionalAuth } from "./lib/auth";
 
@@ -73,9 +73,21 @@ if (process.env.NODE_ENV === "production") {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const staticDir = path.resolve(__dirname, "public");
 
+  // ogMetaMiddleware is the bot-only fast path that returns a bare-bones
+  // OG HTML response — kept as a fallback so scrapers still get a card
+  // even on a degraded deploy where the SPA bundle didn't copy.
   app.use(ogMetaMiddleware);
 
   if (existsSync(staticDir)) {
+    // SPA-OG injection: for HTML navigations on OG-eligible paths, splice
+    // OG/Twitter meta tags into the SPA's index.html for *every* client.
+    // This is what makes iMessage / Apple LinkPresentation render the
+    // proper match preview instead of the generic site card — those
+    // clients use a vanilla Safari UA that the bot regex can't match.
+    // Mounted BEFORE express.static so the catch-all index.html serve
+    // never wins for these paths.
+    app.use(spaOgInjectionMiddleware(staticDir));
+
     app.use(express.static(staticDir));
     app.get("/*splat", (req: Request, res: Response, next: NextFunction) => {
       // Anything under /api is the API surface — let the router 404 it as JSON.

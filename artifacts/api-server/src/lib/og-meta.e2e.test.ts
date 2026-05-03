@@ -299,16 +299,23 @@ describe("link preview pipeline — end-to-end (upload → SSR middleware → OG
     expect(og.text).not.toMatch(/og:description[^>]*6\s*[-:–]\s*3/);
   });
 
-  it("normal browser UA on /match/:id falls through to the SPA index.html", async () => {
-    // Sanity: the SSR middleware's bot-UA gate must let real users through
-    // to the static SPA. If this regresses, every page-load would be served
-    // an OG-only stub instead of the React app.
+  it("normal browser UA on /match/:id receives the SPA index.html with OG meta injected", async () => {
+    // Apple's LinkPresentation (iMessage / Messages) uses a vanilla
+    // Safari UA indistinguishable from a real user, so the bot regex
+    // can't gate on UA. Real users still get the SPA shell — React
+    // hydrates as normal — but the <head> now carries the same OG/
+    // Twitter meta tags that scraper UAs receive. If this regresses,
+    // iMessage falls back to the generic site card.
     const res = await request(app)
       .get(`/match/${matchId}`)
       .set("User-Agent", HUMAN_UA);
     expect(res.status).toBe(200);
+    // SPA shell is preserved (React root + bundle still load).
     expect(res.text).toContain(SPA_BODY_MARKER);
-    expect(res.text).not.toContain('property="og:title"');
+    // OG/Twitter tags are injected for non-bot UAs.
+    expect(res.text).toContain('property="og:title"');
+    expect(res.text).toContain('property="og:image"');
+    expect(res.text).toContain('name="twitter:card"');
   });
 
   it("upload → /share/:pageType/:token (bot UA) renders OG HTML with the stored preview URL", async () => {

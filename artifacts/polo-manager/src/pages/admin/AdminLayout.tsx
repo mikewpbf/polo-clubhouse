@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { Calendar, Users, Building2, Trophy, Activity, LogOut, Home, Shield, Sparkles, Settings, UserCircle, Target, BarChart3 } from "lucide-react";
+import { Calendar, Users, Building2, Trophy, Activity, LogOut, Home, Shield, Sparkles, Settings, UserCircle, Target, BarChart3, KeyRound } from "lucide-react";
 import { triggerAdminPreviewAutoBackfill } from "@/lib/matchPreviewSnap";
 import { useListTodayMatches, useListLiveMatches } from "@workspace/api-client-react";
 
@@ -99,6 +99,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     { href: "/admin/matchday", label: "Match Day", icon: Calendar },
     ...(isSuperAdmin ? [
       { href: "/admin/users", label: "Users", icon: Shield },
+      { href: "/admin/api-keys", label: "Client Apps", icon: KeyRound },
       { href: "/admin/ai-wizard", label: "AI Wizard", icon: Sparkles },
     ] : []),
   ];

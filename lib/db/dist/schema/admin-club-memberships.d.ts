@@ -92,12 +92,12 @@ export declare const adminClubMembershipsTable: import("drizzle-orm/pg-core").Pg
     dialect: "pg";
 }>;
 export declare const insertAdminClubMembershipSchema: z.ZodObject<{
-    clubId: z.ZodUUID;
     role: z.ZodEnum<{
         owner: "owner";
         manager: "manager";
     }>;
     userId: z.ZodUUID;
+    clubId: z.ZodUUID;
     assignedBy: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
 }, {
     out: {};

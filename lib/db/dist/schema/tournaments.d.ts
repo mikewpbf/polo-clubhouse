@@ -148,14 +148,14 @@ export declare const tournamentsTable: import("drizzle-orm/pg-core").PgTableWith
             tableName: "tournaments";
             dataType: "string";
             columnType: "PgEnumColumn";
-            data: "draft" | "published" | "in_progress" | "completed" | "archived";
+            data: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
             driverParam: string;
             notNull: false;
             hasDefault: true;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: ["draft", "published", "in_progress", "completed", "archived"];
+            enumValues: ["draft", "test", "published", "in_progress", "completed", "archived"];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
@@ -558,6 +558,7 @@ export declare const insertTournamentSchema: z.ZodObject<{
     finalsDate: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     status: z.ZodOptional<z.ZodNullable<z.ZodEnum<{
         draft: "draft";
+        test: "test";
         published: "published";
         in_progress: "in_progress";
         completed: "completed";

@@ -29,6 +29,7 @@ import { StatsControl } from "@/pages/admin/StatsControl";
 import { GFXControl } from "@/pages/admin/GFXControl";
 import { ShareControl } from "@/pages/share/ShareControl";
 import { AdminUsers } from "@/pages/admin/Users";
+import { AdminApiKeys } from "@/pages/admin/ApiKeys";
 import { AdminClubs } from "@/pages/admin/Clubs";
 import { AdminPlayers } from "@/pages/admin/Players";
 import { PlayerManage } from "@/pages/admin/PlayerManage";
@@ -83,6 +84,7 @@ function Router() {
       <Route path="/share/scoreboard/:token">{() => <ShareControl pageType="scoreboard" />}</Route>
       <Route path="/admin/match/:id/graphics" component={MatchGraphics} />
       <Route path="/admin/users" component={AdminUsers} />
+      <Route path="/admin/api-keys" component={AdminApiKeys} />
       <Route path="/admin/clubs" component={AdminClubs} />
       <Route path="/admin/club-settings" component={ClubSettings} />
       <Route path="/admin/ai-wizard" component={AiWizard} />

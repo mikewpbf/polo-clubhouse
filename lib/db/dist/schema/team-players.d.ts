@@ -126,8 +126,8 @@ export declare const teamPlayersTable: import("drizzle-orm/pg-core").PgTableWith
     dialect: "pg";
 }>;
 export declare const insertTeamPlayerSchema: z.ZodObject<{
-    isActive: z.ZodOptional<z.ZodBoolean>;
     teamId: z.ZodUUID;
+    isActive: z.ZodOptional<z.ZodBoolean>;
     playerId: z.ZodUUID;
     seasonYear: z.ZodInt;
     position: z.ZodOptional<z.ZodNullable<z.ZodInt>>;

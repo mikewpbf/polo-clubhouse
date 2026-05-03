@@ -162,6 +162,7 @@ export declare const teamManagerAssignmentsTable: import("drizzle-orm/pg-core").
     dialect: "pg";
 }>;
 export declare const insertTeamManagerAssignmentSchema: z.ZodObject<{
+    userId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     status: z.ZodOptional<z.ZodNullable<z.ZodEnum<{
         pending_invite: "pending_invite";
         active: "active";
@@ -169,7 +170,6 @@ export declare const insertTeamManagerAssignmentSchema: z.ZodObject<{
     }>>>;
     tournamentId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     teamId: z.ZodUUID;
-    userId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     assignedBy: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     inviteEmail: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     acceptedAt: z.ZodOptional<z.ZodNullable<z.ZodDate>>;

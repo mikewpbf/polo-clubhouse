@@ -248,8 +248,8 @@ export declare const playersTable: import("drizzle-orm/pg-core").PgTableWithColu
 }>;
 export declare const insertPlayerSchema: z.ZodObject<{
     name: z.ZodString;
-    isActive: z.ZodOptional<z.ZodBoolean>;
     handicap: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    isActive: z.ZodOptional<z.ZodBoolean>;
     headshotUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     headshotSourceUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     broadcastImageUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;

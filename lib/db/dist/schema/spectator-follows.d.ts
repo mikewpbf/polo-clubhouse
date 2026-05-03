@@ -58,8 +58,8 @@ export declare const spectatorFollowsTable: import("drizzle-orm/pg-core").PgTabl
     dialect: "pg";
 }>;
 export declare const insertSpectatorFollowSchema: z.ZodObject<{
-    clubId: z.ZodUUID;
     userId: z.ZodUUID;
+    clubId: z.ZodUUID;
 }, {
     out: {};
     in: {};

@@ -1,5 +1,5 @@
 export declare const tournamentFormatEnum: import("drizzle-orm/pg-core").PgEnum<["round_robin", "single_elim", "double_elim", "group_knockout", "swiss"]>;
-export declare const tournamentStatusEnum: import("drizzle-orm/pg-core").PgEnum<["draft", "published", "in_progress", "completed", "archived"]>;
+export declare const tournamentStatusEnum: import("drizzle-orm/pg-core").PgEnum<["draft", "test", "published", "in_progress", "completed", "archived"]>;
 export declare const matchStatusEnum: import("drizzle-orm/pg-core").PgEnum<["scheduled", "live", "halftime", "final", "postponed", "cancelled"]>;
 export declare const userRoleEnum: import("drizzle-orm/pg-core").PgEnum<["spectator", "team_manager", "admin", "super_admin"]>;
 export declare const clubMembershipRoleEnum: import("drizzle-orm/pg-core").PgEnum<["owner", "manager"]>;

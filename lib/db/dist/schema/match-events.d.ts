@@ -253,6 +253,7 @@ export declare const matchEventsTable: import("drizzle-orm/pg-core").PgTableWith
     dialect: "pg";
 }>;
 export declare const insertMatchEventSchema: z.ZodObject<{
+    createdBy: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     description: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     teamId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     matchId: z.ZodUUID;
@@ -287,7 +288,6 @@ export declare const insertMatchEventSchema: z.ZodObject<{
     distance: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     severity: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     scoreSnapshot: z.ZodOptional<z.ZodNullable<z.ZodType<import("drizzle-zod").Json, unknown, z.core.$ZodTypeInternals<import("drizzle-zod").Json, unknown>>>>;
-    createdBy: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
 }, {
     out: {};
     in: {};

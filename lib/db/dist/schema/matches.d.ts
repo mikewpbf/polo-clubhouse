@@ -616,7 +616,6 @@ export declare const matchesTable: import("drizzle-orm/pg-core").PgTableWithColu
     dialect: "pg";
 }>;
 export declare const insertMatchSchema: z.ZodObject<{
-    notes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     status: z.ZodOptional<z.ZodNullable<z.ZodEnum<{
         scheduled: "scheduled";
         live: "live";
@@ -626,6 +625,7 @@ export declare const insertMatchSchema: z.ZodObject<{
         cancelled: "cancelled";
     }>>>;
     tournamentId: z.ZodUUID;
+    notes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     homeTeamId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     awayTeamId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     fieldId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;

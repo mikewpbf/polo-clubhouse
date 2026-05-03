@@ -41,6 +41,7 @@ export async function listApiKeys() {
     keyPrefix: r.keyPrefix,
     createdAt: r.createdAt,
     revokedAt: r.revokedAt,
+    lastUsedAt: r.lastUsedAt,
   }));
 }
 
@@ -57,5 +58,12 @@ export async function findActiveApiKey(raw: string) {
   const [row] = await db.select().from(apiKeysTable).where(
     and(eq(apiKeysTable.keyHash, hashApiKey(raw)), isNull(apiKeysTable.revokedAt)),
   );
-  return row || null;
+  if (!row) return null;
+  // Best-effort last-used stamp so the admin UI can show recency. Fire and
+  // forget — never block the request, never throw if the write fails.
+  db.update(apiKeysTable)
+    .set({ lastUsedAt: new Date() })
+    .where(eq(apiKeysTable.id, row.id))
+    .catch(() => {});
+  return row;
 }

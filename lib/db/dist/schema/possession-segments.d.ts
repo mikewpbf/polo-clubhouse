@@ -162,9 +162,9 @@ export declare const possessionSegmentsTable: import("drizzle-orm/pg-core").PgTa
     dialect: "pg";
 }>;
 export declare const insertPossessionSegmentSchema: z.ZodObject<{
+    createdBy: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     matchId: z.ZodUUID;
     chukker: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
-    createdBy: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     possessionState: z.ZodString;
     startedAt: z.ZodDate;
     endedAt: z.ZodOptional<z.ZodNullable<z.ZodDate>>;

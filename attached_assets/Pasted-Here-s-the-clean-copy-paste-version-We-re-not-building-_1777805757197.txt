@@ -1,0 +1,18 @@
+Here’s the clean copy-paste version:
+
+We’re not building mobile or Apple TV apps yet, but I want all backend infrastructure in place now so when we do build them later, they plug in cleanly with zero backend refactoring. Treat the web app as the first client of the API, not the only client.
+Please start doing the following:
+1. Build a proper versioned REST (or GraphQL) API layer. Every feature in the web app should be accessible through a documented, versioned API (e.g., /api/v1/...). The web app should consume this same API rather than talking to the database directly. This guarantees feature parity for any future client.
+2. Token-based authentication built for multiple clients. Implement JWT or OAuth2 with refresh tokens instead of session-only cookies. Mobile and tvOS can’t rely on browser sessions. Support:
+	•	Long-lived refresh tokens
+	•	Device-level token management (user can log out one device)
+	•	Role-based access (Super Admin, Producer, Club Admin, Player, etc.)
+3. Auto-generated API documentation from day one. Use OpenAPI/Swagger so future mobile devs can build against the spec without guessing.
+4. Real-time layer. Score updates, clock sync, GFX triggers, and Producer/Match Control sync need a real-time channel — WebSockets or a service like Pusher/Ably/Supabase Realtime. Build it as a shared service so web, mobile, and Apple TV all subscribe to the same event stream.
+5. Proper media handling. Player profile images, aux broadcast images, team logos, jerseys, and event logos go in object storage (S3, Cloudflare R2, etc.) with public URLs and sizing transforms. Do not store images in the database.
+6. Scoreboard & broadcast endpoints. The full-screen browser scoreboard should be powered by an API endpoint that returns live match state (teams, colors, logos, jerseys, score, chukker, clock, event logo). That same endpoint will feed the Apple TV scoreboard later — build it once, use it everywhere.
+7. Push notification readiness. Add a device_tokens table now (user_id, token, platform, created_at). We won’t send pushes yet, but capturing the schema means no retrofit later.
+8. Environment & config management. Keep API base URLs, keys, and feature flags in environment config — not hardcoded. Future mobile/TV builds will point at the same backend with different client identifiers.
+9. Rate limiting & API keys. Plan for API key issuance so future native clients authenticate as known apps. Add basic rate limiting per key/user.
+10. Maintain a MOBILE_TV_NOTES.md file. As you build features, flag anything that’s web-only (e.g., “this uses a browser file picker — mobile will need a native equivalent”). That running list becomes the spec when we start native builds.
+Bottom line: if you do this consistently, the mobile and Apple TV apps become a UI project later — not a backend rebuild.​​​​​​​​​​​​​​​​

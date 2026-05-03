@@ -395,9 +395,9 @@ export function TournamentDetail() {
                             clockElapsedSeconds={m.clockElapsedSeconds ?? 0}
                             clockIsRunning={m.clockIsRunning ?? false}
                             status={m.status}
-                            lastGoalScorerName={m.lastGoalScorerName}
-                            lastGoalTimestamp={m.lastGoalTimestamp}
-                            lastStoppageEvent={m.lastStoppageEvent}
+                            lastGoalScorerName={(m as any).lastGoalScorerName}
+                            lastGoalTimestamp={(m as any).lastGoalTimestamp}
+                            lastStoppageEvent={(m as any).lastStoppageEvent}
 
                           />
                         )}

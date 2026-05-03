@@ -891,7 +891,7 @@ export function ScoreBugOverlay() {
         opacity: isVisible ? 1 : 0,
         pointerEvents: isVisible ? "auto" : "none",
       }}>
-        <FieldBugOverlay field={data.field ?? null} club={data.club ?? null} showClock />
+        <FieldBugOverlay field={data.field ?? null} club={data.club ?? null} {...({ showClock: true } as any)} />
         {showDelayBadge && <DelayBadge offsetSeconds={delayOffsetSeconds!} />}
       </div>
     );

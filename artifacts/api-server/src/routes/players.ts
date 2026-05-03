@@ -451,8 +451,8 @@ router.get("/players/:playerId", optionalAuth, async (req, res) => {
         const aT = a.scheduledAt ? new Date(a.scheduledAt as any).getTime() : 0;
         const bT = b.scheduledAt ? new Date(b.scheduledAt as any).getTime() : 0;
         if (aT !== bT) return bT - aT;
-        const aC = a.createdAt ? new Date(a.createdAt as any).getTime() : 0;
-        const bC = b.createdAt ? new Date(b.createdAt as any).getTime() : 0;
+        const aC = (a as any).createdAt ? new Date((a as any).createdAt).getTime() : 0;
+        const bC = (b as any).createdAt ? new Date((b as any).createdAt).getTime() : 0;
         return bC - aC;
       })
       .slice(0, RECENT_LIMIT);

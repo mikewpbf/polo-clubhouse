@@ -609,7 +609,7 @@ function MatchForm({
   const [time, setTime] = useState(parsed.time);
   const [fieldId, setFieldId] = useState(match?.fieldId || "");
   const [round, setRound] = useState(match?.round || "");
-  const [streamUrl, setStreamUrl] = useState(match?.streamUrl || "");
+  const [streamUrl, setStreamUrl] = useState((match as any)?.streamUrl || "");
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async () => {

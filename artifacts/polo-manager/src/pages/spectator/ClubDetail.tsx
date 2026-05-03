@@ -44,7 +44,7 @@ export function ClubDetail() {
   }, [allTournaments, yearFilter]);
 
   const active = filtered.filter((t: Tournament) => t.status === "in_progress" || t.status === "published");
-  const past = filtered.filter((t: Tournament) => t.status === "completed" || t.status === "final");
+  const past = filtered.filter((t: Tournament) => t.status === "completed" || (t as any).status === "final");
 
   if (isLoading) {
     return (

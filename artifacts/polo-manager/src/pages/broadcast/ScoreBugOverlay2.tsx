@@ -670,17 +670,19 @@ export function ScoreBugOverlay2() {
         pointerEvents: isVisible ? "auto" : "none",
       }}>
         <StatsOverlay
-          homeTeam={data.homeTeam}
-          awayTeam={data.awayTeam}
-          homeScore={data.homeScore}
-          awayScore={data.awayScore}
-          currentChukker={data.currentChukker}
-          clock={clock}
-          clockIsRunning={data.clockIsRunning}
-          stats={data.stats ?? null}
-          topScorers={data.topScorers}
-          possession={data.possession}
-          tournament={data.tournament}
+          {...({
+            homeTeam: data.homeTeam,
+            awayTeam: data.awayTeam,
+            homeScore: data.homeScore,
+            awayScore: data.awayScore,
+            currentChukker: data.currentChukker,
+            clock,
+            clockIsRunning: data.clockIsRunning,
+            stats: data.stats ?? null,
+            topScorers: data.topScorers,
+            possession: data.possession,
+            tournament: data.tournament,
+          } as any)}
         />
       </div>
     );

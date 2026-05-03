@@ -225,7 +225,7 @@ router.post("/admin/ai/execute-setup", requireAuth, requireSuperAdmin, async (re
     const existingFieldsDb = await db.select({ id: fieldsTable.id, name: fieldsTable.name, clubId: fieldsTable.clubId }).from(fieldsTable);
     const fieldMap = new Map<string, string>();
     for (const f of existingFieldsDb) {
-      fieldMap.set(f.name.toLowerCase(), f.id);
+      if (f.name) fieldMap.set(f.name.toLowerCase(), f.id);
     }
 
     // 1. Create clubs first

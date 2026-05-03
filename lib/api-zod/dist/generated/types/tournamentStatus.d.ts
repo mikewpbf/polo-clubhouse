@@ -8,6 +8,7 @@
 export type TournamentStatus = (typeof TournamentStatus)[keyof typeof TournamentStatus];
 export declare const TournamentStatus: {
     readonly draft: "draft";
+    readonly test: "test";
     readonly published: "published";
     readonly in_progress: "in_progress";
     readonly completed: "completed";

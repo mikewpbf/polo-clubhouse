@@ -94,6 +94,7 @@ export declare const TournamentFormat: {
 export type TournamentStatus = (typeof TournamentStatus)[keyof typeof TournamentStatus];
 export declare const TournamentStatus: {
     readonly draft: "draft";
+    readonly test: "test";
     readonly published: "published";
     readonly in_progress: "in_progress";
     readonly completed: "completed";
@@ -248,6 +249,7 @@ export interface UpdateTeamRequest {
 export type TournamentWithClubStatus = (typeof TournamentWithClubStatus)[keyof typeof TournamentWithClubStatus];
 export declare const TournamentWithClubStatus: {
     readonly draft: "draft";
+    readonly test: "test";
     readonly published: "published";
     readonly in_progress: "in_progress";
     readonly completed: "completed";
@@ -276,6 +278,7 @@ export declare const TournamentDetailFormat: {
 export type TournamentDetailStatus = (typeof TournamentDetailStatus)[keyof typeof TournamentDetailStatus];
 export declare const TournamentDetailStatus: {
     readonly draft: "draft";
+    readonly test: "test";
     readonly published: "published";
     readonly in_progress: "in_progress";
     readonly completed: "completed";
@@ -420,6 +423,7 @@ export declare const UpdateTournamentRequestFormat: {
 export type UpdateTournamentRequestStatus = (typeof UpdateTournamentRequestStatus)[keyof typeof UpdateTournamentRequestStatus];
 export declare const UpdateTournamentRequestStatus: {
     readonly draft: "draft";
+    readonly test: "test";
     readonly published: "published";
     readonly in_progress: "in_progress";
     readonly completed: "completed";

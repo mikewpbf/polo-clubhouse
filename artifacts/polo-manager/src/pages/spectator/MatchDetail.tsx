@@ -77,10 +77,10 @@ export function MatchDetail() {
   const matchId = params?.id || "";
 
   const { data: match, isLoading, refetch: refetchMatch } = useGetMatch(matchId, {
-    query: { refetchInterval: 3000 },
+    query: { refetchInterval: 3000 } as any,
   });
   const { data: events, refetch: refetchEvents } = useListMatchEvents(matchId, {
-    query: { refetchInterval: 3000 },
+    query: { refetchInterval: 3000 } as any,
   });
   const { user } = useAuth();
   const canManage = user?.role === "super_admin" || user?.role === "admin";

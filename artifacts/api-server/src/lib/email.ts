@@ -20,7 +20,7 @@ async function getApiKey(): Promise<string> {
         "https://" + hostname + "/api/v2/connection?include_secrets=true&connector_names=resend",
         { headers: { Accept: "application/json", "X-Replit-Token": xReplitToken } }
       ).then((r) => r.json());
-      const key = data.items?.[0]?.settings?.api_key;
+      const key = (data as any)?.items?.[0]?.settings?.api_key;
       if (key) return key;
     } catch {}
   }

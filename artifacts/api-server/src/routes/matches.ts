@@ -23,7 +23,7 @@ async function isDuplicateEvent(matchId: string, eventType: string): Promise<boo
     .where(and(eq(matchEventsTable.matchId, matchId), eq(matchEventsTable.eventType, eventType as any)))
     .orderBy(desc(matchEventsTable.createdAt))
     .limit(1);
-  if (!latest) return false;
+  if (!latest || !latest.createdAt) return false;
   return Date.now() - new Date(latest.createdAt).getTime() < DEDUP_WINDOW_MS;
 }
 
@@ -34,7 +34,7 @@ async function enrichMatch(m: MatchRow, includePlayers = false) {
   const awayTeam = m.awayTeamId ? (await db.select().from(teamsTable).where(eq(teamsTable.id, m.awayTeamId)))[0] : null;
   const field = m.fieldId ? (await db.select().from(fieldsTable).where(eq(fieldsTable.id, m.fieldId)))[0] : null;
   const [tournament] = await db.select().from(tournamentsTable).where(eq(tournamentsTable.id, m.tournamentId));
-  const [club] = tournament ? await db.select().from(clubsTable).where(eq(clubsTable.id, tournament.clubId)) : [null];
+  const [club] = tournament?.clubId ? await db.select().from(clubsTable).where(eq(clubsTable.id, tournament.clubId)) : [null];
 
   let homePlayers: any[] = [];
   let awayPlayers: any[] = [];
@@ -156,7 +156,7 @@ router.get("/tournaments/:tournamentId/matches", optionalAuth, async (req, res) 
     if (teamId) {
       filtered = filtered.filter(m => m.homeTeamId === teamId || m.awayTeamId === teamId);
     }
-    const result = await Promise.all(filtered.map(enrichMatch));
+    const result = await Promise.all(filtered.map(m => enrichMatch(m)));
     res.json(result);
   } catch (e: any) {
     res.status(500).json({ message: e.message });
@@ -247,7 +247,7 @@ router.get("/matches/live", async (_req, res) => {
       .where(inArray(tournamentsTable.status, ["draft", "test"]));
     const hiddenIds = new Set(hiddenTournaments.map(t => t.id));
     const visible = liveMatches.filter(m => !hiddenIds.has(m.tournamentId));
-    const result = await Promise.all(visible.map(enrichMatch));
+    const result = await Promise.all(visible.map(m => enrichMatch(m)));
     res.json(result);
   } catch (e: any) {
     res.status(500).json({ message: e.message });
@@ -297,7 +297,7 @@ router.get("/matches/today", async (req, res) => {
     let matchRows = await db.select().from(matchesTable).where(
       and(gte(matchesTable.scheduledAt, startOfDay), lte(matchesTable.scheduledAt, endOfDay))
     );
-    matchRows = matchRows.filter(m => m.status !== "final" && m.status !== "cancelled" && m.status !== "completed");
+    matchRows = matchRows.filter(m => m.status !== "final" && m.status !== "cancelled");
     if (allClubIds.length > 0) {
       const clubTournaments = await db.select().from(tournamentsTable).where(inArray(tournamentsTable.clubId, allClubIds));
       const tIds = clubTournaments.map(t => t.id);
@@ -314,12 +314,12 @@ router.get("/matches/today", async (req, res) => {
 
     matchRows.sort((a, b) => {
       const statusOrder: Record<string, number> = { live: 0, halftime: 1, scheduled: 2, postponed: 3 };
-      const sa = statusOrder[a.status] ?? 9;
-      const sb = statusOrder[b.status] ?? 9;
+      const sa = statusOrder[a.status ?? ""] ?? 9;
+      const sb = statusOrder[b.status ?? ""] ?? 9;
       if (sa !== sb) return sa - sb;
       return (a.scheduledAt?.getTime() || 0) - (b.scheduledAt?.getTime() || 0);
     });
-    const result = await Promise.all(matchRows.map(enrichMatch));
+    const result = await Promise.all(matchRows.map(m => enrichMatch(m)));
     res.json(result);
   } catch (e: any) {
     res.status(500).json({ message: e.message });
@@ -358,7 +358,7 @@ router.get("/matches/upcoming", async (req, res) => {
 
     const total = matchRows.length;
     matchRows = matchRows.slice(offset, offset + limit);
-    const result = await Promise.all(matchRows.map(enrichMatch));
+    const result = await Promise.all(matchRows.map(m => enrichMatch(m)));
     if (req.query.paginated === "true") {
       res.json({ matches: result, total, offset, limit });
     } else {
@@ -1125,7 +1125,7 @@ router.get("/matches/:matchId/stream", async (req, res) => {
     const matchId = String(req.params.matchId);
     const [match] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
     if (!match) { res.status(404).json({ message: "Match not found" }); return; }
-    if (!LIVE_STATUSES.has(match.status)) {
+    if (!match.status || !LIVE_STATUSES.has(match.status)) {
       res.status(204).end();
       return;
     }
@@ -1142,7 +1142,7 @@ async function buildBroadcastPayload(matchId: string) {
     const homeTeam = match.homeTeamId ? (await db.select().from(teamsTable).where(eq(teamsTable.id, match.homeTeamId)))[0] : null;
     const awayTeam = match.awayTeamId ? (await db.select().from(teamsTable).where(eq(teamsTable.id, match.awayTeamId)))[0] : null;
     const [tournament] = await db.select().from(tournamentsTable).where(eq(tournamentsTable.id, match.tournamentId));
-    const [club] = tournament ? await db.select().from(clubsTable).where(eq(clubsTable.id, tournament.clubId)) : [null];
+    const [club] = tournament?.clubId ? await db.select().from(clubsTable).where(eq(clubsTable.id, tournament.clubId)) : [null];
     const field = match.fieldId ? (await db.select().from(fieldsTable).where(eq(fieldsTable.id, match.fieldId)))[0] : null;
 
     const stoppageTypes = ["penalty", "horse_change", "safety", "injury_timeout"] as const;
@@ -1726,7 +1726,7 @@ router.put("/matches/:matchId/broadcast", requireMatchWrite("gfx", "full_control
         const [thisMatch] = await tx.select().from(matchesTable).where(eq(matchesTable.id, matchId));
         if (!thisMatch) throw new Error("Match not found");
         const [thisTournament] = await tx.select().from(tournamentsTable).where(eq(tournamentsTable.id, thisMatch.tournamentId));
-        if (thisTournament) {
+        if (thisTournament && thisTournament.clubId) {
           const lockKey = `${thisTournament.clubId}:${broadcastChannel}`;
           const lockHash = crypto.createHash("sha256").update(lockKey).digest();
           const lockInt = lockHash.readBigInt64BE(0).toString();

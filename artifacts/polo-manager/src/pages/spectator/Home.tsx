@@ -77,8 +77,8 @@ function MatchCard({ match, showDate = false, showDetails = false }: { match: Re
 }
 
 export function Home() {
-  const { data: liveMatches, isLoading: liveLoading } = useListLiveMatches({ query: { refetchInterval: 3000 } });
-  const { data: todayMatches, isLoading: todayLoading } = useListTodayMatches({ tz: userTz }, { query: { refetchInterval: 5000 } });
+  const { data: liveMatches, isLoading: liveLoading } = useListLiveMatches({ query: { refetchInterval: 3000 } as any });
+  const { data: todayMatches, isLoading: todayLoading } = useListTodayMatches({ tz: userTz }, { query: { refetchInterval: 5000 } as any });
   const { data: upcomingMatches, isLoading: upcomingLoading } = useListUpcomingMatches({ limit: 5 });
   const { data: tournaments, isLoading: tournamentsLoading } = useListAllTournaments({});
   const { data: topPlayers } = useListTopPlayers({ limit: 8 });
@@ -102,7 +102,7 @@ export function Home() {
             </div>
 
             {(() => {
-              const embedUrl = getYouTubeEmbedUrl(featuredLive.streamUrl);
+              const embedUrl = getYouTubeEmbedUrl((featuredLive as any).streamUrl);
               if (!embedUrl) return null;
               return (
                 <div className="rounded-t-[12px] overflow-hidden" style={{ aspectRatio: "16/9" }}>
@@ -118,7 +118,7 @@ export function Home() {
             })()}
 
             <Link href={`/match/${featuredLive.id}`} className="block">
-              <div className={`bg-white overflow-hidden border border-g100 card-shadow hover:border-g300 transition-all ${getYouTubeEmbedUrl(featuredLive.streamUrl) ? "rounded-b-[12px]" : "rounded-[12px]"}`}>
+              <div className={`bg-white overflow-hidden border border-g100 card-shadow hover:border-g300 transition-all ${getYouTubeEmbedUrl((featuredLive as any).streamUrl) ? "rounded-b-[12px]" : "rounded-[12px]"}`}>
                 <div className="bg-g50 px-5 py-2.5 flex items-center justify-between border-b border-g100">
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 rounded-full bg-live animate-live-dot" />
@@ -151,9 +151,9 @@ export function Home() {
                       clockIsRunning={featuredLive.clockIsRunning}
                       status={featuredLive.status}
                       size="lg"
-                      lastGoalScorerName={featuredLive.lastGoalScorerName}
-                      lastGoalTimestamp={featuredLive.lastGoalTimestamp}
-                      lastStoppageEvent={featuredLive.lastStoppageEvent}
+                      lastGoalScorerName={(featuredLive as any).lastGoalScorerName}
+                      lastGoalTimestamp={(featuredLive as any).lastGoalTimestamp}
+                      lastStoppageEvent={(featuredLive as any).lastStoppageEvent}
 
                     />
                     <div className="mt-1.5 text-[12px] font-sans font-medium text-ink3">

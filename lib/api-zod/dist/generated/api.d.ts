@@ -454,7 +454,7 @@ export declare const GetClubBySlugResponse: zod.ZodObject<{
         startDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
         endDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
         finalsDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
-        status: zod.ZodEnum<["draft", "published", "in_progress", "completed", "archived"]>;
+        status: zod.ZodEnum<["draft", "test", "published", "in_progress", "completed", "archived"]>;
         matchDurationMin: zod.ZodOptional<zod.ZodNumber>;
         gapBetweenMin: zod.ZodOptional<zod.ZodNumber>;
         chukkersPerMatch: zod.ZodOptional<zod.ZodNumber>;
@@ -465,7 +465,7 @@ export declare const GetClubBySlugResponse: zod.ZodObject<{
         aiRecommendation: zod.ZodOptional<zod.ZodNullable<zod.ZodObject<{}, "passthrough", zod.ZodTypeAny, zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough">, zod.objectInputType<{}, zod.ZodTypeAny, "passthrough">>>>;
         createdAt: zod.ZodOptional<zod.ZodDate>;
     }, "strip", zod.ZodTypeAny, {
-        status: "draft" | "published" | "in_progress" | "completed" | "archived";
+        status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
         id: string;
         clubId: string;
         name: string;
@@ -484,7 +484,7 @@ export declare const GetClubBySlugResponse: zod.ZodObject<{
         scheduleConfig?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
         aiRecommendation?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
     }, {
-        status: "draft" | "published" | "in_progress" | "completed" | "archived";
+        status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
         id: string;
         clubId: string;
         name: string;
@@ -520,7 +520,7 @@ export declare const GetClubBySlugResponse: zod.ZodObject<{
         isActive?: boolean | undefined;
     }[];
     tournaments: {
-        status: "draft" | "published" | "in_progress" | "completed" | "archived";
+        status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
         id: string;
         clubId: string;
         name: string;
@@ -564,7 +564,7 @@ export declare const GetClubBySlugResponse: zod.ZodObject<{
         isActive?: boolean | undefined;
     }[];
     tournaments: {
-        status: "draft" | "published" | "in_progress" | "completed" | "archived";
+        status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
         id: string;
         clubId: string;
         name: string;
@@ -1226,7 +1226,7 @@ export declare const ListTournamentsResponseItem: zod.ZodObject<{
     startDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     endDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     finalsDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
-    status: zod.ZodEnum<["draft", "published", "in_progress", "completed", "archived"]>;
+    status: zod.ZodEnum<["draft", "test", "published", "in_progress", "completed", "archived"]>;
     matchDurationMin: zod.ZodOptional<zod.ZodNumber>;
     gapBetweenMin: zod.ZodOptional<zod.ZodNumber>;
     chukkersPerMatch: zod.ZodOptional<zod.ZodNumber>;
@@ -1237,7 +1237,7 @@ export declare const ListTournamentsResponseItem: zod.ZodObject<{
     aiRecommendation: zod.ZodOptional<zod.ZodNullable<zod.ZodObject<{}, "passthrough", zod.ZodTypeAny, zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough">, zod.objectInputType<{}, zod.ZodTypeAny, "passthrough">>>>;
     createdAt: zod.ZodOptional<zod.ZodDate>;
 }, "strip", zod.ZodTypeAny, {
-    status: "draft" | "published" | "in_progress" | "completed" | "archived";
+    status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
     id: string;
     clubId: string;
     name: string;
@@ -1256,7 +1256,7 @@ export declare const ListTournamentsResponseItem: zod.ZodObject<{
     scheduleConfig?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
     aiRecommendation?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
 }, {
-    status: "draft" | "published" | "in_progress" | "completed" | "archived";
+    status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
     id: string;
     clubId: string;
     name: string;
@@ -1284,7 +1284,7 @@ export declare const ListTournamentsResponse: zod.ZodArray<zod.ZodObject<{
     startDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     endDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     finalsDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
-    status: zod.ZodEnum<["draft", "published", "in_progress", "completed", "archived"]>;
+    status: zod.ZodEnum<["draft", "test", "published", "in_progress", "completed", "archived"]>;
     matchDurationMin: zod.ZodOptional<zod.ZodNumber>;
     gapBetweenMin: zod.ZodOptional<zod.ZodNumber>;
     chukkersPerMatch: zod.ZodOptional<zod.ZodNumber>;
@@ -1295,7 +1295,7 @@ export declare const ListTournamentsResponse: zod.ZodArray<zod.ZodObject<{
     aiRecommendation: zod.ZodOptional<zod.ZodNullable<zod.ZodObject<{}, "passthrough", zod.ZodTypeAny, zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough">, zod.objectInputType<{}, zod.ZodTypeAny, "passthrough">>>>;
     createdAt: zod.ZodOptional<zod.ZodDate>;
 }, "strip", zod.ZodTypeAny, {
-    status: "draft" | "published" | "in_progress" | "completed" | "archived";
+    status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
     id: string;
     clubId: string;
     name: string;
@@ -1314,7 +1314,7 @@ export declare const ListTournamentsResponse: zod.ZodArray<zod.ZodObject<{
     scheduleConfig?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
     aiRecommendation?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
 }, {
-    status: "draft" | "published" | "in_progress" | "completed" | "archived";
+    status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
     id: string;
     clubId: string;
     name: string;
@@ -1413,7 +1413,7 @@ export declare const ListAllTournamentsResponseItem: zod.ZodObject<{
     handicapLevel: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     startDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     endDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
-    status: zod.ZodEnum<["draft", "published", "in_progress", "completed", "archived"]>;
+    status: zod.ZodEnum<["draft", "test", "published", "in_progress", "completed", "archived"]>;
     club: zod.ZodObject<{
         id: zod.ZodString;
         name: zod.ZodString;
@@ -1456,7 +1456,7 @@ export declare const ListAllTournamentsResponseItem: zod.ZodObject<{
     }>;
     teamCount: zod.ZodNumber;
 }, "strip", zod.ZodTypeAny, {
-    status: "draft" | "published" | "in_progress" | "completed" | "archived";
+    status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
     id: string;
     clubId: string;
     name: string;
@@ -1480,7 +1480,7 @@ export declare const ListAllTournamentsResponseItem: zod.ZodObject<{
     startDate?: string | null | undefined;
     endDate?: string | null | undefined;
 }, {
-    status: "draft" | "published" | "in_progress" | "completed" | "archived";
+    status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
     id: string;
     clubId: string;
     name: string;
@@ -1512,7 +1512,7 @@ export declare const ListAllTournamentsResponse: zod.ZodArray<zod.ZodObject<{
     handicapLevel: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     startDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     endDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
-    status: zod.ZodEnum<["draft", "published", "in_progress", "completed", "archived"]>;
+    status: zod.ZodEnum<["draft", "test", "published", "in_progress", "completed", "archived"]>;
     club: zod.ZodObject<{
         id: zod.ZodString;
         name: zod.ZodString;
@@ -1555,7 +1555,7 @@ export declare const ListAllTournamentsResponse: zod.ZodArray<zod.ZodObject<{
     }>;
     teamCount: zod.ZodNumber;
 }, "strip", zod.ZodTypeAny, {
-    status: "draft" | "published" | "in_progress" | "completed" | "archived";
+    status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
     id: string;
     clubId: string;
     name: string;
@@ -1579,7 +1579,7 @@ export declare const ListAllTournamentsResponse: zod.ZodArray<zod.ZodObject<{
     startDate?: string | null | undefined;
     endDate?: string | null | undefined;
 }, {
-    status: "draft" | "published" | "in_progress" | "completed" | "archived";
+    status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
     id: string;
     clubId: string;
     name: string;
@@ -1622,7 +1622,7 @@ export declare const GetTournamentResponse: zod.ZodObject<{
     startDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     endDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     finalsDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
-    status: zod.ZodEnum<["draft", "published", "in_progress", "completed", "archived"]>;
+    status: zod.ZodEnum<["draft", "test", "published", "in_progress", "completed", "archived"]>;
     matchDurationMin: zod.ZodOptional<zod.ZodNumber>;
     gapBetweenMin: zod.ZodOptional<zod.ZodNumber>;
     chukkersPerMatch: zod.ZodOptional<zod.ZodNumber>;
@@ -2050,7 +2050,7 @@ export declare const GetTournamentResponse: zod.ZodObject<{
         lunchEnd?: string | null | undefined;
     }>, "many">;
 }, "strip", zod.ZodTypeAny, {
-    status: "draft" | "published" | "in_progress" | "completed" | "archived";
+    status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
     id: string;
     clubId: string;
     name: string;
@@ -2176,7 +2176,7 @@ export declare const GetTournamentResponse: zod.ZodObject<{
     scheduleConfig?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
     aiRecommendation?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
 }, {
-    status: "draft" | "published" | "in_progress" | "completed" | "archived";
+    status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
     id: string;
     clubId: string;
     name: string;
@@ -2325,12 +2325,12 @@ export declare const UpdateTournamentBody: zod.ZodObject<{
     chukkerDurationMinutes: zod.ZodOptional<zod.ZodNumber>;
     hasThirdPlace: zod.ZodOptional<zod.ZodBoolean>;
     isVisitingLeague: zod.ZodOptional<zod.ZodBoolean>;
-    status: zod.ZodOptional<zod.ZodEnum<["draft", "published", "in_progress", "completed", "archived"]>>;
+    status: zod.ZodOptional<zod.ZodEnum<["draft", "test", "published", "in_progress", "completed", "archived"]>>;
     aiRecommendation: zod.ZodOptional<zod.ZodObject<{}, "passthrough", zod.ZodTypeAny, zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough">, zod.objectInputType<{}, zod.ZodTypeAny, "passthrough">>>;
     logoUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     jumbotronBgColor: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
 }, "strip", zod.ZodTypeAny, {
-    status?: "draft" | "published" | "in_progress" | "completed" | "archived" | undefined;
+    status?: "draft" | "test" | "published" | "in_progress" | "completed" | "archived" | undefined;
     name?: string | undefined;
     logoUrl?: string | null | undefined;
     format?: "round_robin" | "single_elim" | "double_elim" | "group_knockout" | "swiss" | undefined;
@@ -2347,7 +2347,7 @@ export declare const UpdateTournamentBody: zod.ZodObject<{
     aiRecommendation?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | undefined;
     jumbotronBgColor?: string | null | undefined;
 }, {
-    status?: "draft" | "published" | "in_progress" | "completed" | "archived" | undefined;
+    status?: "draft" | "test" | "published" | "in_progress" | "completed" | "archived" | undefined;
     name?: string | undefined;
     logoUrl?: string | null | undefined;
     format?: "round_robin" | "single_elim" | "double_elim" | "group_knockout" | "swiss" | undefined;
@@ -2373,7 +2373,7 @@ export declare const UpdateTournamentResponse: zod.ZodObject<{
     startDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     endDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     finalsDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
-    status: zod.ZodEnum<["draft", "published", "in_progress", "completed", "archived"]>;
+    status: zod.ZodEnum<["draft", "test", "published", "in_progress", "completed", "archived"]>;
     matchDurationMin: zod.ZodOptional<zod.ZodNumber>;
     gapBetweenMin: zod.ZodOptional<zod.ZodNumber>;
     chukkersPerMatch: zod.ZodOptional<zod.ZodNumber>;
@@ -2384,7 +2384,7 @@ export declare const UpdateTournamentResponse: zod.ZodObject<{
     aiRecommendation: zod.ZodOptional<zod.ZodNullable<zod.ZodObject<{}, "passthrough", zod.ZodTypeAny, zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough">, zod.objectInputType<{}, zod.ZodTypeAny, "passthrough">>>>;
     createdAt: zod.ZodOptional<zod.ZodDate>;
 }, "strip", zod.ZodTypeAny, {
-    status: "draft" | "published" | "in_progress" | "completed" | "archived";
+    status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
     id: string;
     clubId: string;
     name: string;
@@ -2403,7 +2403,7 @@ export declare const UpdateTournamentResponse: zod.ZodObject<{
     scheduleConfig?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
     aiRecommendation?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
 }, {
-    status: "draft" | "published" | "in_progress" | "completed" | "archived";
+    status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
     id: string;
     clubId: string;
     name: string;
@@ -9270,7 +9270,7 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
         startDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
         endDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
         finalsDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
-        status: zod.ZodEnum<["draft", "published", "in_progress", "completed", "archived"]>;
+        status: zod.ZodEnum<["draft", "test", "published", "in_progress", "completed", "archived"]>;
         matchDurationMin: zod.ZodOptional<zod.ZodNumber>;
         gapBetweenMin: zod.ZodOptional<zod.ZodNumber>;
         chukkersPerMatch: zod.ZodOptional<zod.ZodNumber>;
@@ -9281,7 +9281,7 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
         aiRecommendation: zod.ZodOptional<zod.ZodNullable<zod.ZodObject<{}, "passthrough", zod.ZodTypeAny, zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough">, zod.objectInputType<{}, zod.ZodTypeAny, "passthrough">>>>;
         createdAt: zod.ZodOptional<zod.ZodDate>;
     }, "strip", zod.ZodTypeAny, {
-        status: "draft" | "published" | "in_progress" | "completed" | "archived";
+        status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
         id: string;
         clubId: string;
         name: string;
@@ -9300,7 +9300,7 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
         scheduleConfig?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
         aiRecommendation?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
     }, {
-        status: "draft" | "published" | "in_progress" | "completed" | "archived";
+        status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
         id: string;
         clubId: string;
         name: string;
@@ -9322,7 +9322,7 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
     drawPublished: zod.ZodBoolean;
 }, "strip", zod.ZodTypeAny, {
     tournaments: {
-        status: "draft" | "published" | "in_progress" | "completed" | "archived";
+        status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
         id: string;
         clubId: string;
         name: string;
@@ -9487,7 +9487,7 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
     } | undefined;
 }, {
     tournaments: {
-        status: "draft" | "published" | "in_progress" | "completed" | "archived";
+        status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
         id: string;
         clubId: string;
         name: string;
@@ -11959,7 +11959,7 @@ export declare const PublishTournamentResponse: zod.ZodObject<{
     startDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     endDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     finalsDate: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
-    status: zod.ZodEnum<["draft", "published", "in_progress", "completed", "archived"]>;
+    status: zod.ZodEnum<["draft", "test", "published", "in_progress", "completed", "archived"]>;
     matchDurationMin: zod.ZodOptional<zod.ZodNumber>;
     gapBetweenMin: zod.ZodOptional<zod.ZodNumber>;
     chukkersPerMatch: zod.ZodOptional<zod.ZodNumber>;
@@ -11970,7 +11970,7 @@ export declare const PublishTournamentResponse: zod.ZodObject<{
     aiRecommendation: zod.ZodOptional<zod.ZodNullable<zod.ZodObject<{}, "passthrough", zod.ZodTypeAny, zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough">, zod.objectInputType<{}, zod.ZodTypeAny, "passthrough">>>>;
     createdAt: zod.ZodOptional<zod.ZodDate>;
 }, "strip", zod.ZodTypeAny, {
-    status: "draft" | "published" | "in_progress" | "completed" | "archived";
+    status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
     id: string;
     clubId: string;
     name: string;
@@ -11989,7 +11989,7 @@ export declare const PublishTournamentResponse: zod.ZodObject<{
     scheduleConfig?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
     aiRecommendation?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
 }, {
-    status: "draft" | "published" | "in_progress" | "completed" | "archived";
+    status: "draft" | "test" | "published" | "in_progress" | "completed" | "archived";
     id: string;
     clubId: string;
     name: string;

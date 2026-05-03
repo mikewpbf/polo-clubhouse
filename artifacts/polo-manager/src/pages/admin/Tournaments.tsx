@@ -13,7 +13,7 @@ import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { TournamentExportButton } from "@/components/TournamentExportImage";
 import { ImageCropUpload } from "@/components/ImageCropUpload";
-import { snapMatchPreviewInBackground } from "@/lib/matchPreviewSnap";
+import { snapMatchPreviewInBackground, snapAndUploadMatchPreview } from "@/lib/matchPreviewSnap";
 
 interface TournamentItem {
   id: string;
@@ -2016,20 +2016,36 @@ function TournamentForm({
 function RegeneratePreviewsButton({ tournamentId }: { tournamentId: string }) {
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
   const handleClick = async () => {
     if (busy) return;
     setBusy(true);
+    setProgress(null);
     try {
-      const result = await apiFetch(`/tournaments/${tournamentId}/regenerate-match-previews`, {
-        method: "POST",
-      });
-      const total = result?.total ?? 0;
-      const regenerated = result?.regenerated ?? 0;
-      const failed = result?.failed ?? 0;
+      // Fetch every match in this tournament, then run the high-fidelity
+      // client-side snap (BoldDiagonal template -> html-to-image -> R2)
+      // sequentially. Sequential because each snap mounts a 1920x1080
+      // off-screen renderer; doing many at once would peg the main thread.
+      const matches = await apiFetch(`/tournaments/${tournamentId}/matches`);
+      const ids: string[] = Array.isArray(matches) ? matches.map((m: any) => m.id).filter(Boolean) : [];
+      if (ids.length === 0) {
+        toast({ title: "No matches to refresh", description: "This tournament has no matches yet." });
+        return;
+      }
+
+      let succeeded = 0;
+      let failed = 0;
+      for (let i = 0; i < ids.length; i++) {
+        setProgress({ done: i, total: ids.length });
+        const ok = await snapAndUploadMatchPreview(ids[i]);
+        if (ok) succeeded++; else failed++;
+      }
+      setProgress({ done: ids.length, total: ids.length });
+
       toast({
         title: failed > 0 ? "Regenerated with errors" : "Previews regenerated",
-        description: `${regenerated}/${total} match previews refreshed${failed > 0 ? ` · ${failed} failed` : ""}.`,
+        description: `${succeeded}/${ids.length} match previews refreshed${failed > 0 ? ` · ${failed} failed` : ""}.`,
         variant: failed > 0 ? "destructive" : "default",
       });
     } catch (err: any) {
@@ -2040,8 +2056,15 @@ function RegeneratePreviewsButton({ tournamentId }: { tournamentId: string }) {
       });
     } finally {
       setBusy(false);
+      setProgress(null);
     }
   };
+
+  const label = busy
+    ? progress
+      ? `Refreshing ${progress.done}/${progress.total}…`
+      : "Loading…"
+    : "Previews";
 
   return (
     <Button
@@ -2050,10 +2073,10 @@ function RegeneratePreviewsButton({ tournamentId }: { tournamentId: string }) {
       className="bg-surface border-line gap-1.5"
       onClick={handleClick}
       disabled={busy}
-      title="Re-render link-preview thumbnails for every match in this tournament"
+      title="Re-render link-preview thumbnails for every match in this tournament using the Match Graphics template"
     >
       {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
-      {busy ? "Regenerating…" : "Previews"}
+      {label}
     </Button>
   );
 }

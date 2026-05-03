@@ -375,10 +375,27 @@ export interface LineupOverlayProps {
   teamSide?: string;
 }
 
+// Preload an image off-DOM. Resolves on load OR error so a single broken
+// URL never blocks the whole panel from appearing. Resolves immediately
+// when given a falsy URL.
+function preloadImage(url: string | null | undefined): Promise<void> {
+  return new Promise((resolve) => {
+    if (!url) { resolve(); return; }
+    const img = new Image();
+    img.onload = () => resolve();
+    img.onerror = () => resolve();
+    img.src = url;
+  });
+}
+
 export default function LineupOverlay(props: LineupOverlayProps = {}) {
   const [, params] = useRoute<{ matchId: string; teamSide: string }>("/broadcast/lineup/:matchId/:teamSide");
   const matchId = props.matchId ?? params?.matchId;
   const teamSide = props.teamSide ?? params?.teamSide;
+  // `data` holds the *displayed* payload, only set after images for that
+  // payload have been preloaded. This eliminates the brief flash of an
+  // unloaded panel ("No lineup set", missing logos) that broadcast viewers
+  // would otherwise see between the fetch resolving and assets decoding.
   const [data, setData] = useState<LineupResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -395,7 +412,23 @@ export default function LineupOverlay(props: LineupOverlayProps = {}) {
           if (!cancelled) setError(body.message || `Failed to load lineup (${res.status})`);
           return;
         }
-        const json = await res.json();
+        const json: LineupResponse = await res.json();
+
+        // Preload every image (player headshots/broadcast images + team
+        // logo) before swapping the panel in. Capped at ~1.5s so a slow
+        // CDN can't keep the overlay invisible forever — at worst we'll
+        // fall back to the same behavior as before for that single load.
+        const urls: (string | null)[] = [];
+        urls.push(json.team?.logoUrl ?? null);
+        for (const p of json.players ?? []) {
+          urls.push(p.broadcastImageUrl ?? null);
+          urls.push(p.headshotUrl ?? null);
+        }
+        await Promise.race([
+          Promise.all(urls.map(preloadImage)),
+          new Promise<void>((r) => window.setTimeout(r, 1500)),
+        ]);
+
         if (!cancelled) {
           setData(json);
           setError(null);
@@ -417,6 +450,12 @@ export default function LineupOverlay(props: LineupOverlayProps = {}) {
   const slots: (LineupPlayer | null)[] = [0, 1, 2, 3].map(i => players[i] ?? null);
   const hasAnyPlayer = players.length > 0;
   const teamRgb = hexToRgb(data?.team?.primaryColor ?? null);
+
+  // Until the first successful load completes, render nothing. Broadcast
+  // overlays sit on top of live video — a flash of "No lineup set" or a
+  // logo-less panel is worse than a moment of empty space. Errors still
+  // render so an operator notices misconfigured share links.
+  if (!data && !error) return null;
 
   return (
     <div style={{

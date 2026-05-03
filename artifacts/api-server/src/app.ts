@@ -12,6 +12,14 @@ import { optionalAuth } from "./lib/auth";
 
 const app: Express = express();
 
+// Trust the deployment proxy so `req.protocol` reflects X-Forwarded-Proto.
+// Without this, OG link-preview URLs (og:url / og:image) come out as
+// `http://` even when the page is served over HTTPS, which causes iMessage,
+// WhatsApp, and other chat apps to drop the preview image due to mixed
+// content. Replit Autoscale and similar single-hop reverse proxies are safe
+// to fully trust here.
+app.set("trust proxy", true);
+
 app.use(
   pinoHttp({
     logger,

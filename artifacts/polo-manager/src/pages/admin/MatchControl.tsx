@@ -1849,7 +1849,7 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
         )}
       </div>
 
-      {showSection("gfx") && (
+      {(showSection("gfx") || mode === "score") && (
         <BroadcastPreview matchId={match.id} dark={dk} broadcastStyle={match.broadcastStyle} broadcastVisible={match.broadcastVisible} broadcastResolution={match.broadcastResolution} broadcast4kScale={match.broadcast4kScale} broadcast4kOffsetX={match.broadcast4kOffsetX} broadcast4kOffsetY={match.broadcast4kOffsetY} open={previewOpen} onClose={() => setPreviewOpen(false)} />
       )}
     </div>

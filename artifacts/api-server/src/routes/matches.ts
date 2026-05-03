@@ -1427,6 +1427,7 @@ router.get("/matches/:matchId/lineup/:teamSide", async (req, res) => {
         id: team.id,
         name: team.name,
         logoUrl: team.logoUrl ?? null,
+        primaryColor: team.primaryColor ?? null,
         totalHandicap,
       },
       players,

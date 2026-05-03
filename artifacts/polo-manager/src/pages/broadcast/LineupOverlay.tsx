@@ -10,6 +10,7 @@ interface LineupTeam {
   id: string;
   name: string;
   logoUrl: string | null;
+  primaryColor: string | null;
   totalHandicap: number;
 }
 
@@ -37,8 +38,20 @@ const PANEL_STYLE: React.CSSProperties = {
   borderRadius: 24,
   boxShadow: "0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 60px rgba(0,0,0,0.25)",
   padding: "32px 48px 40px",
-  width: 720,
+  width: 820,
 };
+
+// Convert "#rrggbb" / "#rgb" to "r,g,b". Returns null if unparseable so callers
+// can fall back to a neutral tint.
+function hexToRgb(hex: string | null): string | null {
+  if (!hex) return null;
+  const m = hex.trim().match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (!m) return null;
+  let h = m[1];
+  if (h.length === 3) h = h.split("").map(c => c + c).join("");
+  const n = parseInt(h, 16);
+  return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
+}
 
 function computeAge(dateOfBirth: string | null): number | null {
   if (!dateOfBirth) return null;
@@ -130,7 +143,7 @@ function PlayerPhoto({ player }: { player: LineupPlayer }) {
   );
 }
 
-function PlayerCard({ player }: { player: LineupPlayer | null }) {
+function PlayerCard({ player, teamRgb }: { player: LineupPlayer | null; teamRgb: string | null }) {
   if (!player) {
     return (
       <div style={{
@@ -150,9 +163,17 @@ function PlayerCard({ player }: { player: LineupPlayer | null }) {
   if (club) metaParts.push(club);
   const metaLine = metaParts.join(" · ");
 
+  // Subtle team-color tint: faint vertical wash on the card body + a 2px
+  // accent bar between headshot and body. Falls back to neutral if no color.
+  const cardBg = teamRgb
+    ? `linear-gradient(180deg, rgba(${teamRgb},0.10) 0%, rgba(${teamRgb},0.04) 100%)`
+    : "rgba(255,255,255,0.04)";
+  const accentBar = teamRgb ? `rgba(${teamRgb},0.85)` : "rgba(255,255,255,0.12)";
+  const dividerColor = teamRgb ? `rgba(${teamRgb},0.2)` : "rgba(255,255,255,0.08)";
+
   return (
     <div style={{
-      background: "rgba(255,255,255,0.04)",
+      background: cardBg,
       borderRadius: 12,
       overflow: "hidden",
       display: "flex",
@@ -176,14 +197,20 @@ function PlayerCard({ player }: { player: LineupPlayer | null }) {
         }} />
       </div>
 
-      {/* Card body — left aligned */}
+      {/* Team-color accent bar between photo and body */}
+      <div style={{ height: 2, width: "100%", background: accentBar }} />
+
+      {/* Card body — left aligned, flex column so the stats grid pins to the
+          bottom regardless of meta-row presence. This keeps the stat row
+          aligned across all 4 cards even when one player is missing club/age. */}
       <div style={{
         padding: "12px 12px 14px",
         display: "flex",
         flexDirection: "column",
-        alignItems: "flex-start",
+        alignItems: "stretch",
         textAlign: "left",
         gap: 6,
+        flex: 1,
       }}>
         {first && (
           <div style={{
@@ -246,15 +273,16 @@ function PlayerCard({ player }: { player: LineupPlayer | null }) {
           </div>
         )}
 
-        {/* Stats grid — 2 cols, each cell individually centered */}
+        {/* Stats grid — pinned to bottom of card via marginTop:auto so all
+            four cards align even when meta row is empty for some players. */}
         <div style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gap: 8,
           width: "100%",
-          marginTop: 4,
+          marginTop: "auto",
           paddingTop: 10,
-          borderTop: "1px solid rgba(255,255,255,0.08)",
+          borderTop: `1px solid ${dividerColor}`,
         }}>
           <div style={{
             display: "flex",
@@ -382,6 +410,7 @@ export default function LineupOverlay(props: LineupOverlayProps = {}) {
   const players = data?.players ?? [];
   const slots: (LineupPlayer | null)[] = [0, 1, 2, 3].map(i => players[i] ?? null);
   const hasAnyPlayer = players.length > 0;
+  const teamRgb = hexToRgb(data?.team?.primaryColor ?? null);
 
   return (
     <div style={{
@@ -487,7 +516,7 @@ export default function LineupOverlay(props: LineupOverlayProps = {}) {
             gap: 12,
           }}>
             {slots.map((p, i) => (
-              <PlayerCard key={p?.id ?? `slot-${i}`} player={p} />
+              <PlayerCard key={p?.id ?? `slot-${i}`} player={p} teamRgb={teamRgb} />
             ))}
           </div>
         )}

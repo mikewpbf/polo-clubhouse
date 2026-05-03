@@ -16,10 +16,13 @@ declare global {
 
 const WINDOW_MS = 60 * 1000;
 
-// 60 req/min for unauthenticated traffic per IP.
+// 600 req/min for unauthenticated traffic per IP. Broadcast/spectator pages
+// poll multiple live endpoints every few seconds without auth, and many
+// viewers may share a single NAT/corporate IP, so the cap is intentionally
+// generous — its only job is to stop a runaway client from flooding the API.
 export const unauthRateLimiter = rateLimit({
   windowMs: WINDOW_MS,
-  limit: 60,
+  limit: 600,
   standardHeaders: "draft-8",
   legacyHeaders: false,
   // Skip if we recognize a user or API-key — those have their own buckets.

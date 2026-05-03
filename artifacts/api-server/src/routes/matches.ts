@@ -8,6 +8,7 @@ import { requireAuth, optionalAuth, isSuperAdmin, requireMatchWrite, requireMatc
 import { addSSEClient, emitMatchUpdate, emitMatchEnded } from "../lib/sse";
 import { invalidateMatchPreview } from "./match-previews";
 import { publicPlayer } from "../lib/playerPrivacy";
+import { publicTeam } from "../lib/teamPrivacy";
 import { scheduleMatchPreviewGeneration } from "../lib/serverMatchPreview";
 
 const router: IRouter = Router();
@@ -101,8 +102,11 @@ async function enrichMatch(m: MatchRow, includePlayers = false) {
       homeScore: m.awayScore,
       awayScore: m.homeScore,
       lastGoalTeamSide: m.lastGoalTeamSide === "home" ? "away" : m.lastGoalTeamSide === "away" ? "home" : m.lastGoalTeamSide,
-      homeTeam: awayTeam ? { ...awayTeam, players: awayPlayers } : null,
-      awayTeam: homeTeam ? { ...homeTeam, players: homePlayers } : null,
+      // Strip private jersey art before serializing — enrichMatch feeds every
+      // generic match payload (including spectator-facing GETs) and jersey
+      // images are reserved for the dedicated broadcast/jumbotron endpoints.
+      homeTeam: awayTeam ? { ...publicTeam(awayTeam), players: awayPlayers } : null,
+      awayTeam: homeTeam ? { ...publicTeam(homeTeam), players: homePlayers } : null,
       field,
       tournament: tournament ? { id: tournament.id, name: tournament.name, chukkersPerMatch: tournament.chukkersPerMatch || 6, clubId: tournament.clubId, clubName: club?.name || "" } : null,
       lastStoppageEvent,
@@ -112,8 +116,8 @@ async function enrichMatch(m: MatchRow, includePlayers = false) {
 
   return {
     ...sanitized,
-    homeTeam: homeTeam ? { ...homeTeam, players: homePlayers } : null,
-    awayTeam: awayTeam ? { ...awayTeam, players: awayPlayers } : null,
+    homeTeam: homeTeam ? { ...publicTeam(homeTeam), players: homePlayers } : null,
+    awayTeam: awayTeam ? { ...publicTeam(awayTeam), players: awayPlayers } : null,
     field,
     tournament: tournament ? { id: tournament.id, name: tournament.name, chukkersPerMatch: tournament.chukkersPerMatch || 6, clubId: tournament.clubId, clubName: club?.name || "" } : null,
     lastStoppageEvent,
@@ -1222,9 +1226,9 @@ async function buildBroadcastPayload(matchId: string) {
       lastGoalTeamSide: bSwap ? (match.lastGoalTeamSide === "home" ? "away" : match.lastGoalTeamSide === "away" ? "home" : match.lastGoalTeamSide) : match.lastGoalTeamSide,
       lastGoalTimestamp: match.lastGoalTimestamp,
       lastStoppageEvent,
-      homeTeam: (bSwap ? awayTeam : homeTeam) ? { name: (bSwap ? awayTeam : homeTeam)!.name, shortName: (bSwap ? awayTeam : homeTeam)!.shortName, scoreboardName: (bSwap ? awayTeam : homeTeam)!.scoreboardName, logoUrl: (bSwap ? awayTeam : homeTeam)!.logoUrl, primaryColor: (bSwap ? awayTeam : homeTeam)!.primaryColor } : null,
-      awayTeam: (bSwap ? homeTeam : awayTeam) ? { name: (bSwap ? homeTeam : awayTeam)!.name, shortName: (bSwap ? homeTeam : awayTeam)!.shortName, scoreboardName: (bSwap ? homeTeam : awayTeam)!.scoreboardName, logoUrl: (bSwap ? homeTeam : awayTeam)!.logoUrl, primaryColor: (bSwap ? homeTeam : awayTeam)!.primaryColor } : null,
-      tournament: tournament ? { name: tournament.name, chukkersPerMatch: tournament.chukkersPerMatch || 6, clubId: tournament.clubId } : null,
+      homeTeam: (bSwap ? awayTeam : homeTeam) ? { name: (bSwap ? awayTeam : homeTeam)!.name, shortName: (bSwap ? awayTeam : homeTeam)!.shortName, scoreboardName: (bSwap ? awayTeam : homeTeam)!.scoreboardName, logoUrl: (bSwap ? awayTeam : homeTeam)!.logoUrl, primaryColor: (bSwap ? awayTeam : homeTeam)!.primaryColor, jerseyImageUrl: (bSwap ? awayTeam : homeTeam)!.jerseyImageUrl } : null,
+      awayTeam: (bSwap ? homeTeam : awayTeam) ? { name: (bSwap ? homeTeam : awayTeam)!.name, shortName: (bSwap ? homeTeam : awayTeam)!.shortName, scoreboardName: (bSwap ? homeTeam : awayTeam)!.scoreboardName, logoUrl: (bSwap ? homeTeam : awayTeam)!.logoUrl, primaryColor: (bSwap ? homeTeam : awayTeam)!.primaryColor, jerseyImageUrl: (bSwap ? homeTeam : awayTeam)!.jerseyImageUrl } : null,
+      tournament: tournament ? { name: tournament.name, chukkersPerMatch: tournament.chukkersPerMatch || 6, clubId: tournament.clubId, logoUrl: tournament.logoUrl || null, jumbotronBgColor: tournament.jumbotronBgColor || null } : null,
       club: club ? { name: club.name, logoUrl: club.logoUrl || null } : null,
       field: field ? { id: field.id, name: field.name, number: field.number, imageUrl: field.imageUrl || null, hasLocation: !!(field.lat && field.lng) || !!field.zipcode } : null,
       stats: { home: bSwap ? rawAwayStats : rawHomeStats, away: bSwap ? rawHomeStats : rawAwayStats },
@@ -1241,6 +1245,23 @@ async function buildBroadcastPayload(matchId: string) {
 }
 
 router.get("/matches/:matchId/broadcast", async (req, res) => {
+  try {
+    const matchId = String(req.params.matchId);
+    const payload = await buildBroadcastPayload(matchId);
+    if (!payload) { res.status(404).json({ message: "Match not found" }); return; }
+    res.setHeader("Cache-Control", "no-store");
+    res.json(payload);
+  } catch (e: any) {
+    res.status(500).json({ message: e.message });
+  }
+});
+
+// Task #117: dedicated jumbotron payload. Currently the same shape as the
+// broadcast payload (the jumbotron overlay only consumes a subset of fields)
+// but exposed under its own URL so the contract can evolve independently —
+// e.g. add stadium-only fields (sponsor logos, period summaries) without
+// affecting the OBS scorebug.
+router.get("/matches/:matchId/jumbotron", async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const payload = await buildBroadcastPayload(matchId);

@@ -2,8 +2,9 @@ import { Router, type IRouter, type Request, type Response, type NextFunction } 
 import { db } from "@workspace/db";
 import { teamsTable, teamManagerAssignmentsTable, adminClubMembershipsTable, tournamentTeamsTable, matchesTable, matchEventsTable, teamOutDatesTable, userInvitesTable, playersTable, teamPlayersTable, usersTable, horsesTable, HORSE_SEX_OPTIONS, HORSE_COLOR_OPTIONS } from "@workspace/db/schema";
 import { eq, ilike, and, or, inArray } from "drizzle-orm";
-import { requireAuth, isSuperAdmin, requireSuperAdmin } from "../lib/auth";
+import { requireAuth, optionalAuth, isSuperAdmin, requireSuperAdmin } from "../lib/auth";
 import { publicPlayer } from "../lib/playerPrivacy";
+import { publicTeam } from "../lib/teamPrivacy";
 import { invalidateMatchPreviewsForTeam } from "./match-previews";
 
 const router: IRouter = Router();
@@ -41,7 +42,11 @@ router.get("/clubs/:clubId/teams", async (req, res) => {
     const conditions: any[] = [eq(teamsTable.clubId, clubId)];
     if (search) conditions.push(ilike(teamsTable.name, `%${search}%`));
     const teams = await db.select().from(teamsTable).where(and(...conditions));
-    res.json(teams);
+    // jersey_image_url is a private broadcast asset and must never appear on
+    // any list endpoint, regardless of caller role. Admins who need to edit
+    // jersey art fetch the single-team endpoint /teams/:teamId, which gates
+    // jersey visibility through canSeeJersey.
+    res.json(teams.map(publicTeam));
   } catch (e: any) {
     res.status(500).json({ message: e.message });
   }
@@ -50,9 +55,9 @@ router.get("/clubs/:clubId/teams", async (req, res) => {
 router.post("/clubs/:clubId/teams", requireAuth, requireClubAdminForTeamWrite, async (req, res) => {
   try {
     const clubId = String(req.params.clubId);
-    const { name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, scoreboardName } = req.body;
+    const { name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, scoreboardName, jerseyImageUrl } = req.body;
     const [team] = await db.insert(teamsTable).values({
-      clubId, name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, scoreboardName,
+      clubId, name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, scoreboardName, jerseyImageUrl,
     }).returning();
     res.status(201).json(team);
   } catch (e: any) {
@@ -68,7 +73,10 @@ router.get("/teams", async (req, res) => {
     const teams = conditions.length > 0
       ? await db.select().from(teamsTable).where(and(...conditions))
       : await db.select().from(teamsTable);
-    res.json(teams);
+    // Same rule as /clubs/:clubId/teams: jersey art is broadcast-only and is
+    // stripped from every list payload (anonymous AND authed). Admins fetch
+    // the per-team endpoint to load jersey art for editing.
+    res.json(teams.map(publicTeam));
   } catch (e: any) {
     res.status(500).json({ message: e.message });
   }
@@ -76,7 +84,7 @@ router.get("/teams", async (req, res) => {
 
 router.post("/teams", requireAuth, async (req, res) => {
   try {
-    const { name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, clubId, scoreboardName } = req.body;
+    const { name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, clubId, scoreboardName, jerseyImageUrl } = req.body;
     if (!name) { res.status(400).json({ message: "Team name is required" }); return; }
     if (clubId && !isSuperAdmin(req.user!)) {
       const memberships = await db.select().from(adminClubMembershipsTable).where(eq(adminClubMembershipsTable.userId, req.user!.id));
@@ -86,7 +94,7 @@ router.post("/teams", requireAuth, async (req, res) => {
     }
     const [team] = await db.insert(teamsTable).values({
       clubId: clubId || null,
-      name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, scoreboardName,
+      name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, scoreboardName, jerseyImageUrl,
     }).returning();
     res.status(201).json(team);
   } catch (e: any) {
@@ -94,14 +102,43 @@ router.post("/teams", requireAuth, async (req, res) => {
   }
 });
 
-router.get("/teams/:teamId", async (req, res) => {
+router.get("/teams/:teamId", optionalAuth, async (req, res) => {
   try {
     const teamId = String(req.params.teamId);
     const [team] = await db.select().from(teamsTable).where(eq(teamsTable.id, teamId));
     if (!team) { res.status(404).json({ message: "Team not found" }); return; }
     const assignments = await db.select().from(teamManagerAssignmentsTable)
       .where(and(eq(teamManagerAssignmentsTable.teamId, teamId), eq(teamManagerAssignmentsTable.status, "active")));
-    res.json({ ...team, managerAssignment: assignments[0] || null });
+
+    // Jersey image is private (broadcast asset). Show it only to authed admins
+    // who can edit this team: super_admin, club admins of the team's club, or
+    // active team managers.
+    let canSeeJersey = false;
+    if (req.user) {
+      if (isSuperAdmin(req.user)) {
+        canSeeJersey = true;
+      } else {
+        const clubMems = team.clubId
+          ? await db.select().from(adminClubMembershipsTable).where(
+              and(eq(adminClubMembershipsTable.userId, req.user.id), eq(adminClubMembershipsTable.clubId, team.clubId))
+            )
+          : [];
+        if (clubMems.length > 0) {
+          canSeeJersey = true;
+        } else {
+          const mgrAssigns = await db.select().from(teamManagerAssignmentsTable).where(
+            and(
+              eq(teamManagerAssignmentsTable.teamId, teamId),
+              eq(teamManagerAssignmentsTable.userId, req.user.id),
+              eq(teamManagerAssignmentsTable.status, "active"),
+            )
+          );
+          if (mgrAssigns.length > 0) canSeeJersey = true;
+        }
+      }
+    }
+    const teamOut = canSeeJersey ? team : publicTeam(team);
+    res.json({ ...teamOut, managerAssignment: assignments[0] || null });
   } catch (e: any) {
     res.status(500).json({ message: e.message });
   }
@@ -110,7 +147,7 @@ router.get("/teams/:teamId", async (req, res) => {
 router.put("/teams/:teamId", requireAuth, requireTeamAdminOrManager, async (req, res) => {
   try {
     const teamId = String(req.params.teamId);
-    const { name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, scoreboardName } = req.body;
+    const { name, shortName, primaryColor, handicap, contactName, contactPhone, notes, logoUrl, scoreboardName, jerseyImageUrl } = req.body;
     const updates: Record<string, any> = {};
     if (name !== undefined) updates.name = name;
     if (shortName !== undefined) updates.shortName = shortName;
@@ -120,6 +157,7 @@ router.put("/teams/:teamId", requireAuth, requireTeamAdminOrManager, async (req,
     if (contactPhone !== undefined) updates.contactPhone = contactPhone;
     if (notes !== undefined) updates.notes = notes;
     if (logoUrl !== undefined) updates.logoUrl = logoUrl;
+    if (jerseyImageUrl !== undefined) updates.jerseyImageUrl = jerseyImageUrl;
     if (scoreboardName !== undefined) updates.scoreboardName = scoreboardName || null;
     const [team] = await db.update(teamsTable).set(updates).where(eq(teamsTable.id, teamId)).returning();
     // If anything that appears on the OG preview card changed, drop the

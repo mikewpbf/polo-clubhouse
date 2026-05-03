@@ -1417,6 +1417,43 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                 </>
               ) : null}
 
+              {/* Jumbotron is a broadcast surface — keep it gated by the
+                  same broadcastVisible flag that hides the GFX/scoreboard
+                  feeds. When broadcast is set to "Hide", no broadcast URLs
+                  (channel feeds, jumbotron) should be surfaced for copy/open. */}
+              {match.broadcastVisible && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1 h-10 rounded-[8px] text-[13px] gap-2"
+                    onClick={() => {
+                      const base = window.location.origin + import.meta.env.BASE_URL.replace(/\/$/, "");
+                      const url = `${base}/broadcast/jumbotron/${matchId}`;
+                      window.open(url, "_blank", "noopener");
+                    }}
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                    Open Jumbotron
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1 h-10 rounded-[8px] text-[13px] gap-2"
+                    onClick={() => {
+                      const base = window.location.origin + import.meta.env.BASE_URL.replace(/\/$/, "");
+                      const url = `${base}/broadcast/jumbotron/${matchId}?jersey=1`;
+                      navigator.clipboard.writeText(url).then(() => {
+                        toast({ title: "URL copied", description: "Jumbotron URL (with jersey images) copied to clipboard" });
+                      }).catch(() => {
+                        window.prompt("Copy Jumbotron URL:", url);
+                      });
+                    }}
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    Copy Jumbotron URL
+                  </Button>
+                </div>
+              )}
+
               <div>
                 <label className="block text-[11px] font-medium mb-1" style={{ color: dk ? textMuted : "#888" }}>Stream URL (YouTube)</label>
                 <div className="flex gap-2">

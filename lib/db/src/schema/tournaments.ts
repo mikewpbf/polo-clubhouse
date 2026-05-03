@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, date, integer, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, date, integer, boolean, jsonb, timestamp, text } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { clubsTable } from "./clubs";
@@ -34,6 +34,8 @@ export const tournamentsTable = pgTable("tournaments", {
   bppHorseId: uuid("bpp_horse_id"),
   bppDisplaySettings: jsonb("bpp_display_settings"),
   bppGamesOverride: integer("bpp_games_override"),
+  logoUrl: text("logo_url"),
+  jumbotronBgColor: varchar("jumbotron_bg_color", { length: 7 }),
 });
 
 export const insertTournamentSchema = createInsertSchema(tournamentsTable).omit({ id: true, createdAt: true });

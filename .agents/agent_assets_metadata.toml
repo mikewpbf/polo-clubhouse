@@ -48,3 +48,45 @@ id = "CcPVCNeKM0x1BR-J6LyB6"
 uri = "file://screenshots/scorebug_live_v1_v2.jpg"
 type = "image"
 title = "New scorebug now live in both broadcast styles"
+
+[[outputs]]
+id = "KK7q0_2xJsbWe6xwIYitB"
+uri = "file://screenshots/jumbo-classic.jpg"
+type = "image"
+title = "Variant 1 — Classic (Singular-style)"
+
+[[outputs]]
+id = "F_kCi7jviPJcJ1fHb-V8x"
+uri = "file://screenshots/jumbo-stadium.jpg"
+type = "image"
+title = "Variant 2 — Stadium (LED with diagonal cuts)"
+
+[[outputs]]
+id = "kOZEdoNCbYWbgWihOyoUG"
+uri = "file://screenshots/jumbo-jersey.jpg"
+type = "image"
+title = "Variant 3 — Jersey View (jersey graphics instead of logos)"
+
+[[outputs]]
+id = "aDe0HIJgPl5rnsfBBI3Gk"
+uri = "file://screenshots/jumbo-stacked.jpg"
+type = "image"
+title = "Variant A — Mega Chukker (giant number in spine)"
+
+[[outputs]]
+id = "VVSQbPxdIRu1DX5GRG1g7"
+uri = "file://screenshots/jumbo-stacked-badge.jpg"
+type = "image"
+title = "Variant B — Chukker Badge (number in circular emblem + clock card)"
+
+[[outputs]]
+id = "qL2fAH7DDny6JxCp_k5vc"
+uri = "file://screenshots/jumbo-pavilion.jpg"
+type = "image"
+title = "Variant A — Pavilion (score pills top corners, jersey on panel, name dominant)"
+
+[[outputs]]
+id = "DlIzQ-ZBMXA_5KWVKXm6M"
+uri = "file://screenshots/jumbo-pavilion-stack.jpg"
+type = "image"
+title = "Variant B — Pavilion Stack (logo → name → jersey → big score, per cell)"

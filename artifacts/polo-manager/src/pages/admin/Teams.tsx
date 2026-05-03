@@ -23,6 +23,7 @@ interface TeamItem {
   contactName?: string | null;
   contactPhone?: string | null;
   logoUrl?: string | null;
+  jerseyImageUrl?: string | null;
   clubId?: string | null;
 }
 
@@ -664,6 +665,27 @@ function TeamForm({
   const [scoreboardName, setScoreboardName] = useState(team?.scoreboardName || "");
   const [color, setColor] = useState(team?.primaryColor || "#0e2e14");
   const [logoUrl, setLogoUrl] = useState(team?.logoUrl || "");
+  // jerseyImageUrl is private — list endpoints (/clubs/:clubId/teams, /teams)
+  // strip it for everyone, including authed admins. To populate the editor with
+  // the existing jersey we re-fetch the single-team endpoint on mount, which
+  // returns the field for super_admin / club admin / team manager.
+  const [jerseyImageUrl, setJerseyImageUrl] = useState(team?.jerseyImageUrl || "");
+  useEffect(() => {
+    if (!team?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const full = await apiFetch(`/teams/${team.id}`) as { jerseyImageUrl?: string | null };
+        if (!cancelled && full && typeof full.jerseyImageUrl === "string") {
+          setJerseyImageUrl(full.jerseyImageUrl);
+        }
+      } catch {
+        // Non-admin viewers won't see jerseyImageUrl in the response. Leave the
+        // local state at "" — the upload control simply starts empty.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [team?.id]);
   const [contactName, setContactName] = useState(team?.contactName || "");
   const [contactPhone, setContactPhone] = useState(team?.contactPhone || "");
   const [saving, setSaving] = useState(false);
@@ -686,6 +708,7 @@ function TeamForm({
             scoreboardName: scoreboardName || null,
             primaryColor: color,
             logoUrl: logoUrl || undefined,
+            jerseyImageUrl: jerseyImageUrl || null,
             contactName: contactName || undefined,
             contactPhone: contactPhone || undefined,
           },
@@ -701,6 +724,7 @@ function TeamForm({
             scoreboardName: scoreboardName || undefined,
             primaryColor: color,
             logoUrl: logoUrl || undefined,
+            jerseyImageUrl: jerseyImageUrl || undefined,
             contactName: contactName || undefined,
             contactPhone: contactPhone || undefined,
           }),
@@ -754,6 +778,16 @@ function TeamForm({
               color={color}
               initials={initials}
             />
+            <div className="flex flex-col items-center gap-2">
+              <ImageCropUpload
+                value={jerseyImageUrl || null}
+                onChange={(url) => setJerseyImageUrl(url || "")}
+                name={initials}
+                shape="square"
+                size={64}
+              />
+              <span className="text-[11px] text-ink3">Jersey image</span>
+            </div>
             <div className="flex-1 space-y-3">
               <div className="flex gap-3">
                 <div className="flex-1">
@@ -831,6 +865,16 @@ function TeamForm({
               color={color}
               initials={initials}
             />
+            <div className="flex flex-col items-center gap-2">
+              <ImageCropUpload
+                value={jerseyImageUrl || null}
+                onChange={(url) => setJerseyImageUrl(url || "")}
+                name={initials}
+                shape="square"
+                size={64}
+              />
+              <span className="text-[11px] text-ink3">Jersey image</span>
+            </div>
             <div className="flex-1 space-y-3">
               <div className="flex gap-3">
                 <div className="flex-1">

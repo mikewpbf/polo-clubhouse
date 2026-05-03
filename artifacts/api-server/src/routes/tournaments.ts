@@ -4,6 +4,7 @@ import { tournamentsTable, tournamentTeamsTable, teamsTable, matchesTable, playD
 import { eq, and, ilike, count, inArray, desc, asc } from "drizzle-orm";
 import { requireAuth, optionalAuth, isSuperAdmin, requireSuperAdmin } from "../lib/auth";
 import { invalidateMatchPreviewsForTournament } from "./match-previews";
+import { publicTeam } from "../lib/teamPrivacy";
 import OpenAI from "openai";
 
 const router: IRouter = Router();
@@ -65,7 +66,7 @@ router.post("/clubs/:clubId/tournaments", requireAuth, requireClubAdminForTourna
 
 router.post("/tournaments", requireAuth, async (req, res) => {
   try {
-    const { name, clubId, format, status, startDate, endDate, handicapLevel, chukkersPerMatch, description, matchDurationMin, gapBetweenMin, chukkerDurationMinutes, hasThirdPlace, finalsDate, isVisitingLeague } = req.body;
+    const { name, clubId, format, status, startDate, endDate, handicapLevel, chukkersPerMatch, description, matchDurationMin, gapBetweenMin, chukkerDurationMinutes, hasThirdPlace, finalsDate, isVisitingLeague, logoUrl, jumbotronBgColor } = req.body;
     if (!name) { res.status(400).json({ message: "Tournament name is required" }); return; }
     if (clubId && !isSuperAdmin(req.user!)) {
       const memberships = await db.select().from(adminClubMembershipsTable).where(eq(adminClubMembershipsTable.userId, req.user!.id));
@@ -77,6 +78,7 @@ router.post("/tournaments", requireAuth, async (req, res) => {
       clubId: clubId || null,
       name, format, status, startDate, endDate, handicapLevel, chukkersPerMatch, description,
       matchDurationMin, gapBetweenMin, chukkerDurationMinutes, hasThirdPlace, finalsDate, isVisitingLeague,
+      logoUrl, jumbotronBgColor,
     }).returning();
     res.status(201).json(tournament);
   } catch (e: any) {
@@ -138,7 +140,9 @@ router.get("/tournaments/:tournamentId", optionalAuth, async (req, res) => {
     const ttEntries = await db.select().from(tournamentTeamsTable).where(eq(tournamentTeamsTable.tournamentId, tournament.id));
     const teams = await Promise.all(ttEntries.map(async (tt) => {
       const [team] = await db.select().from(teamsTable).where(eq(teamsTable.id, tt.teamId));
-      return { ...tt, team: team || null };
+      // jersey_image_url is broadcast-only; strip it from every public/admin
+      // tournament payload — admins fetch /teams/:teamId for jersey edits.
+      return { ...tt, team: team ? publicTeam(team) : null };
     }));
 
     const matchRows = await db.select().from(matchesTable).where(eq(matchesTable.tournamentId, tournament.id)).orderBy(asc(matchesTable.scheduledAt));
@@ -150,10 +154,12 @@ router.get("/tournaments/:tournamentId", optionalAuth, async (req, res) => {
       const hName = homeTeam?.name || "";
       const aName = awayTeam?.name || "";
       const swap = hName && aName && aName.localeCompare(hName) < 0;
+      const ph = homeTeam ? publicTeam(homeTeam) : null;
+      const pa = awayTeam ? publicTeam(awayTeam) : null;
       if (swap) {
-        return { ...m, homeTeamId: m.awayTeamId, awayTeamId: m.homeTeamId, homeScore: m.awayScore, awayScore: m.homeScore, homeTeam: awayTeam, awayTeam: homeTeam, field, tournament: tournamentInfo, _teamsSwapped: true };
+        return { ...m, homeTeamId: m.awayTeamId, awayTeamId: m.homeTeamId, homeScore: m.awayScore, awayScore: m.homeScore, homeTeam: pa, awayTeam: ph, field, tournament: tournamentInfo, _teamsSwapped: true };
       }
-      return { ...m, homeTeam, awayTeam, field, tournament: tournamentInfo, _teamsSwapped: false };
+      return { ...m, homeTeam: ph, awayTeam: pa, field, tournament: tournamentInfo, _teamsSwapped: false };
     }));
 
     const playDates = await db.select().from(playDatesTable).where(eq(playDatesTable.tournamentId, tournament.id));
@@ -201,7 +207,7 @@ router.get("/tournaments/:tournamentId/teams", async (req, res) => {
     const entries = await db.select().from(tournamentTeamsTable).where(eq(tournamentTeamsTable.tournamentId, tournamentId));
     const result = await Promise.all(entries.map(async (tt) => {
       const [team] = await db.select().from(teamsTable).where(eq(teamsTable.id, tt.teamId));
-      return { ...tt, team: team || null };
+      return { ...tt, team: team ? publicTeam(team) : null };
     }));
     res.json(result);
   } catch (e: any) {
@@ -219,7 +225,7 @@ router.post("/tournaments/:tournamentId/teams", requireAuth, requireAdminForTour
     await db.insert(tournamentTeamsTable).values({
       tournamentId, teamId, seed, groupLabel, maxGamesPerDay,
     });
-    res.status(201).json({ tournamentId, teamId, seed, groupLabel, maxGamesPerDay: maxGamesPerDay || 2, team });
+    res.status(201).json({ tournamentId, teamId, seed, groupLabel, maxGamesPerDay: maxGamesPerDay || 2, team: publicTeam(team) });
   } catch (e: any) {
     res.status(400).json({ message: e.message });
   }
@@ -238,7 +244,7 @@ router.put("/tournaments/:tournamentId/teams/:teamId", requireAuth, requireAdmin
       and(eq(tournamentTeamsTable.tournamentId, tournamentId), eq(tournamentTeamsTable.teamId, teamId))
     );
     const [team] = await db.select().from(teamsTable).where(eq(teamsTable.id, teamId));
-    res.json({ tournamentId, teamId, ...updates, team });
+    res.json({ tournamentId, teamId, ...updates, team: team ? publicTeam(team) : null });
   } catch (e: any) {
     res.status(400).json({ message: e.message });
   }
@@ -265,7 +271,8 @@ router.get("/tournaments/:tournamentId/standings", async (req, res) => {
       and(eq(matchesTable.tournamentId, tournamentId), eq(matchesTable.status, "final"))
     );
     const standings = await Promise.all(entries.map(async (tt) => {
-      const [team] = await db.select().from(teamsTable).where(eq(teamsTable.id, tt.teamId));
+      const [teamRaw] = await db.select().from(teamsTable).where(eq(teamsTable.id, tt.teamId));
+      const team = teamRaw ? publicTeam(teamRaw) : null;
       const hasManual = tt.manualWins !== null || tt.manualLosses !== null || tt.manualNetGoals !== null || tt.manualGrossGoals !== null;
       let autoGoalsFor = 0;
       let won = 0, lost = 0, goalsFor = 0, goalsAgainst = 0;

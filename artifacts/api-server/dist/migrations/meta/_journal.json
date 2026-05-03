@@ -78,6 +78,13 @@
       "when": 1777636684322,
       "tag": "0010_match_broadcast_player_id",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1777636684323,
+      "tag": "0011_jumbotron_assets",
+      "breakpoints": true
     }
   ]
 }

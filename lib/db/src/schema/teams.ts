@@ -16,6 +16,7 @@ export const teamsTable = pgTable("teams", {
   contactName: varchar("contact_name", { length: 255 }),
   contactPhone: varchar("contact_phone", { length: 50 }),
   notes: text("notes"),
+  jerseyImageUrl: text("jersey_image_url"),
 });
 
 export const insertTeamSchema = createInsertSchema(teamsTable).omit({ id: true });

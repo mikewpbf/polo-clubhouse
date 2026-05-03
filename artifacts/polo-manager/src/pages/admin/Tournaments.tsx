@@ -12,6 +12,7 @@ import { Plus, Trophy, Calendar, X, Trash2, Pencil, Users, Sparkles, Check, Load
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { TournamentExportButton } from "@/components/TournamentExportImage";
+import { ImageCropUpload } from "@/components/ImageCropUpload";
 import { snapMatchPreviewInBackground } from "@/lib/matchPreviewSnap";
 
 interface TournamentItem {
@@ -27,6 +28,8 @@ interface TournamentItem {
   clubId?: string | null;
   sponsored?: boolean | null;
   sponsoredRank?: number | null;
+  logoUrl?: string | null;
+  jumbotronBgColor?: string | null;
 }
 
 interface TeamOption {
@@ -1728,6 +1731,8 @@ function TournamentForm({
   const [handicapLevel, setHandicapLevel] = useState(tournament?.handicapLevel || "");
   const [chukkersPerMatch, setChukkersPerMatch] = useState(tournament?.chukkersPerMatch?.toString() || "6");
   const [description, setDescription] = useState(tournament?.description || "");
+  const [logoUrl, setLogoUrl] = useState(tournament?.logoUrl || "");
+  const [jumbotronBgColor, setJumbotronBgColor] = useState(tournament?.jumbotronBgColor || "#0c1a35");
   const [sponsored, setSponsored] = useState(tournament?.sponsored || false);
   const [sponsoredRank, setSponsoredRank] = useState(tournament?.sponsoredRank || 0);
   const [saving, setSaving] = useState(false);
@@ -1752,6 +1757,8 @@ function TournamentForm({
         handicapLevel: handicapLevel || undefined,
         chukkersPerMatch: chukkersPerMatch ? parseInt(chukkersPerMatch) : undefined,
         description: description || undefined,
+        logoUrl: logoUrl || null,
+        jumbotronBgColor: jumbotronBgColor || null,
       };
       if (isSuperAdminUser) {
         data.sponsored = sponsored;
@@ -1881,6 +1888,46 @@ function TournamentForm({
             rows={2}
             placeholder="Optional description..."
           />
+        </div>
+
+        <div className="pt-2 border-t border-line2">
+          <h4 className="text-[13px] font-medium text-ink mb-3">Jumbotron / Scoreboard</h4>
+          <div className="flex items-start gap-6">
+            <div className="flex flex-col items-center gap-1.5">
+              <ImageCropUpload
+                value={logoUrl || null}
+                onChange={(url) => setLogoUrl(url || "")}
+                name={(name || "?").substring(0, 2).toUpperCase()}
+                shape="circle"
+                size={80}
+              />
+              <span className="text-[11px] text-ink3 text-center max-w-[100px] leading-tight">
+                Event logo<br />(fits inside center seal)
+              </span>
+            </div>
+            <div className="flex-1 space-y-3">
+              <div>
+                <label className="block text-[12px] font-medium text-ink2 mb-1">Center Background Color</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={jumbotronBgColor || "#0c1a35"}
+                    onChange={(e) => setJumbotronBgColor(e.target.value)}
+                    className="w-12 h-9 rounded-[4px] border border-line cursor-pointer"
+                  />
+                  <Input
+                    value={jumbotronBgColor || ""}
+                    onChange={(e) => setJumbotronBgColor(e.target.value)}
+                    placeholder="#0c1a35"
+                    className="w-32 h-9"
+                  />
+                  <span className="text-[11px] text-ink3 leading-tight">
+                    Used as the background of the center seal when no event logo is uploaded.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {isSuperAdminUser && isEditing && (

@@ -42,6 +42,18 @@ export function generateToken(user: { id: string; email: string; displayName: st
   return jwt.sign({ id: user.id, email: user.email, displayName: user.displayName, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
 }
 
+// Task #121 (step 2): short-lived access token for the new refresh-token
+// flow. The `typ: "access"` claim lets future verifiers distinguish refresh-
+// flow tokens from legacy 7d ones; legacy tokens (no `typ`) are still
+// accepted by `verifyToken` so existing clients keep working.
+export function generateAccessToken(user: { id: string; email: string; displayName: string; role: string }): string {
+  return jwt.sign(
+    { id: user.id, email: user.email, displayName: user.displayName, role: user.role, typ: "access" },
+    JWT_SECRET,
+    { expiresIn: "1h" },
+  );
+}
+
 export function verifyToken(token: string): AuthUser | null {
   try {
     return jwt.verify(token, JWT_SECRET) as AuthUser;

@@ -18,6 +18,10 @@ import storageRouter from "./storage";
 import imageProxyRouter from "./image-proxy";
 import playersRouter from "./players";
 import usersRouter from "./users";
+import sessionsRouter from "./sessions";
+import devicesRouter from "./devices";
+import apiKeysRouter from "./api-keys";
+import openapiDocsRouter from "./openapi-docs";
 
 const router: IRouter = Router();
 
@@ -40,5 +44,9 @@ router.use(adminUsersRouter);
 router.use(aiWizardRouter);
 router.use(playersRouter);
 router.use(usersRouter);
+router.use(sessionsRouter);
+router.use(devicesRouter);
+router.use(apiKeysRouter);
+router.use(openapiDocsRouter);
 
 export default router;

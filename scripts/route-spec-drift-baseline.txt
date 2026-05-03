@@ -1,0 +1,83 @@
+# Pre-existing route ↔ spec drift baseline.
+#
+# Each line is `METHOD /path` for a route that exists in the codebase but is
+# not (yet) declared in lib/api-spec/openapi.yaml. The drift checker treats
+# entries here as known-undocumented — it only fails when a *new* route is
+# added without a spec entry. Ratchet this list down over time; do NOT add
+# new lines without a very good reason.
+#
+# Generated from `node scripts/check-route-spec-drift.mjs` output at the time
+# Task #121 (mobile/TV backend foundation) landed. None of the entries below
+# are touched by Task #121.
+GET /admin/users
+PUT /admin/users/{userId}/role
+DELETE /admin/users/{userId}
+POST /admin/users/invite
+POST /admin/ai/parse-setup
+POST /admin/ai/execute-setup
+POST /auth/forgot-password
+POST /auth/reset-password
+DELETE /clubs/{clubId}
+GET /clubs/{clubId}/managers
+POST /clubs/{clubId}/managers
+DELETE /clubs/{clubId}/managers/{userId}
+GET /clubs/{clubId}/users/search
+GET /fields/{fieldId}/weather
+GET /image-proxy
+POST /invites/team-manager
+POST /invites/admin
+GET /invites
+POST /invites/{token}/accept
+GET /matches/manageable
+POST /matches/{matchId}/goal
+POST /matches/{matchId}/undo-goal
+DELETE /matches/{matchId}/events/{eventId}
+POST /matches/{matchId}/clock/adjust
+POST /matches/{matchId}/event
+GET /matches/{matchId}/stats
+POST /matches/{matchId}/stat
+POST /tournaments/{tournamentId}/matches
+DELETE /matches/{matchId}
+GET /matches/{matchId}/stream
+GET /matches/{matchId}/broadcast
+GET /matches/{matchId}/jumbotron
+GET /clubs/{clubId}/broadcast/channel/{channel}
+PUT /matches/{matchId}/broadcast
+GET /matches/{matchId}/possession
+POST /matches/{matchId}/possession
+DELETE /matches/{matchId}/possession
+POST /matches/{matchId}/possession/token
+GET /matches/{matchId}/possession/verify-token
+GET /teams/{teamId}/out-dates
+POST /teams/{teamId}/out-dates
+POST /tournaments/{tournamentId}/schedule/generate
+POST /tournaments/{tournamentId}/schedule/save
+POST /storage/uploads/request-url
+GET /storage/public-objects/*filePath
+GET /storage/objects/*path
+GET /teams
+POST /teams
+DELETE /teams/{teamId}
+GET /teams/{teamId}/players
+POST /teams/{teamId}/players
+PUT /teams/{teamId}/players/{playerId}
+DELETE /teams/{teamId}/players/{playerId}
+GET /teams/{teamId}/players/{playerId}/horses
+POST /teams/{teamId}/players/{playerId}/horses
+PUT /teams/{teamId}/players/{playerId}/horses/{horseId}
+DELETE /teams/{teamId}/players/{playerId}/horses/{horseId}
+GET /teams/{teamId}/managers
+POST /teams/{teamId}/managers
+DELETE /teams/{teamId}/managers/{assignmentId}
+POST /tournaments
+GET /tournaments/{tournamentId}/top-scorers
+PUT /tournaments/{tournamentId}/standings
+DELETE /tournaments/{tournamentId}/standings
+DELETE /tournaments/{tournamentId}
+POST /tournaments/{tournamentId}/ai-format
+POST /tournaments/{tournamentId}/ai-schedule
+GET /tournaments/{tournamentId}/mvp
+PUT /tournaments/{tournamentId}/mvp
+GET /tournaments/{tournamentId}/bpp
+PUT /tournaments/{tournamentId}/bpp
+GET /users/search

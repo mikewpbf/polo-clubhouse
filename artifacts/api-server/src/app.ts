@@ -7,6 +7,8 @@ import { existsSync } from "node:fs";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { ogMetaMiddleware } from "./lib/og-meta";
+import { attachApiKey, unauthRateLimiter, userRateLimiter, apiKeyRateLimiter } from "./lib/rateLimit";
+import { optionalAuth } from "./lib/auth";
 
 const app: Express = express();
 
@@ -33,7 +35,21 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api", router);
+// Task #121 (step 1): versioned alias. We rewrite `/api/v1/*` to `/api/*`
+// BEFORE the main `/api` mount, so both prefixes hit the same router and
+// middleware chain exactly once (no double rate-limiting). `/api/v1` is the
+// canonical path documented for new clients; `/api` stays mounted for
+// backward compatibility.
+app.use((req, _res, next) => {
+  if (req.url.startsWith("/api/v1/") || req.url === "/api/v1") {
+    req.url = "/api" + req.url.slice("/api/v1".length);
+  }
+  next();
+});
+
+// Task #121 (step 8): rate limiting. Attach the optional auth user + API key
+// first so the limiter can choose the right bucket per request.
+app.use("/api", optionalAuth, attachApiKey, unauthRateLimiter, userRateLimiter, apiKeyRateLimiter, router);
 
 // In production the bundled api-server also serves the polo-manager SPA.
 // build.mjs copies polo-manager/dist/public into api-server/dist/public,

@@ -4,9 +4,10 @@ import { usersTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import { generateToken, requireAuth, getUserWithRoles, optionalAuth } from "../lib/auth";
+import { generateToken, generateAccessToken, requireAuth, getUserWithRoles, optionalAuth } from "../lib/auth";
 import { sendEmail, passwordResetEmailHtml } from "../lib/email";
 import { SignupBody, LoginBody } from "@workspace/api-zod";
+import { issueSessionForRequest } from "./sessions";
 
 const router: IRouter = Router();
 
@@ -28,8 +29,18 @@ router.post("/auth/signup", async (req, res) => {
       role: "spectator",
     }).returning();
     const token = generateToken({ id: user.id, email: user.email!, displayName: user.displayName!, role: user.role! });
+    const accessToken = generateAccessToken({ id: user.id, email: user.email!, displayName: user.displayName!, role: user.role! });
     const userWithRoles = await getUserWithRoles(user.id);
-    res.status(201).json({ user: userWithRoles, token });
+    // Task #121 (step 2): also mint a refresh-token-backed session so future
+    // clients can opt into the refresh flow. Web app keeps using `token`
+    // (legacy 7d JWT); native clients use `accessToken` + `refreshToken`.
+    let refreshToken: string | undefined;
+    let sessionId: string | undefined;
+    try {
+      const session = await issueSessionForRequest(req, user.id);
+      refreshToken = session.refreshToken; sessionId = session.id;
+    } catch { /* don't break signup if sessions table is unavailable */ }
+    res.status(201).json({ user: userWithRoles, token, accessToken, refreshToken, sessionId });
   } catch (e: any) {
     res.status(400).json({ message: e.message || "Signup failed" });
   }
@@ -50,8 +61,17 @@ router.post("/auth/login", async (req, res) => {
       return;
     }
     const token = generateToken({ id: user.id, email: user.email!, displayName: user.displayName!, role: user.role! });
+    const accessToken = generateAccessToken({ id: user.id, email: user.email!, displayName: user.displayName!, role: user.role! });
     const userWithRoles = await getUserWithRoles(user.id);
-    res.json({ user: userWithRoles, token });
+    // Task #121 (step 2): also mint a refresh-token-backed session. Native
+    // clients use `accessToken` (~1h) + `refreshToken`; web stays on `token`.
+    let refreshToken: string | undefined;
+    let sessionId: string | undefined;
+    try {
+      const session = await issueSessionForRequest(req, user.id);
+      refreshToken = session.refreshToken; sessionId = session.id;
+    } catch { /* don't break login if sessions table is unavailable */ }
+    res.json({ user: userWithRoles, token, accessToken, refreshToken, sessionId });
   } catch (e: any) {
     res.status(400).json({ message: e.message || "Login failed" });
   }

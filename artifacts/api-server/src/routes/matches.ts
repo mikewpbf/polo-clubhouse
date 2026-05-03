@@ -1277,30 +1277,33 @@ async function buildBroadcastPayload(matchId: string) {
     };
 }
 
+// Task #121 (step 6): canonical scoreboard endpoint. `?variant=jumbotron|
+// scorebug|tv` is documented as the official discriminator for any client
+// (web/OBS today, Apple TV / mobile tomorrow). The legacy `/jumbotron` route
+// below is kept as a thin alias so existing callers don't break.
 router.get("/matches/:matchId/broadcast", async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const payload = await buildBroadcastPayload(matchId);
     if (!payload) { res.status(404).json({ message: "Match not found" }); return; }
+    const variant = String(req.query.variant ?? "scorebug");
     res.setHeader("Cache-Control", "no-store");
-    res.json(payload);
+    res.json({ ...payload, variant });
   } catch (e: any) {
     res.status(500).json({ message: e.message });
   }
 });
 
-// Task #117: dedicated jumbotron payload. Currently the same shape as the
-// broadcast payload (the jumbotron overlay only consumes a subset of fields)
-// but exposed under its own URL so the contract can evolve independently —
-// e.g. add stadium-only fields (sponsor logos, period summaries) without
-// affecting the OBS scorebug.
+// Task #117 / Task #121: jumbotron is now an alias for /broadcast?variant=jumbotron.
+// The shape is identical — kept under its own URL for backward compatibility
+// with existing OBS / TV consumers that already point at this path.
 router.get("/matches/:matchId/jumbotron", async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
     const payload = await buildBroadcastPayload(matchId);
     if (!payload) { res.status(404).json({ message: "Match not found" }); return; }
     res.setHeader("Cache-Control", "no-store");
-    res.json(payload);
+    res.json({ ...payload, variant: "jumbotron" });
   } catch (e: any) {
     res.status(500).json({ message: e.message });
   }

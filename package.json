@@ -4,9 +4,10 @@
   "license": "MIT",
   "scripts": {
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
-    "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "build": "pnpm run typecheck && pnpm run check:routes && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "check:routes": "node scripts/check-route-spec-drift.mjs",
     "test": "pnpm -r --if-present run test"
   },
   "private": true,
@@ -97,6 +98,9 @@
       "@expo/ngrok-bin>@expo/ngrok-bin-win32-x64": "-",
       "@esbuild-kit/esm-loader": "npm:tsx@^4.21.0",
       "esbuild": "0.27.3"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "sharp"
+    ]
   }
 }

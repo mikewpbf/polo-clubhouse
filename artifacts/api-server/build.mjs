@@ -127,6 +127,18 @@ globalThis.__dirname = __bannerPath.dirname(globalThis.__filename);
   await cp(migrationsSrc, migrationsDest, { recursive: true });
   console.log(`Copied db migrations -> ${path.relative(artifactDir, migrationsDest)}`);
 
+  // Task #121 (step 3): copy the OpenAPI spec next to the bundle so the
+  // /api/openapi.yaml route can serve it in production. The dev path
+  // (lib/api-spec/openapi.yaml) is also tried at runtime as a fallback.
+  try {
+    const specSrc = path.resolve(artifactDir, "..", "..", "lib", "api-spec", "openapi.yaml");
+    const specDest = path.resolve(distDir, "openapi.yaml");
+    await cp(specSrc, specDest);
+    console.log(`Copied openapi.yaml -> ${path.relative(artifactDir, specDest)}`);
+  } catch (err) {
+    if (err.code !== "ENOENT") throw err;
+  }
+
   // Copy the polo-manager SPA build alongside the api-server bundle so it can
   // be served by Express in production. The api-server's app.ts looks for a
   // sibling `public/` dir and falls back to API-only if it's missing.

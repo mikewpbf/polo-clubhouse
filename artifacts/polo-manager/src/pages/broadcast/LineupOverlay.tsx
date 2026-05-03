@@ -143,14 +143,19 @@ function PlayerPhoto({ player }: { player: LineupPlayer }) {
   );
 }
 
-function PlayerCard({ player, teamRgb }: { player: LineupPlayer | null; teamRgb: string | null }) {
+function PlayerCard({ player, teamRgb, index }: { player: LineupPlayer | null; teamRgb: string | null; index: number }) {
+  const animationStyle: React.CSSProperties = {
+    animation: "lineupCardIn 420ms cubic-bezier(0.22, 1, 0.36, 1) both",
+    animationDelay: `${index * 60}ms`,
+  };
   if (!player) {
     return (
-      <div style={{
+      <div className="lineup-card-anim" style={{
         background: "rgba(255,255,255,0.02)",
         border: "1px dashed rgba(255,255,255,0.06)",
         borderRadius: 12,
         minHeight: 320,
+        ...animationStyle,
       }} />
     );
   }
@@ -172,12 +177,13 @@ function PlayerCard({ player, teamRgb }: { player: LineupPlayer | null; teamRgb:
   const dividerColor = teamRgb ? `rgba(${teamRgb},0.2)` : "rgba(255,255,255,0.08)";
 
   return (
-    <div style={{
+    <div className="lineup-card-anim" style={{
       background: cardBg,
       borderRadius: 12,
       overflow: "hidden",
       display: "flex",
       flexDirection: "column",
+      ...animationStyle,
     }}>
       {/* Headshot 4:5 — no badges */}
       <div style={{
@@ -422,6 +428,15 @@ export default function LineupOverlay(props: LineupOverlayProps = {}) {
       fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif",
       background: "transparent",
     }}>
+      <style>{`
+        @keyframes lineupCardIn {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .lineup-card-anim { animation: none !important; }
+        }
+      `}</style>
       <div style={PANEL_STYLE}>
         {/* Header — tournament name only */}
         <div style={{ textAlign: "center", marginBottom: 8 }}>
@@ -516,7 +531,7 @@ export default function LineupOverlay(props: LineupOverlayProps = {}) {
             gap: 10,
           }}>
             {slots.map((p, i) => (
-              <PlayerCard key={p?.id ?? `slot-${i}`} player={p} teamRgb={teamRgb} />
+              <PlayerCard key={p?.id ?? `slot-${i}`} player={p} teamRgb={teamRgb} index={i} />
             ))}
           </div>
         )}

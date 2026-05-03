@@ -10,6 +10,7 @@ export const tournamentFormatEnum = pgEnum("tournament_format", [
 
 export const tournamentStatusEnum = pgEnum("tournament_status", [
   "draft",
+  "test",
   "published",
   "in_progress",
   "completed",

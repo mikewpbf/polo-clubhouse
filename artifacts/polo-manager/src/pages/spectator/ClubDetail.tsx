@@ -22,7 +22,7 @@ export function ClubDetail() {
   const c = club as ClubDetailType | undefined;
   const allTournaments: Tournament[] = useMemo(() => {
     if (!c?.tournaments) return [];
-    return c.tournaments.filter((t: Tournament) => t.status !== "draft");
+    return c.tournaments.filter((t: Tournament) => t.status !== "draft" && t.status !== "test");
   }, [c]);
 
   const availableYears = useMemo(() => {

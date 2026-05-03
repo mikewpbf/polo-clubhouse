@@ -5,6 +5,7 @@ import { eq, and, ilike, count, inArray, desc, asc } from "drizzle-orm";
 import { requireAuth, optionalAuth, isSuperAdmin, requireSuperAdmin } from "../lib/auth";
 import { invalidateMatchPreviewsForTournament } from "./match-previews";
 import { publicTeam } from "../lib/teamPrivacy";
+import { isHiddenStatus, filterVisibleTournaments, loadVisibleTournament } from "../lib/tournamentVisibility";
 import OpenAI from "openai";
 
 const router: IRouter = Router();
@@ -33,14 +34,17 @@ async function requireAdminForTournamentId(req: Request, res: Response, next: Ne
   next();
 }
 
-router.get("/clubs/:clubId/tournaments", async (req, res) => {
+router.get("/clubs/:clubId/tournaments", optionalAuth, async (req, res) => {
   try {
     const clubId = String(req.params.clubId);
     const status = req.query.status as string | undefined;
     const conditions: any[] = [eq(tournamentsTable.clubId, clubId)];
     if (status) conditions.push(eq(tournamentsTable.status, status as any));
     const tournaments = await db.select().from(tournamentsTable).where(and(...conditions));
-    res.json(tournaments);
+    // Hide draft + test from non-admins. Club admins see their own hidden
+    // tournaments; super admins see everything.
+    const visible = await filterVisibleTournaments((req as any).user, tournaments);
+    res.json(visible);
   } catch (e: any) {
     res.status(500).json({ message: e.message });
   }
@@ -92,19 +96,8 @@ router.get("/tournaments", optionalAuth, async (req, res) => {
     const clubSlug = req.query.clubSlug as string | undefined;
     const search = req.query.search as string | undefined;
     const conditions: any[] = [];
-    const user = (req as any).user;
-    const isSuperAdmin = user?.role === "super_admin";
-    if (status) {
-      if (status === "draft" && !isSuperAdmin) {
-        conditions.push(inArray(tournamentsTable.status, ["published", "in_progress", "completed"]));
-      } else {
-        conditions.push(eq(tournamentsTable.status, status as any));
-      }
-    } else if (!isSuperAdmin) {
-      conditions.push(inArray(tournamentsTable.status, ["published", "in_progress", "completed"]));
-    }
+    if (status) conditions.push(eq(tournamentsTable.status, status as any));
     if (search) conditions.push(ilike(tournamentsTable.name, `%${search}%`));
-
     if (clubSlug) {
       const [club] = await db.select().from(clubsTable).where(eq(clubsTable.slug, clubSlug));
       if (club) conditions.push(eq(tournamentsTable.clubId, club.id));
@@ -113,7 +106,12 @@ router.get("/tournaments", optionalAuth, async (req, res) => {
     const query = conditions.length > 0
       ? db.select().from(tournamentsTable).where(and(...conditions))
       : db.select().from(tournamentsTable);
-    const tournaments = await query.orderBy(desc(tournamentsTable.sponsored), desc(tournamentsTable.sponsoredRank), asc(tournamentsTable.name));
+    const allTournaments = await query.orderBy(desc(tournamentsTable.sponsored), desc(tournamentsTable.sponsoredRank), asc(tournamentsTable.name));
+
+    // Hide draft + test from spectators. Club admins see their own hidden
+    // tournaments here so the admin Tournaments page surfaces them; super
+    // admins see everything.
+    const tournaments = await filterVisibleTournaments(req.user, allTournaments);
 
     const result = await Promise.all(tournaments.map(async (t) => {
       const club = t.clubId ? (await db.select().from(clubsTable).where(eq(clubsTable.id, t.clubId)))[0] : null;
@@ -130,11 +128,11 @@ router.get("/tournaments", optionalAuth, async (req, res) => {
 router.get("/tournaments/:tournamentId", optionalAuth, async (req, res) => {
   try {
     const tournamentId = String(req.params.tournamentId);
-    const [tournament] = await db.select().from(tournamentsTable).where(eq(tournamentsTable.id, tournamentId));
+    // Hidden statuses (draft / test) return 404 to spectators; super
+    // admins always see them, and club admins of the owning club see
+    // their own (so admin pages can deep-link to /tournaments/:id).
+    const tournament = await loadVisibleTournament(req.user, tournamentId);
     if (!tournament) { res.status(404).json({ message: "Tournament not found" }); return; }
-    const tUser = (req as any).user;
-    const tIsSuperAdmin = tUser?.role === "super_admin";
-    if (tournament.status === "draft" && !tIsSuperAdmin) { res.status(404).json({ message: "Tournament not found" }); return; }
 
     const club = tournament.clubId ? (await db.select().from(clubsTable).where(eq(clubsTable.id, tournament.clubId)))[0] : null;
     const ttEntries = await db.select().from(tournamentTeamsTable).where(eq(tournamentTeamsTable.tournamentId, tournament.id));

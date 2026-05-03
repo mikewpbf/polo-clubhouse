@@ -116,6 +116,7 @@ export type TournamentStatus =
 
 export const TournamentStatus = {
   draft: "draft",
+  test: "test",
   published: "published",
   in_progress: "in_progress",
   completed: "completed",
@@ -285,6 +286,7 @@ export type TournamentWithClubStatus =
 
 export const TournamentWithClubStatus = {
   draft: "draft",
+  test: "test",
   published: "published",
   in_progress: "in_progress",
   completed: "completed",
@@ -321,6 +323,7 @@ export type TournamentDetailStatus =
 
 export const TournamentDetailStatus = {
   draft: "draft",
+  test: "test",
   published: "published",
   in_progress: "in_progress",
   completed: "completed",
@@ -487,6 +490,7 @@ export type UpdateTournamentRequestStatus =
 
 export const UpdateTournamentRequestStatus = {
   draft: "draft",
+  test: "test",
   published: "published",
   in_progress: "in_progress",
   completed: "completed",

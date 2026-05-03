@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { clubsTable, fieldsTable, tournamentsTable, spectatorFollowsTable, adminClubMembershipsTable, teamsTable, tournamentTeamsTable, matchesTable, matchEventsTable, playDatesTable, teamOutDatesTable, teamManagerAssignmentsTable, userInvitesTable, usersTable } from "@workspace/db/schema";
 import { eq, ilike, and, count, or, inArray, desc, asc } from "drizzle-orm";
 import { optionalAuth, requireAuth, requireClubAdmin, requireSuperAdmin, isSuperAdmin } from "../lib/auth";
+import { filterVisibleTournaments } from "../lib/tournamentVisibility";
 
 const router: IRouter = Router();
 
@@ -49,7 +50,11 @@ router.get("/clubs/:slug", optionalAuth, async (req, res) => {
     const [club] = await db.select().from(clubsTable).where(eq(clubsTable.slug, slug));
     if (!club) { res.status(404).json({ message: "Club not found" }); return; }
     const fields = await db.select().from(fieldsTable).where(eq(fieldsTable.clubId, club.id));
-    const tournaments = await db.select().from(tournamentsTable).where(eq(tournamentsTable.clubId, club.id));
+    const allTournaments = await db.select().from(tournamentsTable).where(eq(tournamentsTable.clubId, club.id));
+    // Hide draft + test tournaments from spectators on the public club page.
+    // Club admins (and super admins) still see their own hidden tournaments
+    // so they can navigate into them from the spectator-side club view.
+    const tournaments = await filterVisibleTournaments(req.user, allTournaments);
     const [followerResult] = await db.select({ count: count() }).from(spectatorFollowsTable).where(eq(spectatorFollowsTable.clubId, club.id));
     let isFollowing = false;
     if (req.user) {

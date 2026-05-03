@@ -186,6 +186,7 @@ export const GetClubBySlugResponse = zod.object({
       finalsDate: zod.string().nullish(),
       status: zod.enum([
         "draft",
+        "test",
         "published",
         "in_progress",
         "completed",
@@ -479,6 +480,7 @@ export const ListTournamentsResponseItem = zod.object({
   finalsDate: zod.string().nullish(),
   status: zod.enum([
     "draft",
+    "test",
     "published",
     "in_progress",
     "completed",
@@ -547,6 +549,7 @@ export const ListAllTournamentsResponseItem = zod.object({
   endDate: zod.string().nullish(),
   status: zod.enum([
     "draft",
+    "test",
     "published",
     "in_progress",
     "completed",
@@ -598,6 +601,7 @@ export const GetTournamentResponse = zod.object({
   finalsDate: zod.string().nullish(),
   status: zod.enum([
     "draft",
+    "test",
     "published",
     "in_progress",
     "completed",
@@ -791,7 +795,14 @@ export const UpdateTournamentBody = zod.object({
   hasThirdPlace: zod.boolean().optional(),
   isVisitingLeague: zod.boolean().optional(),
   status: zod
-    .enum(["draft", "published", "in_progress", "completed", "archived"])
+    .enum([
+      "draft",
+      "test",
+      "published",
+      "in_progress",
+      "completed",
+      "archived",
+    ])
     .optional(),
   aiRecommendation: zod.object({}).passthrough().optional(),
   logoUrl: zod.string().nullish(),
@@ -817,6 +828,7 @@ export const UpdateTournamentResponse = zod.object({
   finalsDate: zod.string().nullish(),
   status: zod.enum([
     "draft",
+    "test",
     "published",
     "in_progress",
     "completed",
@@ -3069,6 +3081,7 @@ export const GetMyTeamDashboardResponse = zod.object({
       finalsDate: zod.string().nullish(),
       status: zod.enum([
         "draft",
+        "test",
         "published",
         "in_progress",
         "completed",
@@ -3873,6 +3886,7 @@ export const PublishTournamentResponse = zod.object({
   finalsDate: zod.string().nullish(),
   status: zod.enum([
     "draft",
+    "test",
     "published",
     "in_progress",
     "completed",

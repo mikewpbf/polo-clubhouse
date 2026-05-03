@@ -95,6 +95,7 @@ const FORMAT_OPTIONS = [
 
 const STATUS_OPTIONS = [
   { value: "draft", label: "Draft" },
+  { value: "test", label: "Test (admins only)" },
   { value: "published", label: "Published" },
   { value: "in_progress", label: "In Progress" },
   { value: "completed", label: "Completed" },

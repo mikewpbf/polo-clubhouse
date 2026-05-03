@@ -11,6 +11,7 @@ export type UpdateTournamentRequestStatus =
 
 export const UpdateTournamentRequestStatus = {
   draft: "draft",
+  test: "test",
   published: "published",
   in_progress: "in_progress",
   completed: "completed",

@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { eq, and, gte, lte, gt, desc, asc, isNull, inArray, sql } from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
 import { requireAuth, optionalAuth, isSuperAdmin, requireMatchWrite, requireMatchAdmin as requireMatchAdminFactory, resolveShareToken } from "../lib/auth";
+import { loadVisibleTournament, userCanSeeMatchTournament } from "../lib/tournamentVisibility";
 import { addSSEClient, emitMatchUpdate, emitMatchEnded } from "../lib/sse";
 import { invalidateMatchPreview } from "./match-previews";
 import { publicPlayer } from "../lib/playerPrivacy";
@@ -140,10 +141,16 @@ async function requireMatchAdmin(req: Request, res: Response, next: NextFunction
   next();
 }
 
-router.get("/tournaments/:tournamentId/matches", async (req, res) => {
+router.get("/tournaments/:tournamentId/matches", optionalAuth, async (req, res) => {
   try {
     const tournamentId = String(req.params.tournamentId);
     const teamId = req.query.teamId as string | undefined;
+    // Reject the entire match list if the parent tournament is hidden
+    // (draft / test) and the requester is not an admin of the club. Without
+    // this gate, knowing a tournament UUID would expose its full match
+    // schedule via this public endpoint.
+    const visibleTournament = await loadVisibleTournament(req.user, tournamentId);
+    if (!visibleTournament) { res.status(404).json({ message: "Tournament not found" }); return; }
     const matchRows = await db.select().from(matchesTable).where(eq(matchesTable.tournamentId, tournamentId));
     let filtered = matchRows;
     if (teamId) {
@@ -232,7 +239,15 @@ router.get("/matches/manageable", requireAuth, async (req, res) => {
 router.get("/matches/live", async (_req, res) => {
   try {
     const liveMatches = await db.select().from(matchesTable).where(eq(matchesTable.status, "live"));
-    const result = await Promise.all(liveMatches.map(enrichMatch));
+    // Hide matches whose parent tournament is in a hidden status (draft/test)
+    // — those tournaments are admin-only and their matches must never appear
+    // in any spectator-facing live feed (homepage, "Live Now" tile, etc).
+    const hiddenTournaments = await db.select({ id: tournamentsTable.id })
+      .from(tournamentsTable)
+      .where(inArray(tournamentsTable.status, ["draft", "test"]));
+    const hiddenIds = new Set(hiddenTournaments.map(t => t.id));
+    const visible = liveMatches.filter(m => !hiddenIds.has(m.tournamentId));
+    const result = await Promise.all(visible.map(enrichMatch));
     res.json(result);
   } catch (e: any) {
     res.status(500).json({ message: e.message });
@@ -289,9 +304,13 @@ router.get("/matches/today", async (req, res) => {
       matchRows = matchRows.filter(m => tIds.includes(m.tournamentId));
     }
 
-    const draftTournaments = await db.select({ id: tournamentsTable.id }).from(tournamentsTable).where(eq(tournamentsTable.status, "draft"));
-    const draftIds = new Set(draftTournaments.map(t => t.id));
-    matchRows = matchRows.filter(m => !draftIds.has(m.tournamentId));
+    // Hidden = draft + test. Both are admin-only statuses and their matches
+    // must never appear on the public /matches/today feed (homepage / TV / etc).
+    const hiddenTournaments = await db.select({ id: tournamentsTable.id })
+      .from(tournamentsTable)
+      .where(inArray(tournamentsTable.status, ["draft", "test"]));
+    const hiddenIds = new Set(hiddenTournaments.map(t => t.id));
+    matchRows = matchRows.filter(m => !hiddenIds.has(m.tournamentId));
 
     matchRows.sort((a, b) => {
       const statusOrder: Record<string, number> = { live: 0, halftime: 1, scheduled: 2, postponed: 3 };
@@ -330,9 +349,12 @@ router.get("/matches/upcoming", async (req, res) => {
       matchRows = matchRows.filter(m => tIds.includes(m.tournamentId));
     }
 
-    const draftTournaments = await db.select({ id: tournamentsTable.id }).from(tournamentsTable).where(eq(tournamentsTable.status, "draft"));
-    const draftIds = new Set(draftTournaments.map(t => t.id));
-    matchRows = matchRows.filter(m => !draftIds.has(m.tournamentId));
+    // See /matches/today: hide both draft and test from the public upcoming feed.
+    const hiddenTournaments = await db.select({ id: tournamentsTable.id })
+      .from(tournamentsTable)
+      .where(inArray(tournamentsTable.status, ["draft", "test"]));
+    const hiddenIds = new Set(hiddenTournaments.map(t => t.id));
+    matchRows = matchRows.filter(m => !hiddenIds.has(m.tournamentId));
 
     const total = matchRows.length;
     matchRows = matchRows.slice(offset, offset + limit);
@@ -352,6 +374,17 @@ router.get("/matches/:matchId", optionalAuth, async (req, res) => {
     const matchId = String(req.params.matchId);
     const [match] = await db.select().from(matchesTable).where(eq(matchesTable.id, matchId));
     if (!match) { res.status(404).json({ message: "Match not found" }); return; }
+    // Hide matches whose parent tournament is draft or test from non-admins.
+    // Share-token operators are allowed through (an admin handed them the
+    // link intentionally to test scoring/stats/scoreboard pages), but the
+    // token must actually validate AND be bound to this match — never trust
+    // mere presence of a token header.
+    const visibilityShare = await resolveShareToken(req);
+    const isValidShareForThisMatch = !!(visibilityShare && visibilityShare.matchId === matchId);
+    if (!isValidShareForThisMatch) {
+      const canSee = await userCanSeeMatchTournament(req.user, match);
+      if (!canSee) { res.status(404).json({ message: "Match not found" }); return; }
+    }
     const enriched = await enrichMatch(match, true);
     const events = await db.select().from(matchEventsTable).where(eq(matchEventsTable.matchId, match.id));
     const enrichedEvents = await Promise.all(events.map(async (evt) => {
@@ -1281,7 +1314,11 @@ router.get("/clubs/:clubId/broadcast/channel/:channel", async (req, res) => {
       res.status(400).json({ message: "channel must be ch1 or ch2" });
       return;
     }
-    const clubTournaments = await db.select().from(tournamentsTable).where(eq(tournamentsTable.clubId, clubId));
+    const allClubTournaments = await db.select().from(tournamentsTable).where(eq(tournamentsTable.clubId, clubId));
+    // The broadcast channel endpoint is fully public (no auth) — strip
+    // hidden (draft / test) tournaments so a test match never broadcasts
+    // its name + score onto a public stream board.
+    const clubTournaments = allClubTournaments.filter(t => t.status !== "draft" && t.status !== "test");
     if (clubTournaments.length === 0) { res.json({ assigned: false }); return; }
     const tournamentIds = clubTournaments.map(t => t.id);
     const assignedMatches = await db.select().from(matchesTable)

@@ -148,6 +148,10 @@ async function buildOg(req: Request): Promise<OgData | null> {
     const id = m[1];
     const [t] = await db.select().from(tournamentsTable).where(eq(tournamentsTable.id, id));
     if (!t) return null;
+    // Hidden statuses (draft / test) must not produce OG cards — those leak
+    // tournament names into social-link unfurls. Fall back to the default
+    // OG card so the page still has *some* preview, just nothing identifying.
+    if (t.status === "draft" || t.status === "test") return null;
     const club = t.clubId
       ? (await db.select().from(clubsTable).where(eq(clubsTable.id, t.clubId)))[0] ?? null
       : null;
@@ -165,6 +169,8 @@ async function buildOg(req: Request): Promise<OgData | null> {
   if (m) {
     const ctx = await buildMatchContext(m[1]);
     if (!ctx) return null;
+    // Same hidden-tournament guard as /tournaments/:id above.
+    if (ctx.tournament?.status === "draft" || ctx.tournament?.status === "test") return null;
     const { match, home, away, tournament } = ctx;
     const homeName = home?.name || "TBD";
     const awayName = away?.name || "TBD";

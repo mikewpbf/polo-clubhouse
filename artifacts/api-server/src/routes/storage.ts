@@ -46,7 +46,18 @@ router.get("/storage/public-objects/*filePath", async (req: Request, res: Respon
     const response = await objectStorageService.downloadObject(file);
 
     res.status(response.status);
-    response.headers.forEach((value, key) => res.setHeader(key, value));
+    response.headers.forEach((value, key) => {
+      // The /public-objects endpoint is, by definition, unauthenticated and
+      // public. Some objects come back from storage with a stale or
+      // accidentally-private Cache-Control depending on how they were
+      // uploaded; we must NOT forward that, because Facebook / WhatsApp /
+      // iMessage / LinkedIn refuse to render OG link-preview thumbnails
+      // sourced from images served with `Cache-Control: private`. Strip the
+      // upstream value here and set a public, CDN-friendly one below.
+      if (key.toLowerCase() === "cache-control") return;
+      res.setHeader(key, value);
+    });
+    res.setHeader("Cache-Control", "public, max-age=3600, immutable");
 
     if (response.body) {
       const nodeStream = Readable.fromWeb(response.body as ReadableStream<Uint8Array>);

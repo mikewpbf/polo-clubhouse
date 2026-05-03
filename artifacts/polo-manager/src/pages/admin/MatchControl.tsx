@@ -392,15 +392,14 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
   const awayPlayers = (match.awayTeam?.players || []).filter(p => p.isActive).sort((a, b) => (a.position || 99) - (b.position || 99));
 
   const handleScore = (team: "home" | "away", delta: number) => {
-    if (delta < 0) {
-      const teamId = team === "home" ? match.homeTeamId : match.awayTeamId;
-      mutate(`/matches/${match.id}/undo-goal`, { teamId }, prev => ({
-        ...prev,
-        homeScore: team === "home" ? Math.max(0, prev.homeScore - 1) : prev.homeScore,
-        awayScore: team === "away" ? Math.max(0, prev.awayScore - 1) : prev.awayScore,
-      }));
-      return;
-    }
+    // Bare ± buttons always go through /score (absolute set) so the path
+    // works whether or not the existing goals were player-attributed.
+    // Previously the "−" button called /undo-goal, which 409s when no
+    // matching goal event exists (e.g. goals added via bare "+" never
+    // create goal events) — that 409 reverted the optimistic decrement
+    // and made the goal "shake then pop back". /score has no such
+    // dependency on the events log; player-attributed undo can still
+    // be wired through /undo-goal from a per-player UI in the future.
     const newHome = team === "home" ? Math.max(0, match.homeScore + delta) : match.homeScore;
     const newAway = team === "away" ? Math.max(0, match.awayScore + delta) : match.awayScore;
     const swapped = (match as any)._teamsSwapped;

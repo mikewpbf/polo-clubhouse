@@ -32,15 +32,12 @@ interface LineupResponse {
   players: LineupPlayer[];
 }
 
-// Mirrors PANEL_STYLE in StatsOverlay.tsx so the two graphics share identical
-// chrome (background gradient, blur, radius, border, shadow).
 const PANEL_STYLE: React.CSSProperties = {
   background: "linear-gradient(180deg, rgba(12,12,16,0.82) 0%, rgba(18,18,24,0.86) 100%)",
-  backdropFilter: "blur(24px)",
-  borderRadius: 20,
-  border: "1px solid rgba(255,255,255,0.1)",
-  boxShadow: "0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05) inset",
-  overflow: "hidden",
+  borderRadius: 24,
+  boxShadow: "0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 60px rgba(0,0,0,0.25)",
+  padding: "32px 48px 40px",
+  width: 720,
 };
 
 function computeAge(dateOfBirth: string | null): number | null {
@@ -68,10 +65,9 @@ function initials(name: string): string {
 }
 
 function formatHandicapValue(handicap: string | null): string {
-  if (handicap === null || handicap === undefined) return "—";
+  if (handicap === null || handicap === undefined) return "0";
   const n = Number(handicap);
   if (!Number.isFinite(n)) return handicap;
-  // Show integers without trailing zeros (e.g. "5"), keep decimals as-is (e.g. "1.5")
   return Number.isInteger(n) ? String(n) : String(n);
 }
 
@@ -93,24 +89,18 @@ function PlayerPhoto({ player }: { player: LineupPlayer }) {
 
   if (stage === "initials" || !src) {
     return (
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "linear-gradient(135deg, rgba(60,60,70,0.85) 0%, rgba(28,28,34,0.95) 100%)",
-        }}
-      >
-        <span style={{
-          fontSize: 64,
-          fontWeight: 800,
-          color: "rgba(255,255,255,0.7)",
-          letterSpacing: 2,
-        }}>
-          {initials(player.name)}
-        </span>
+      <div style={{
+        position: "absolute",
+        inset: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "rgba(255,255,255,0.35)",
+        fontSize: 44,
+        fontWeight: 800,
+        letterSpacing: 2,
+      }}>
+        {initials(player.name)}
       </div>
     );
   }
@@ -134,20 +124,20 @@ function PlayerPhoto({ player }: { player: LineupPlayer }) {
         width: "100%",
         height: "100%",
         objectFit: "cover",
-        objectPosition: "center 25%",
+        display: "block",
       }}
     />
   );
 }
 
-function PlayerCard({ player, slotNumber }: { player: LineupPlayer | null; slotNumber: number }) {
+function PlayerCard({ player }: { player: LineupPlayer | null }) {
   if (!player) {
     return (
       <div style={{
         background: "rgba(255,255,255,0.02)",
-        border: "1px dashed rgba(255,255,255,0.08)",
-        borderRadius: 16,
-        minHeight: 380,
+        border: "1px dashed rgba(255,255,255,0.06)",
+        borderRadius: 12,
+        minHeight: 320,
       }} />
     );
   }
@@ -162,160 +152,155 @@ function PlayerCard({ player, slotNumber }: { player: LineupPlayer | null; slotN
 
   return (
     <div style={{
+      background: "rgba(255,255,255,0.04)",
+      borderRadius: 12,
+      overflow: "hidden",
       display: "flex",
       flexDirection: "column",
-      background: "rgba(255,255,255,0.03)",
-      border: "1px solid rgba(255,255,255,0.06)",
-      borderRadius: 16,
-      overflow: "hidden",
     }}>
-      {/* Photo: 4:5 aspect ratio frame */}
+      {/* Headshot 4:5 — no badges */}
       <div style={{
         position: "relative",
         width: "100%",
         aspectRatio: "4 / 5",
-        background: "#0d0d12",
+        background: "linear-gradient(180deg, #4a4a4e 0%, #34343a 100%)",
         overflow: "hidden",
       }}>
         <PlayerPhoto player={player} />
-        {/* Position badge */}
+        {/* Bottom legibility gradient */}
         <div style={{
           position: "absolute",
-          top: 12,
-          left: 12,
-          padding: "5px 11px",
-          borderRadius: 999,
-          background: "rgba(0,0,0,0.65)",
-          backdropFilter: "blur(12px)",
-          border: "1px solid rgba(255,255,255,0.18)",
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: 2,
-          textTransform: "uppercase",
-          color: "#fff",
-        }}>
-          No. {slotNumber}
-        </div>
-        {/* Handicap badge */}
-        <div style={{
-          position: "absolute",
-          top: 12,
-          right: 12,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-end",
-          gap: 1,
-          padding: "5px 11px",
-          borderRadius: 10,
-          background: "rgba(0,0,0,0.65)",
-          backdropFilter: "blur(12px)",
-          border: "1px solid rgba(255,255,255,0.18)",
-        }}>
-          <span style={{
-            fontSize: 22,
-            fontWeight: 800,
-            color: "#fff",
-            lineHeight: 1,
-            fontFamily: "'JetBrains Mono', 'SF Mono', monospace",
-          }}>
-            {formatHandicapValue(player.handicap)}
-          </span>
-          <span style={{
-            fontSize: 8,
-            fontWeight: 700,
-            color: "rgba(255,255,255,0.55)",
-            letterSpacing: 1.5,
-          }}>
-            GOALS
-          </span>
-        </div>
+          inset: 0,
+          background: "linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.4) 100%)",
+          pointerEvents: "none",
+        }} />
       </div>
 
-      {/* Name + meta */}
-      <div style={{ padding: "14px 14px 10px" }}>
+      {/* Card body — left aligned */}
+      <div style={{
+        padding: "12px 12px 14px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        textAlign: "left",
+        gap: 6,
+      }}>
         {first && (
           <div style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: "rgba(255,255,255,0.5)",
-            letterSpacing: 1.5,
+            fontSize: 13,
+            fontWeight: 700,
+            color: "rgba(255,255,255,0.7)",
+            letterSpacing: 0.5,
             textTransform: "uppercase",
-            marginBottom: 1,
+            lineHeight: 1.15,
           }}>
             {first}
           </div>
         )}
         <div style={{
-          fontSize: 22,
+          fontSize: 17,
           fontWeight: 800,
           color: "#fff",
-          letterSpacing: -0.3,
-          lineHeight: 1.05,
+          letterSpacing: 0.5,
+          textTransform: "uppercase",
+          lineHeight: 1.15,
+          marginTop: first ? -4 : 0,
         }}>
           {last || player.name}
         </div>
+
+        {/* Handicap — small inline "N GOALS" */}
+        <div style={{
+          display: "flex",
+          alignItems: "baseline",
+          gap: 5,
+          paddingTop: 2,
+        }}>
+          <span style={{
+            fontSize: 16,
+            fontWeight: 800,
+            color: "#fff",
+            lineHeight: 1,
+          }}>
+            {formatHandicapValue(player.handicap)}
+          </span>
+          <span style={{
+            fontSize: 9,
+            fontWeight: 700,
+            color: "rgba(255,255,255,0.45)",
+            letterSpacing: 1.5,
+            textTransform: "uppercase",
+          }}>
+            Goals
+          </span>
+        </div>
+
         {metaLine && (
           <div style={{
-            marginTop: 7,
             fontSize: 11,
             fontWeight: 600,
-            color: "rgba(255,255,255,0.45)",
-            letterSpacing: 0.5,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
+            color: "rgba(255,255,255,0.55)",
+            letterSpacing: 0.3,
           }}>
             {metaLine}
           </div>
         )}
-      </div>
 
-      {/* Stat grid */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-      }}>
-        <div style={{ padding: "10px 14px", borderRight: "1px solid rgba(255,255,255,0.06)" }}>
+        {/* Stats grid — 2 cols, each cell individually centered */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 8,
+          width: "100%",
+          marginTop: 4,
+          paddingTop: 10,
+          borderTop: "1px solid rgba(255,255,255,0.08)",
+        }}>
           <div style={{
-            fontSize: 9,
-            fontWeight: 700,
-            letterSpacing: 1.5,
-            textTransform: "uppercase",
-            color: "rgba(255,255,255,0.45)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+            gap: 2,
           }}>
-            Tournament
+            <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", lineHeight: 1 }}>
+              {player.tournamentGoals}
+            </span>
+            <span style={{
+              fontSize: 8,
+              fontWeight: 700,
+              color: "rgba(255,255,255,0.4)",
+              letterSpacing: 1,
+              textTransform: "uppercase",
+              lineHeight: 1.2,
+              maxWidth: 64,
+              textAlign: "center",
+            }}>
+              Tournament Goals
+            </span>
           </div>
           <div style={{
-            marginTop: 2,
-            fontSize: 22,
-            fontWeight: 800,
-            color: "#fff",
-            fontFamily: "'JetBrains Mono', 'SF Mono', monospace",
-            lineHeight: 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+            gap: 2,
           }}>
-            {player.tournamentGoals}
-          </div>
-        </div>
-        <div style={{ padding: "10px 14px" }}>
-          <div style={{
-            fontSize: 9,
-            fontWeight: 700,
-            letterSpacing: 1.5,
-            textTransform: "uppercase",
-            color: "rgba(255,255,255,0.45)",
-          }}>
-            Avg / Match
-          </div>
-          <div style={{
-            marginTop: 2,
-            fontSize: 22,
-            fontWeight: 800,
-            color: "#fff",
-            fontFamily: "'JetBrains Mono', 'SF Mono', monospace",
-            lineHeight: 1,
-          }}>
-            {formatAvg(player.avgGoalsPerMatch)}
+            <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", lineHeight: 1 }}>
+              {formatAvg(player.avgGoalsPerMatch)}
+            </span>
+            <span style={{
+              fontSize: 8,
+              fontWeight: 700,
+              color: "rgba(255,255,255,0.4)",
+              letterSpacing: 1,
+              textTransform: "uppercase",
+              lineHeight: 1.2,
+              maxWidth: 64,
+              textAlign: "center",
+            }}>
+              Avg per Match
+            </span>
           </div>
         </div>
       </div>
@@ -326,11 +311,18 @@ function PlayerCard({ player, slotNumber }: { player: LineupPlayer | null; slotN
 function TeamLogoBubble({ team }: { team: LineupTeam }) {
   const [failed, setFailed] = useState(false);
   const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-  const fallbackText = (team.name?.substring(0, 2) || "?").toUpperCase();
+  const fallbackText = (team.name?.substring(0, 3) || "?").toUpperCase();
 
   if (!team.logoUrl || failed) {
     return (
-      <span style={{ fontSize: 24, fontWeight: 800, color: "#fff" }}>{fallbackText}</span>
+      <span style={{
+        fontWeight: 800,
+        fontSize: 14,
+        letterSpacing: 0.3,
+        color: "#2a2a2e",
+      }}>
+        {fallbackText}
+      </span>
     );
   }
   const src = team.logoUrl.startsWith("http") ? team.logoUrl : `${base}${team.logoUrl}`;
@@ -380,7 +372,6 @@ export default function LineupOverlay(props: LineupOverlayProps = {}) {
     };
 
     load();
-    // Poll on the same cadence other broadcast surfaces use for broadcast data.
     const handle = window.setInterval(load, 10_000);
     return () => {
       cancelled = true;
@@ -388,7 +379,6 @@ export default function LineupOverlay(props: LineupOverlayProps = {}) {
     };
   }, [matchId, teamSide]);
 
-  // Pad the player list to exactly 4 slots so the grid never reflows.
   const players = data?.players ?? [];
   const slots: (LineupPlayer | null)[] = [0, 1, 2, 3].map(i => players[i] ?? null);
   const hasAnyPlayer = players.length > 0;
@@ -403,57 +393,37 @@ export default function LineupOverlay(props: LineupOverlayProps = {}) {
       fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif",
       background: "transparent",
     }}>
-      <div style={{
-        width: 1280,
-        ...PANEL_STYLE,
-        display: "flex",
-        flexDirection: "column",
-      }}>
-        {/* Header */}
-        <div style={{
-          padding: "26px 44px 22px",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
-          textAlign: "center",
-        }}>
-          {data?.tournament?.name && (
-            <div style={{
-              fontSize: 18,
-              fontWeight: 700,
-              letterSpacing: 4,
-              textTransform: "uppercase",
-              color: "rgba(255,255,255,0.55)",
-              marginBottom: 8,
-            }}>
-              {data.tournament.name}
-            </div>
-          )}
+      <div style={PANEL_STYLE}>
+        {/* Header — tournament name only */}
+        <div style={{ textAlign: "center", marginBottom: 8 }}>
           <div style={{
-            fontSize: 36,
+            fontSize: 16,
             fontWeight: 800,
-            letterSpacing: 6,
-            textTransform: "uppercase",
             color: "#fff",
+            letterSpacing: 3,
+            textTransform: "uppercase",
           }}>
-            Starting Lineup
+            {data?.tournament?.name || "\u00A0"}
           </div>
         </div>
 
         {/* Team identity row */}
         {data?.team && (
           <div style={{
-            padding: "20px 44px",
-            borderBottom: "1px solid rgba(255,255,255,0.06)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 22,
+            gap: 14,
+            padding: "22px 0 24px",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            marginBottom: 24,
           }}>
             <div style={{
-              width: 64,
-              height: 64,
+              width: 56,
+              height: 56,
               borderRadius: "50%",
-              background: "rgba(255,255,255,0.06)",
-              border: "2px solid rgba(255,255,255,0.18)",
+              background: "#fff",
+              border: "2px solid rgba(255,255,255,0.95)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -463,80 +433,64 @@ export default function LineupOverlay(props: LineupOverlayProps = {}) {
               <TeamLogoBubble team={data.team} />
             </div>
             <div style={{
-              fontSize: 32,
+              fontSize: 30,
               fontWeight: 800,
-              letterSpacing: -0.3,
               color: "#fff",
+              letterSpacing: 1,
+              textTransform: "uppercase",
             }}>
               {data.team.name}
             </div>
             <div style={{
-              display: "flex",
-              alignItems: "baseline",
-              gap: 8,
-              padding: "8px 18px",
-              borderRadius: 10,
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              fontSize: 14,
+              fontWeight: 800,
+              color: "rgba(255,255,255,0.6)",
+              letterSpacing: 1.5,
+              textTransform: "uppercase",
+              paddingLeft: 12,
+              borderLeft: "1px solid rgba(255,255,255,0.15)",
+              marginLeft: 4,
             }}>
-              <span style={{
-                fontSize: 26,
-                fontWeight: 800,
-                color: "#fff",
-                fontFamily: "'JetBrains Mono', 'SF Mono', monospace",
-                lineHeight: 1,
-              }}>
-                {formatTotalHandicap(data.team.totalHandicap)}
-              </span>
-              <span style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: "rgba(255,255,255,0.55)",
-                letterSpacing: 2,
-              }}>
-                GOALS
-              </span>
+              {formatTotalHandicap(data.team.totalHandicap)} Goals
             </div>
           </div>
         )}
 
-        {/* Player cards or empty state */}
-        <div style={{ padding: "26px 44px 36px" }}>
-          {error && (
-            <div style={{
-              fontSize: 16,
-              fontWeight: 600,
-              color: "rgba(255,200,200,0.85)",
-              textAlign: "center",
-              padding: "60px 0",
-            }}>
-              {error}
-            </div>
-          )}
-          {!error && !hasAnyPlayer && (
-            <div style={{
-              fontSize: 18,
-              fontWeight: 600,
-              letterSpacing: 1,
-              color: "rgba(255,255,255,0.55)",
-              textAlign: "center",
-              padding: "60px 0",
-            }}>
-              No lineup set for this team
-            </div>
-          )}
-          {!error && hasAnyPlayer && (
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: 18,
-            }}>
-              {slots.map((p, i) => (
-                <PlayerCard key={p?.id ?? `slot-${i}`} player={p} slotNumber={i + 1} />
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Player cards / empty / error */}
+        {error && (
+          <div style={{
+            fontSize: 14,
+            fontWeight: 600,
+            color: "rgba(255,200,200,0.85)",
+            textAlign: "center",
+            padding: "40px 0",
+          }}>
+            {error}
+          </div>
+        )}
+        {!error && !hasAnyPlayer && (
+          <div style={{
+            fontSize: 14,
+            fontWeight: 600,
+            letterSpacing: 1,
+            color: "rgba(255,255,255,0.55)",
+            textAlign: "center",
+            padding: "40px 0",
+          }}>
+            No lineup set for this team
+          </div>
+        )}
+        {!error && hasAnyPlayer && (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: 12,
+          }}>
+            {slots.map((p, i) => (
+              <PlayerCard key={p?.id ?? `slot-${i}`} player={p} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

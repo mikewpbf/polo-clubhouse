@@ -1,0 +1,82 @@
+The Team Lineup broadcast graphic was built but doesn't match the visual 
+spec. The attached HTML mockup (lineup-graphic-v11.html) is the source of 
+truth — rebuild the lineup overlay to match it exactly when rendered with 
+real player data.
+
+FILE TO UPDATE
+artifacts/polo-manager/src/pages/broadcast/LineupOverlay.tsx
+
+CRITICAL FIXES from the current implementation:
+
+1. Panel size: 720px wide on a 1920px broadcast canvas. NOT full-screen. 
+   Same width as the existing full_stats overlay (StatsOverlay.tsx — 
+   verify against that file).
+
+2. Panel background: use the SAME gradient as StatsOverlay.tsx:
+     linear-gradient(180deg, rgba(12,12,16,0.82) 0%, rgba(18,18,24,0.86) 100%)
+   Do NOT use a solid color. The translucency is intentional.
+
+3. No position number badges on the headshots. Remove "No. 1" / "No. 2" / 
+   etc. — we don't use position numbers.
+
+4. No "Starting Lineup" subtitle in the header. Header is just the 
+   tournament name (e.g. "2026 U.S. OPEN POLO CHAMPIONSHIP®"), 16px 
+   fontWeight 800, letterSpacing 3px, uppercase, white, centered.
+
+5. Player card text alignment: left-aligned for player name, handicap 
+   line, and meta row. The two stat cells at the bottom of the card are 
+   individually centered (number centered above its wrapping label) so 
+   when "Tournament Goals" wraps to two lines, the number sits cleanly 
+   above the center.
+
+6. Handicap is a SMALL inline element. Format as "[N] GOALS" with the 
+   number at 16px fontWeight 800 and "GOALS" at 9px uppercase 
+   letterSpacing 1.5px muted gray. Do NOT render the number at 32px — 
+   it shouldn't dominate the card.
+
+7. Stat labels are FULL TEXT — "Tournament Goals" and "Avg per Match" — 
+   wrapped to two lines under the number. NOT abbreviations like 
+   "Tourn G" or "Avg / M".
+
+LAYOUT (top to bottom in the panel)
+- Header: tournament name only, centered.
+- Team identity row, centered with gap 14px: 56px white circular logo 
+  bubble (charcoal initials fallback), team name 30px fontWeight 800 
+  uppercase, vertical hairline divider, team handicap "[N] GOALS" 14px 
+  uppercase letterSpacing 1.5px muted.
+- Hairline border below the team row, then the player cards.
+- 4 player cards in a CSS grid, repeat(4, 1fr), gap 12px.
+
+PLAYER CARD STRUCTURE
+- Card background: rgba(255,255,255,0.04), border-radius 12, overflow 
+  hidden.
+- Headshot at top: aspect-ratio 4/5, full card width, object-fit cover. 
+  Fallback when headshot_url is null: gradient (#4a4a4e → #34343a) with 
+  player initials at 44px in muted white (rgba 0.35), letterSpacing 2px. 
+  Inset gradient at bottom of the headshot for legibility:
+    linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.4) 100%)
+  No badges of any kind on the headshot.
+- Card body padding 12px 12px 14px, content left-aligned, gap 6px:
+  • First name: 13px fontWeight 700 letterSpacing 0.5px uppercase 
+    color rgba(255,255,255,0.7)
+  • Last name: 17px fontWeight 800 letterSpacing 0.5px uppercase white
+  • Handicap line: small "[N] GOALS" inline as described above
+  • Meta row: "Age N · Home Club", 11px fontWeight 600 
+    color rgba(255,255,255,0.55)
+  • Hairline border, then 2-column stats grid (gap 8px, padding-top 10px):
+    Stat 1: Tournament Goals — value 16px fontWeight 800 white centered 
+    above the wrapping label.
+    Stat 2: Avg per Match — same styling.
+    Label format: 8px uppercase fontWeight 700 letterSpacing 1px 
+    line-height 1.2 max-width 64px color rgba(255,255,255,0.4).
+    Each stat individually centered (the cell is centered, not 
+    left-aligned).
+
+CONSTRAINTS
+- The attached mockup HTML wins. If anything in this prompt conflicts 
+  with the mockup, follow the mockup.
+- Do NOT change the API endpoint or data wiring — only the visual layer.
+- After changes, run pnpm run typecheck and existing tests.
+- Confirm visually by loading /broadcast/lineup/:matchId/home and 
+  /broadcast/lineup/:matchId/away on a match with a populated roster, 
+  comparing side-by-side to the attached mockup.

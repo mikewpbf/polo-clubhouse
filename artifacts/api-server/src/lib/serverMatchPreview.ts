@@ -145,31 +145,31 @@ export function buildMatchPreviewSvg(data: ServerPreviewSourceData): string {
   ${badge ? `
   <g transform="translate(${WIDTH / 2}, 110)">
     <rect x="-180" y="-46" width="360" height="76" rx="38" ry="38" fill="${accent}" opacity="0.92"/>
-    <text x="0" y="8" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="44" font-weight="700" fill="#ffffff" letter-spacing="6">${badge}</text>
+    <text x="0" y="8" text-anchor="middle" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="44" font-weight="700" fill="#ffffff" letter-spacing="6">${badge}</text>
   </g>` : ""}
 
-  <text x="${WIDTH / 2}" y="220" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="58" font-weight="700" fill="#ffffff">${headline}</text>
+  <text x="${WIDTH / 2}" y="220" text-anchor="middle" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="58" font-weight="700" fill="#ffffff">${headline}</text>
 
   <g transform="translate(${WIDTH / 4}, ${HEIGHT / 2 + 30})">
     <circle cx="0" cy="-100" r="180" fill="${homeBg}" stroke="rgba(255,255,255,0.25)" stroke-width="6"/>
-    <text x="0" y="-78" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="140" font-weight="800" fill="${homeText}">${homeInit}</text>
-    <text x="0" y="180" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="60" font-weight="700" fill="#ffffff">${homeName}</text>
+    <text x="0" y="-78" text-anchor="middle" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="140" font-weight="800" fill="${homeText}">${homeInit}</text>
+    <text x="0" y="180" text-anchor="middle" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="60" font-weight="700" fill="#ffffff">${homeName}</text>
   </g>
 
   <g transform="translate(${WIDTH / 2}, ${HEIGHT / 2 + 30})">
-    <text x="0" y="-60" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="120" font-weight="800" fill="rgba(255,255,255,0.55)">VS</text>
+    <text x="0" y="-60" text-anchor="middle" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="120" font-weight="800" fill="rgba(255,255,255,0.55)">VS</text>
     <line x1="0" y1="20" x2="0" y2="180" stroke="rgba(255,255,255,0.18)" stroke-width="4"/>
   </g>
 
   <g transform="translate(${(WIDTH * 3) / 4}, ${HEIGHT / 2 + 30})">
     <circle cx="0" cy="-100" r="180" fill="${awayBg}" stroke="rgba(255,255,255,0.25)" stroke-width="6"/>
-    <text x="0" y="-78" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="140" font-weight="800" fill="${awayText}">${awayInit}</text>
-    <text x="0" y="180" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="60" font-weight="700" fill="#ffffff">${awayName}</text>
+    <text x="0" y="-78" text-anchor="middle" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="140" font-weight="800" fill="${awayText}">${awayInit}</text>
+    <text x="0" y="180" text-anchor="middle" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="60" font-weight="700" fill="#ffffff">${awayName}</text>
   </g>
 
   <g transform="translate(${WIDTH / 2}, ${HEIGHT - 110})">
-    ${date || time ? `<text x="0" y="-20" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="42" font-weight="600" fill="#ffffff">${[date, time].filter(Boolean).join("  ·  ")}</text>` : ""}
-    ${location ? `<text x="0" y="34" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="32" font-weight="500" fill="rgba(255,255,255,0.75)">${location}</text>` : ""}
+    ${date || time ? `<text x="0" y="-20" text-anchor="middle" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="42" font-weight="600" fill="#ffffff">${[date, time].filter(Boolean).join("  ·  ")}</text>` : ""}
+    ${location ? `<text x="0" y="34" text-anchor="middle" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="32" font-weight="500" fill="rgba(255,255,255,0.75)">${location}</text>` : ""}
   </g>
 </svg>`;
 }
@@ -182,10 +182,23 @@ export function renderMatchPreviewPng(data: ServerPreviewSourceData): Buffer {
     background: "rgba(0,0,0,0)",
     fitTo: { mode: "width", value: WIDTH },
     font: {
-      // Disable on-disk font loading entirely — resvg falls back to
-      // its bundled Noto Sans, so renders are deterministic and the
-      // server doesn't need any system fonts installed.
-      loadSystemFonts: false,
+      // IMPORTANT: @resvg/resvg-js does NOT actually bundle a fallback
+      // font — with loadSystemFonts:false and no fontFiles, every <text>
+      // element silently renders to nothing, producing card images with
+      // colored shapes but no labels (and FB / iMessage refuse to use
+      // them as link-preview thumbnails). Replit's Linux base image
+      // ships DejaVu Sans at /usr/share/fonts/truetype/dejavu/, which
+      // is what we point at here. A plain `loadSystemFonts: true`
+      // would also work, but is slower (scans every system font dir on
+      // first render) and non-deterministic across host upgrades — so
+      // we explicitly load just the two TTF files we use, and fall
+      // back to system scanning only if those files aren't present.
+      loadSystemFonts: true,
+      defaultFontFamily: "DejaVu Sans",
+      fontFiles: [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+      ],
     },
   });
   return resvg.render().asPng();
@@ -257,16 +270,28 @@ async function loadMatchSourceData(matchId: string): Promise<ServerPreviewSource
 export async function generateAndStoreMatchPreview(matchId: string): Promise<boolean> {
   try {
     const source = await loadMatchSourceData(matchId);
-    if (!source) return false;
+    if (!source) {
+      logger.warn({ matchId }, "Match preview skipped: match not found");
+      return false;
+    }
     const png = renderMatchPreviewPng(source);
+    if (!png || png.length < 200) {
+      // resvg occasionally returns a tiny / empty buffer when font
+      // loading fails or the SVG silently mis-parses. Reject these so
+      // we don't poison R2 with a blank PNG that link-preview scrapers
+      // refuse to render.
+      logger.warn({ matchId, bytes: png?.length ?? 0 }, "Match preview render produced an empty PNG");
+      return false;
+    }
     const filePath = `match-previews/${matchId}.png`;
     const { url } = await objectStorage.uploadPublicObject(filePath, png, "image/png");
     await db.update(matchesTable)
       .set({ previewImageUrl: url, previewImageUpdatedAt: new Date() })
       .where(eq(matchesTable.id, matchId));
+    logger.info({ matchId, bytes: png.length }, "Generated server-side match preview");
     return true;
   } catch (err) {
-    logger.warn({ err, matchId }, "Failed to generate server-side match preview");
+    logger.error({ err, matchId }, "Failed to generate server-side match preview");
     return false;
   }
 }

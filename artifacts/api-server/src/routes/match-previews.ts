@@ -4,6 +4,7 @@ import { matchesTable, tournamentsTable, adminClubMembershipsTable } from "@work
 import { eq, isNull, or } from "drizzle-orm";
 import { requireAuth, isSuperAdmin } from "../lib/auth";
 import { ObjectStorageService } from "../lib/objectStorage";
+import { generateAndStoreMatchPreview } from "../lib/serverMatchPreview";
 
 const router: IRouter = Router();
 const objectStorage = new ObjectStorageService();
@@ -156,6 +157,44 @@ router.get(
       }
 
       res.json({ matchIds: filtered.slice(0, limit).map(r => r.id) });
+    } catch (e: any) {
+      res.status(500).json({ message: e.message });
+    }
+  },
+);
+
+// Force-regenerate the server-side fallback preview for every match in a
+// tournament. Used when the renderer code or fonts change and existing R2
+// PNGs need to be refreshed (otherwise the auto-backfill only re-renders
+// matches with `previewImageUrl IS NULL`, so the broken cached PNGs stay
+// in R2 forever). Authorized for super-admin or admin of the tournament's
+// club. Returns counts; never throws on individual failures so one bad
+// match doesn't abort the whole regen.
+router.post(
+  "/tournaments/:tournamentId/regenerate-match-previews",
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const tournamentId = String(req.params.tournamentId);
+      const [tournament] = await db.select().from(tournamentsTable).where(eq(tournamentsTable.id, tournamentId));
+      if (!tournament) { res.status(404).json({ message: "Tournament not found" }); return; }
+
+      if (!isSuperAdmin(req.user)) {
+        const memberships = await db.select().from(adminClubMembershipsTable)
+          .where(eq(adminClubMembershipsTable.userId, req.user!.id));
+        const ok = tournament.clubId && memberships.some(m => m.clubId === tournament.clubId);
+        if (!ok) { res.status(403).json({ message: "Not an admin of this tournament's club" }); return; }
+      }
+
+      const matches = await db.select({ id: matchesTable.id }).from(matchesTable)
+        .where(eq(matchesTable.tournamentId, tournamentId));
+
+      let ok = 0, failed = 0;
+      for (const m of matches) {
+        const success = await generateAndStoreMatchPreview(m.id);
+        if (success) ok++; else failed++;
+      }
+      res.json({ tournamentId, total: matches.length, regenerated: ok, failed });
     } catch (e: any) {
       res.status(500).json({ message: e.message });
     }

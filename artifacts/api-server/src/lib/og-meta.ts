@@ -23,6 +23,9 @@ interface OgData {
   title: string;
   description: string;
   image?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  imageType?: string; // e.g. "image/png"
   url: string;
   type?: string;
 }
@@ -32,21 +35,34 @@ function renderHtml(og: OgData): string {
   const d = escapeHtml(og.description);
   const u = escapeHtml(og.url);
   const img = og.image ? escapeHtml(og.image) : "";
+  // Declaring og:image:width / height / type / alt makes Facebook, iMessage,
+  // WhatsApp, LinkedIn, and others much more likely to render the thumbnail
+  // synchronously instead of falling back to the bare-domain card.
+  const imgMeta = img
+    ? `<meta property="og:image" content="${img}">
+<meta property="og:image:secure_url" content="${img}">
+${og.imageType ? `<meta property="og:image:type" content="${escapeHtml(og.imageType)}">` : ""}
+${og.imageWidth ? `<meta property="og:image:width" content="${og.imageWidth}">` : ""}
+${og.imageHeight ? `<meta property="og:image:height" content="${og.imageHeight}">` : ""}
+<meta property="og:image:alt" content="${t}">`
+    : "";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>${t}</title>
 <meta name="description" content="${d}">
+<meta property="og:site_name" content="Polo Clubhouse">
 <meta property="og:title" content="${t}">
 <meta property="og:description" content="${d}">
 <meta property="og:url" content="${u}">
 <meta property="og:type" content="${og.type || "website"}">
-${img ? `<meta property="og:image" content="${img}">` : ""}
+${imgMeta}
 <meta name="twitter:card" content="${img ? "summary_large_image" : "summary"}">
 <meta name="twitter:title" content="${t}">
 <meta name="twitter:description" content="${d}">
-${img ? `<meta name="twitter:image" content="${img}">` : ""}
+${img ? `<meta name="twitter:image" content="${img}">
+<meta name="twitter:image:alt" content="${t}">` : ""}
 </head>
 <body>
 <h1>${t}</h1>
@@ -205,11 +221,19 @@ async function buildOg(req: Request): Promise<OgData | null> {
     const description = descParts.join(" · ") || `${homeName} vs ${awayName}`;
 
     const previewImage = absolutePreviewUrl(req, match.previewImageUrl, match.previewImageUpdatedAt);
+    const finalImage = previewImage || home?.logoUrl || away?.logoUrl || fallbackImage;
+    // The server-rendered match preview PNG is always 1920x1080 (see
+    // serverMatchPreview.ts). Declare those dims so chat apps render the
+    // thumbnail without having to fetch the image to measure it.
+    const isPreviewImage = finalImage === previewImage;
     return {
       title,
       description,
       url: fullUrl,
-      image: previewImage || home?.logoUrl || away?.logoUrl || fallbackImage,
+      image: finalImage,
+      imageType: isPreviewImage ? "image/png" : undefined,
+      imageWidth: isPreviewImage ? 1920 : undefined,
+      imageHeight: isPreviewImage ? 1080 : undefined,
       type: "article",
     };
   }
@@ -276,11 +300,16 @@ async function buildOg(req: Request): Promise<OgData | null> {
     const description = descParts.join(" · ") || `${pageLabel} for ${homeName} vs ${awayName}`;
 
     const previewImage = absolutePreviewUrl(req, match.previewImageUrl, match.previewImageUpdatedAt);
+    const finalImage = previewImage || home?.logoUrl || away?.logoUrl || fallbackImage;
+    const isPreviewImage = finalImage === previewImage;
     return {
       title,
       description,
       url: fullUrl,
-      image: previewImage || home?.logoUrl || away?.logoUrl || fallbackImage,
+      image: finalImage,
+      imageType: isPreviewImage ? "image/png" : undefined,
+      imageWidth: isPreviewImage ? 1920 : undefined,
+      imageHeight: isPreviewImage ? 1080 : undefined,
       type: "website",
     };
   }

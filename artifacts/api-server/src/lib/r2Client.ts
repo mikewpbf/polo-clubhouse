@@ -45,6 +45,13 @@ export function getR2Client(): S3Client {
       secretAccessKey: cfg.secretAccessKey,
     },
     forcePathStyle: true,
+    // Cloudflare R2 does not support the `x-amz-checksum-mode` /
+    // `x-amz-sdk-checksum-algorithm` query params that AWS SDK v3 adds by
+    // default. When these are signed into a presigned GET URL, R2 returns
+    // 403 Forbidden because the canonical request it computes does not
+    // match. Force "WHEN_REQUIRED" so the SDK skips them on read/write.
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
   });
   return _client;
 }

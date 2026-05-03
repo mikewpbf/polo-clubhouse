@@ -37,8 +37,8 @@ const PANEL_STYLE: React.CSSProperties = {
   background: "linear-gradient(180deg, rgba(12,12,16,0.82) 0%, rgba(18,18,24,0.86) 100%)",
   borderRadius: 24,
   boxShadow: "0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 60px rgba(0,0,0,0.25)",
-  padding: "32px 48px 40px",
-  width: 820,
+  padding: "26px 36px 32px",
+  width: 900,
 };
 
 // Convert "#rrggbb" / "#rgb" to "r,g,b". Returns null if unparseable so callers
@@ -204,17 +204,17 @@ function PlayerCard({ player, teamRgb }: { player: LineupPlayer | null; teamRgb:
           bottom regardless of meta-row presence. This keeps the stat row
           aligned across all 4 cards even when one player is missing club/age. */}
       <div style={{
-        padding: "12px 12px 14px",
+        padding: "10px 11px 12px",
         display: "flex",
         flexDirection: "column",
         alignItems: "stretch",
         textAlign: "left",
-        gap: 6,
+        gap: 5,
         flex: 1,
       }}>
         {first && (
           <div style={{
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: 700,
             color: "rgba(255,255,255,0.7)",
             letterSpacing: 0.5,
@@ -225,10 +225,10 @@ function PlayerCard({ player, teamRgb }: { player: LineupPlayer | null; teamRgb:
           </div>
         )}
         <div style={{
-          fontSize: 17,
+          fontSize: 16,
           fontWeight: 800,
           color: "#fff",
-          letterSpacing: 0.5,
+          letterSpacing: 0.4,
           textTransform: "uppercase",
           lineHeight: 1.15,
           marginTop: first ? -4 : 0,
@@ -244,7 +244,7 @@ function PlayerCard({ player, teamRgb }: { player: LineupPlayer | null; teamRgb:
           paddingTop: 2,
         }}>
           <span style={{
-            fontSize: 16,
+            fontSize: 15,
             fontWeight: 800,
             color: "#fff",
             lineHeight: 1,
@@ -264,7 +264,7 @@ function PlayerCard({ player, teamRgb }: { player: LineupPlayer | null; teamRgb:
 
         {metaLine && (
           <div style={{
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: 600,
             color: "rgba(255,255,255,0.55)",
             letterSpacing: 0.3,
@@ -291,7 +291,7 @@ function PlayerCard({ player, teamRgb }: { player: LineupPlayer | null; teamRgb:
             textAlign: "center",
             gap: 2,
           }}>
-            <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", lineHeight: 1 }}>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", lineHeight: 1 }}>
               {player.tournamentGoals}
             </span>
             <span style={{
@@ -314,7 +314,7 @@ function PlayerCard({ player, teamRgb }: { player: LineupPlayer | null; teamRgb:
             textAlign: "center",
             gap: 2,
           }}>
-            <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", lineHeight: 1 }}>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", lineHeight: 1 }}>
               {formatAvg(player.avgGoalsPerMatch)}
             </span>
             <span style={{
@@ -442,14 +442,14 @@ export default function LineupOverlay(props: LineupOverlayProps = {}) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 14,
-            padding: "22px 0 24px",
+            gap: 12,
+            padding: "18px 0 20px",
             borderBottom: "1px solid rgba(255,255,255,0.08)",
-            marginBottom: 24,
+            marginBottom: 20,
           }}>
             <div style={{
-              width: 56,
-              height: 56,
+              width: 50,
+              height: 50,
               borderRadius: "50%",
               background: "#fff",
               border: "2px solid rgba(255,255,255,0.95)",
@@ -462,7 +462,7 @@ export default function LineupOverlay(props: LineupOverlayProps = {}) {
               <TeamLogoBubble team={data.team} />
             </div>
             <div style={{
-              fontSize: 30,
+              fontSize: 26,
               fontWeight: 800,
               color: "#fff",
               letterSpacing: 1,
@@ -471,7 +471,7 @@ export default function LineupOverlay(props: LineupOverlayProps = {}) {
               {data.team.name}
             </div>
             <div style={{
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: 800,
               color: "rgba(255,255,255,0.6)",
               letterSpacing: 1.5,
@@ -513,7 +513,7 @@ export default function LineupOverlay(props: LineupOverlayProps = {}) {
           <div style={{
             display: "grid",
             gridTemplateColumns: "repeat(4, 1fr)",
-            gap: 12,
+            gap: 10,
           }}>
             {slots.map((p, i) => (
               <PlayerCard key={p?.id ?? `slot-${i}`} player={p} teamRgb={teamRgb} />

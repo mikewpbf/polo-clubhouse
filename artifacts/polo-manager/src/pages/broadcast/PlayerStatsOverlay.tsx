@@ -7,6 +7,7 @@ interface PlayerStatsResponse {
     id: string;
     name: string;
     headshotUrl: string | null;
+    broadcastImageUrl: string | null;
     teamSide: "home" | "away" | null;
   };
   team: {
@@ -56,9 +57,22 @@ function formatAvg(value: number): string {
   return value.toFixed(1);
 }
 
-function PlayerHeadshot({ name, src }: { name: string; src: string | null }) {
-  const [failed, setFailed] = useState(false);
-  if (!src || failed) {
+function PlayerHeadshot({ name, broadcastSrc, headshotSrc }: {
+  name: string;
+  broadcastSrc: string | null;
+  headshotSrc: string | null;
+}) {
+  // Prefer the broadcast (AUX) cutout, fall back to the public headshot, then
+  // initials. Mirrors the fallback chain used by the lineup card.
+  const initialStage: "primary" | "fallback" | "initials" = broadcastSrc
+    ? "primary"
+    : headshotSrc
+    ? "fallback"
+    : "initials";
+  const [stage, setStage] = useState<"primary" | "fallback" | "initials">(initialStage);
+  const [src, setSrc] = useState<string | null>(broadcastSrc || headshotSrc);
+
+  if (stage === "initials" || !src) {
     return (
       <div style={{
         position: "absolute",
@@ -79,7 +93,15 @@ function PlayerHeadshot({ name, src }: { name: string; src: string | null }) {
     <img
       src={src}
       alt=""
-      onError={() => setFailed(true)}
+      onError={() => {
+        if (stage === "primary" && headshotSrc) {
+          setSrc(headshotSrc);
+          setStage("fallback");
+        } else {
+          setSrc(null);
+          setStage("initials");
+        }
+      }}
       style={{
         position: "absolute",
         inset: 0,
@@ -233,7 +255,11 @@ export default function PlayerStatsOverlay(props: PlayerStatsOverlayProps = {}) 
           boxShadow: "0 10px 24px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.06)",
           zIndex: 2,
         }}>
-          <PlayerHeadshot name={data.player.name} src={data.player.headshotUrl} />
+          <PlayerHeadshot
+            name={data.player.name}
+            broadcastSrc={data.player.broadcastImageUrl}
+            headshotSrc={data.player.headshotUrl}
+          />
           {/* Bottom legibility gradient */}
           <div style={{
             position: "absolute",

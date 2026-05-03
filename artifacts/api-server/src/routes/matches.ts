@@ -1439,8 +1439,9 @@ router.get("/matches/:matchId/lineup/:teamSide", async (req, res) => {
 
 // Broadcast surface: returns the per-player + per-tournament stat payload that
 // drives the Player Stats lower-third graphic. URL-gated only (no auth gate),
-// same posture as the scorebug endpoint. Intentionally exposes `headshotUrl`
-// (the public photo) but never `broadcastImageUrl`.
+// same posture as the scorebug endpoint. Exposes both `headshotUrl` (public
+// profile) and `broadcastImageUrl` (broadcast/AUX cutout) so the overlay can
+// prefer the AUX shot and fall back to the headshot when missing.
 router.get("/matches/:matchId/player-stats/:playerId", async (req, res) => {
   try {
     const matchId = String(req.params.matchId);
@@ -1575,6 +1576,7 @@ router.get("/matches/:matchId/player-stats/:playerId", async (req, res) => {
         id: player.id,
         name: player.name,
         headshotUrl: player.headshotUrl,
+        broadcastImageUrl: player.broadcastImageUrl,
         teamSide,
       },
       team: team ? {

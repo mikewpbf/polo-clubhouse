@@ -2292,6 +2292,9 @@ components:
           type: string
         shortName:
           type: string
+        scoreboardName:
+          type: string
+          nullable: true
         primaryColor:
           type: string
         handicap:
@@ -2304,6 +2307,9 @@ components:
           type: string
         logoUrl:
           type: string
+        jerseyImageUrl:
+          type: string
+          nullable: true
       required:
         - name
 
@@ -2314,6 +2320,9 @@ components:
           type: string
         shortName:
           type: string
+        scoreboardName:
+          type: string
+          nullable: true
         primaryColor:
           type: string
         handicap:
@@ -2326,6 +2335,9 @@ components:
           type: string
         logoUrl:
           type: string
+        jerseyImageUrl:
+          type: string
+          nullable: true
 
     Tournament:
       type: object
@@ -2522,6 +2534,12 @@ components:
           type: boolean
         isVisitingLeague:
           type: boolean
+        logoUrl:
+          type: string
+          nullable: true
+        jumbotronBgColor:
+          type: string
+          nullable: true
       required:
         - name
 
@@ -2558,6 +2576,12 @@ components:
           enum: [draft, published, in_progress, completed, archived]
         aiRecommendation:
           type: object
+        logoUrl:
+          type: string
+          nullable: true
+        jumbotronBgColor:
+          type: string
+          nullable: true
 
     TournamentTeamWithDetails:
       type: object

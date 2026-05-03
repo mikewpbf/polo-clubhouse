@@ -8,10 +8,13 @@
 export interface CreateTeamRequest {
     name: string;
     shortName?: string;
+    scoreboardName?: string | null;
     primaryColor?: string;
     handicap?: string;
     contactName?: string;
     contactPhone?: string;
     notes?: string;
+    logoUrl?: string;
+    jerseyImageUrl?: string | null;
 }
 //# sourceMappingURL=createTeamRequest.d.ts.map

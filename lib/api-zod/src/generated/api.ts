@@ -371,12 +371,14 @@ export const CreateTeamParams = zod.object({
 export const CreateTeamBody = zod.object({
   name: zod.string(),
   shortName: zod.string().optional(),
+  scoreboardName: zod.string().nullish(),
   primaryColor: zod.string().optional(),
   handicap: zod.string().optional(),
   contactName: zod.string().optional(),
   contactPhone: zod.string().optional(),
   notes: zod.string().optional(),
   logoUrl: zod.string().optional(),
+  jerseyImageUrl: zod.string().nullish(),
 });
 
 /**
@@ -423,12 +425,14 @@ export const UpdateTeamParams = zod.object({
 export const UpdateTeamBody = zod.object({
   name: zod.string().optional(),
   shortName: zod.string().optional(),
+  scoreboardName: zod.string().nullish(),
   primaryColor: zod.string().optional(),
   handicap: zod.string().optional(),
   contactName: zod.string().optional(),
   contactPhone: zod.string().optional(),
   notes: zod.string().optional(),
   logoUrl: zod.string().optional(),
+  jerseyImageUrl: zod.string().nullish(),
 });
 
 export const UpdateTeamResponse = zod.object({
@@ -520,6 +524,8 @@ export const CreateTournamentBody = zod.object({
   chukkerDurationMinutes: zod.number().optional(),
   hasThirdPlace: zod.boolean().optional(),
   isVisitingLeague: zod.boolean().optional(),
+  logoUrl: zod.string().nullish(),
+  jumbotronBgColor: zod.string().nullish(),
 });
 
 /**
@@ -788,6 +794,8 @@ export const UpdateTournamentBody = zod.object({
     .enum(["draft", "published", "in_progress", "completed", "archived"])
     .optional(),
   aiRecommendation: zod.object({}).passthrough().optional(),
+  logoUrl: zod.string().nullish(),
+  jumbotronBgColor: zod.string().nullish(),
 });
 
 export const UpdateTournamentResponse = zod.object({

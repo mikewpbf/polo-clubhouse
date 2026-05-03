@@ -23,5 +23,7 @@ export interface UpdateTournamentRequest {
     isVisitingLeague?: boolean;
     status?: UpdateTournamentRequestStatus;
     aiRecommendation?: UpdateTournamentRequestAiRecommendation;
+    logoUrl?: string | null;
+    jumbotronBgColor?: string | null;
 }
 //# sourceMappingURL=updateTournamentRequest.d.ts.map

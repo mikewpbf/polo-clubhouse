@@ -20,4 +20,6 @@ export interface CreateTournamentRequest {
   chukkerDurationMinutes?: number;
   hasThirdPlace?: boolean;
   isVisitingLeague?: boolean;
+  logoUrl?: string | null;
+  jumbotronBgColor?: string | null;
 }

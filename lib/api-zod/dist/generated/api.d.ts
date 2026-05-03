@@ -988,27 +988,36 @@ export declare const CreateTeamParams: zod.ZodObject<{
 export declare const CreateTeamBody: zod.ZodObject<{
     name: zod.ZodString;
     shortName: zod.ZodOptional<zod.ZodString>;
+    scoreboardName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     primaryColor: zod.ZodOptional<zod.ZodString>;
     handicap: zod.ZodOptional<zod.ZodString>;
     contactName: zod.ZodOptional<zod.ZodString>;
     contactPhone: zod.ZodOptional<zod.ZodString>;
     notes: zod.ZodOptional<zod.ZodString>;
+    logoUrl: zod.ZodOptional<zod.ZodString>;
+    jerseyImageUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
 }, "strip", zod.ZodTypeAny, {
     name: string;
+    logoUrl?: string | undefined;
     shortName?: string | undefined;
     primaryColor?: string | undefined;
     handicap?: string | undefined;
     contactName?: string | undefined;
     contactPhone?: string | undefined;
     notes?: string | undefined;
+    scoreboardName?: string | null | undefined;
+    jerseyImageUrl?: string | null | undefined;
 }, {
     name: string;
+    logoUrl?: string | undefined;
     shortName?: string | undefined;
     primaryColor?: string | undefined;
     handicap?: string | undefined;
     contactName?: string | undefined;
     contactPhone?: string | undefined;
     notes?: string | undefined;
+    scoreboardName?: string | null | undefined;
+    jerseyImageUrl?: string | null | undefined;
 }>;
 /**
  * @summary Get team details
@@ -1123,27 +1132,36 @@ export declare const UpdateTeamParams: zod.ZodObject<{
 export declare const UpdateTeamBody: zod.ZodObject<{
     name: zod.ZodOptional<zod.ZodString>;
     shortName: zod.ZodOptional<zod.ZodString>;
+    scoreboardName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     primaryColor: zod.ZodOptional<zod.ZodString>;
     handicap: zod.ZodOptional<zod.ZodString>;
     contactName: zod.ZodOptional<zod.ZodString>;
     contactPhone: zod.ZodOptional<zod.ZodString>;
     notes: zod.ZodOptional<zod.ZodString>;
+    logoUrl: zod.ZodOptional<zod.ZodString>;
+    jerseyImageUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
 }, "strip", zod.ZodTypeAny, {
     name?: string | undefined;
+    logoUrl?: string | undefined;
     shortName?: string | undefined;
     primaryColor?: string | undefined;
     handicap?: string | undefined;
     contactName?: string | undefined;
     contactPhone?: string | undefined;
     notes?: string | undefined;
+    scoreboardName?: string | null | undefined;
+    jerseyImageUrl?: string | null | undefined;
 }, {
     name?: string | undefined;
+    logoUrl?: string | undefined;
     shortName?: string | undefined;
     primaryColor?: string | undefined;
     handicap?: string | undefined;
     contactName?: string | undefined;
     contactPhone?: string | undefined;
     notes?: string | undefined;
+    scoreboardName?: string | null | undefined;
+    jerseyImageUrl?: string | null | undefined;
 }>;
 export declare const UpdateTeamResponse: zod.ZodObject<{
     id: zod.ZodString;
@@ -1338,8 +1356,11 @@ export declare const CreateTournamentBody: zod.ZodObject<{
     chukkerDurationMinutes: zod.ZodOptional<zod.ZodNumber>;
     hasThirdPlace: zod.ZodOptional<zod.ZodBoolean>;
     isVisitingLeague: zod.ZodOptional<zod.ZodBoolean>;
+    logoUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    jumbotronBgColor: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
 }, "strip", zod.ZodTypeAny, {
     name: string;
+    logoUrl?: string | null | undefined;
     format?: "round_robin" | "single_elim" | "double_elim" | "group_knockout" | "swiss" | undefined;
     handicapLevel?: string | undefined;
     startDate?: string | undefined;
@@ -1351,8 +1372,10 @@ export declare const CreateTournamentBody: zod.ZodObject<{
     chukkerDurationMinutes?: number | undefined;
     hasThirdPlace?: boolean | undefined;
     isVisitingLeague?: boolean | undefined;
+    jumbotronBgColor?: string | null | undefined;
 }, {
     name: string;
+    logoUrl?: string | null | undefined;
     format?: "round_robin" | "single_elim" | "double_elim" | "group_knockout" | "swiss" | undefined;
     handicapLevel?: string | undefined;
     startDate?: string | undefined;
@@ -1364,6 +1387,7 @@ export declare const CreateTournamentBody: zod.ZodObject<{
     chukkerDurationMinutes?: number | undefined;
     hasThirdPlace?: boolean | undefined;
     isVisitingLeague?: boolean | undefined;
+    jumbotronBgColor?: string | null | undefined;
 }>;
 /**
  * @summary List all public tournaments
@@ -1747,6 +1771,8 @@ export declare const GetTournamentResponse: zod.ZodObject<{
         bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
         isLocked: zod.ZodBoolean;
         notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+        broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
         homeTeam: zod.ZodOptional<zod.ZodObject<{
             id: zod.ZodString;
             clubId: zod.ZodString;
@@ -1886,6 +1912,18 @@ export declare const GetTournamentResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -1911,16 +1949,6 @@ export declare const GetTournamentResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -1947,6 +1975,18 @@ export declare const GetTournamentResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -1972,16 +2012,6 @@ export declare const GetTournamentResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -2076,6 +2106,18 @@ export declare const GetTournamentResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -2101,16 +2143,6 @@ export declare const GetTournamentResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -2200,6 +2232,18 @@ export declare const GetTournamentResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -2225,16 +2269,6 @@ export declare const GetTournamentResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -2293,9 +2327,12 @@ export declare const UpdateTournamentBody: zod.ZodObject<{
     isVisitingLeague: zod.ZodOptional<zod.ZodBoolean>;
     status: zod.ZodOptional<zod.ZodEnum<["draft", "published", "in_progress", "completed", "archived"]>>;
     aiRecommendation: zod.ZodOptional<zod.ZodObject<{}, "passthrough", zod.ZodTypeAny, zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough">, zod.objectInputType<{}, zod.ZodTypeAny, "passthrough">>>;
+    logoUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    jumbotronBgColor: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
 }, "strip", zod.ZodTypeAny, {
     status?: "draft" | "published" | "in_progress" | "completed" | "archived" | undefined;
     name?: string | undefined;
+    logoUrl?: string | null | undefined;
     format?: "round_robin" | "single_elim" | "double_elim" | "group_knockout" | "swiss" | undefined;
     handicapLevel?: string | undefined;
     startDate?: string | undefined;
@@ -2308,9 +2345,11 @@ export declare const UpdateTournamentBody: zod.ZodObject<{
     hasThirdPlace?: boolean | undefined;
     isVisitingLeague?: boolean | undefined;
     aiRecommendation?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | undefined;
+    jumbotronBgColor?: string | null | undefined;
 }, {
     status?: "draft" | "published" | "in_progress" | "completed" | "archived" | undefined;
     name?: string | undefined;
+    logoUrl?: string | null | undefined;
     format?: "round_robin" | "single_elim" | "double_elim" | "group_knockout" | "swiss" | undefined;
     handicapLevel?: string | undefined;
     startDate?: string | undefined;
@@ -2323,6 +2362,7 @@ export declare const UpdateTournamentBody: zod.ZodObject<{
     hasThirdPlace?: boolean | undefined;
     isVisitingLeague?: boolean | undefined;
     aiRecommendation?: zod.objectInputType<{}, zod.ZodTypeAny, "passthrough"> | undefined;
+    jumbotronBgColor?: string | null | undefined;
 }>;
 export declare const UpdateTournamentResponse: zod.ZodObject<{
     id: zod.ZodString;
@@ -3086,6 +3126,8 @@ export declare const ListMatchesResponseItem: zod.ZodObject<{
     bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     isLocked: zod.ZodBoolean;
     notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+    broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     homeTeam: zod.ZodOptional<zod.ZodObject<{
         id: zod.ZodString;
         clubId: zod.ZodString;
@@ -3225,6 +3267,18 @@ export declare const ListMatchesResponseItem: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -3250,16 +3304,6 @@ export declare const ListMatchesResponseItem: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -3286,6 +3330,18 @@ export declare const ListMatchesResponseItem: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -3311,16 +3367,6 @@ export declare const ListMatchesResponseItem: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -3348,6 +3394,8 @@ export declare const ListMatchesResponse: zod.ZodArray<zod.ZodObject<{
     bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     isLocked: zod.ZodBoolean;
     notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+    broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     homeTeam: zod.ZodOptional<zod.ZodObject<{
         id: zod.ZodString;
         clubId: zod.ZodString;
@@ -3487,6 +3535,18 @@ export declare const ListMatchesResponse: zod.ZodArray<zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -3512,16 +3572,6 @@ export declare const ListMatchesResponse: zod.ZodArray<zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -3548,6 +3598,18 @@ export declare const ListMatchesResponse: zod.ZodArray<zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -3573,16 +3635,6 @@ export declare const ListMatchesResponse: zod.ZodArray<zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -3621,6 +3673,8 @@ export declare const GenerateScheduleResponse: zod.ZodObject<{
         bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
         isLocked: zod.ZodBoolean;
         notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+        broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
         homeTeam: zod.ZodOptional<zod.ZodObject<{
             id: zod.ZodString;
             clubId: zod.ZodString;
@@ -3760,6 +3814,18 @@ export declare const GenerateScheduleResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -3785,16 +3851,6 @@ export declare const GenerateScheduleResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -3821,6 +3877,18 @@ export declare const GenerateScheduleResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -3846,16 +3914,6 @@ export declare const GenerateScheduleResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -3894,6 +3952,18 @@ export declare const GenerateScheduleResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -3919,16 +3989,6 @@ export declare const GenerateScheduleResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -3961,6 +4021,18 @@ export declare const GenerateScheduleResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -3986,16 +4058,6 @@ export declare const GenerateScheduleResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -4162,19 +4224,29 @@ export declare const GetMatchResponse: zod.ZodObject<{
     events: zod.ZodArray<zod.ZodObject<{
         id: zod.ZodString;
         matchId: zod.ZodString;
-        eventType: zod.ZodEnum<["goal", "score_correction", "chukker_start", "chukker_end", "match_start", "match_end", "clock_start", "clock_pause"]>;
+        eventType: zod.ZodEnum<["goal", "score_correction", "chukker_start", "chukker_end", "match_start", "match_end", "clock_start", "clock_pause", "penalty", "horse_change", "safety", "injury_timeout", "bowl_in", "knock_in", "foul", "penalty_goal", "shot_on_goal", "penalty_in", "penalty_out", "throw_in_won", "foul_committed", "fouls_won"]>;
         teamId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        playerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        playerName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        distance: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["20", "30", "40"]>>>;
+        severity: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["1", "2", "3", "4", "5a", "5b"]>>>;
         chukker: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
         clockSeconds: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
         scoreSnapshot: zod.ZodOptional<zod.ZodNullable<zod.ZodObject<{}, "passthrough", zod.ZodTypeAny, zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough">, zod.objectInputType<{}, zod.ZodTypeAny, "passthrough">>>>;
+        description: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
         createdBy: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
         createdAt: zod.ZodOptional<zod.ZodDate>;
     }, "strip", zod.ZodTypeAny, {
         id: string;
         matchId: string;
-        eventType: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause";
+        eventType: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause" | "penalty" | "horse_change" | "safety" | "injury_timeout" | "bowl_in" | "knock_in" | "foul" | "penalty_goal" | "shot_on_goal" | "penalty_in" | "penalty_out" | "throw_in_won" | "foul_committed" | "fouls_won";
         teamId?: string | null | undefined;
+        description?: string | null | undefined;
         createdAt?: Date | undefined;
+        playerId?: string | null | undefined;
+        playerName?: string | null | undefined;
+        distance?: "20" | "30" | "40" | null | undefined;
+        severity?: "1" | "2" | "3" | "4" | "5a" | "5b" | null | undefined;
         chukker?: number | null | undefined;
         clockSeconds?: number | null | undefined;
         scoreSnapshot?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
@@ -4182,14 +4254,25 @@ export declare const GetMatchResponse: zod.ZodObject<{
     }, {
         id: string;
         matchId: string;
-        eventType: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause";
+        eventType: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause" | "penalty" | "horse_change" | "safety" | "injury_timeout" | "bowl_in" | "knock_in" | "foul" | "penalty_goal" | "shot_on_goal" | "penalty_in" | "penalty_out" | "throw_in_won" | "foul_committed" | "fouls_won";
         teamId?: string | null | undefined;
+        description?: string | null | undefined;
         createdAt?: Date | undefined;
+        playerId?: string | null | undefined;
+        playerName?: string | null | undefined;
+        distance?: "20" | "30" | "40" | null | undefined;
+        severity?: "1" | "2" | "3" | "4" | "5a" | "5b" | null | undefined;
         chukker?: number | null | undefined;
         clockSeconds?: number | null | undefined;
         scoreSnapshot?: zod.objectInputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
         createdBy?: string | null | undefined;
     }>, "many">;
+    streamStartedAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    scoringLocation: zod.ZodEnum<["studio", "field"]>;
+    broadcastOffsetSeconds: zod.ZodNumber;
+    broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+    broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    canAdminMatch: zod.ZodOptional<zod.ZodBoolean>;
 }, "strip", zod.ZodTypeAny, {
     status: "scheduled" | "live" | "halftime" | "final" | "postponed" | "cancelled";
     id: string;
@@ -4203,14 +4286,21 @@ export declare const GetMatchResponse: zod.ZodObject<{
     events: {
         id: string;
         matchId: string;
-        eventType: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause";
+        eventType: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause" | "penalty" | "horse_change" | "safety" | "injury_timeout" | "bowl_in" | "knock_in" | "foul" | "penalty_goal" | "shot_on_goal" | "penalty_in" | "penalty_out" | "throw_in_won" | "foul_committed" | "fouls_won";
         teamId?: string | null | undefined;
+        description?: string | null | undefined;
         createdAt?: Date | undefined;
+        playerId?: string | null | undefined;
+        playerName?: string | null | undefined;
+        distance?: "20" | "30" | "40" | null | undefined;
+        severity?: "1" | "2" | "3" | "4" | "5a" | "5b" | null | undefined;
         chukker?: number | null | undefined;
         clockSeconds?: number | null | undefined;
         scoreSnapshot?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
         createdBy?: string | null | undefined;
     }[];
+    scoringLocation: "field" | "studio";
+    broadcastOffsetSeconds: number;
     fieldId?: string | null | undefined;
     notes?: string | null | undefined;
     homeTeamId?: string | null | undefined;
@@ -4219,6 +4309,18 @@ export declare const GetMatchResponse: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -4245,16 +4347,6 @@ export declare const GetMatchResponse: zod.ZodObject<{
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
     } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
-    } | undefined;
     tournament?: {
         id: string;
         clubId: string;
@@ -4262,6 +4354,8 @@ export declare const GetMatchResponse: zod.ZodObject<{
         name: string;
         chukkersPerMatch: number;
     } | undefined;
+    streamStartedAt?: Date | null | undefined;
+    canAdminMatch?: boolean | undefined;
 }, {
     status: "scheduled" | "live" | "halftime" | "final" | "postponed" | "cancelled";
     id: string;
@@ -4275,14 +4369,21 @@ export declare const GetMatchResponse: zod.ZodObject<{
     events: {
         id: string;
         matchId: string;
-        eventType: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause";
+        eventType: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause" | "penalty" | "horse_change" | "safety" | "injury_timeout" | "bowl_in" | "knock_in" | "foul" | "penalty_goal" | "shot_on_goal" | "penalty_in" | "penalty_out" | "throw_in_won" | "foul_committed" | "fouls_won";
         teamId?: string | null | undefined;
+        description?: string | null | undefined;
         createdAt?: Date | undefined;
+        playerId?: string | null | undefined;
+        playerName?: string | null | undefined;
+        distance?: "20" | "30" | "40" | null | undefined;
+        severity?: "1" | "2" | "3" | "4" | "5a" | "5b" | null | undefined;
         chukker?: number | null | undefined;
         clockSeconds?: number | null | undefined;
         scoreSnapshot?: zod.objectInputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
         createdBy?: string | null | undefined;
     }[];
+    scoringLocation: "field" | "studio";
+    broadcastOffsetSeconds: number;
     fieldId?: string | null | undefined;
     notes?: string | null | undefined;
     homeTeamId?: string | null | undefined;
@@ -4291,6 +4392,18 @@ export declare const GetMatchResponse: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -4317,16 +4430,6 @@ export declare const GetMatchResponse: zod.ZodObject<{
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
     } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
-    } | undefined;
     tournament?: {
         id: string;
         clubId: string;
@@ -4334,6 +4437,8 @@ export declare const GetMatchResponse: zod.ZodObject<{
         name: string;
         chukkersPerMatch: number;
     } | undefined;
+    streamStartedAt?: Date | null | undefined;
+    canAdminMatch?: boolean | undefined;
 }>;
 /**
  * @summary Update match
@@ -4353,6 +4458,9 @@ export declare const UpdateMatchBody: zod.ZodObject<{
     round: zod.ZodOptional<zod.ZodString>;
     isLocked: zod.ZodOptional<zod.ZodBoolean>;
     notes: zod.ZodOptional<zod.ZodString>;
+    streamStartedAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    scoringLocation: zod.ZodOptional<zod.ZodEnum<["studio", "field"]>>;
+    broadcastOffsetSeconds: zod.ZodOptional<zod.ZodNumber>;
 }, "strip", zod.ZodTypeAny, {
     fieldId?: string | undefined;
     notes?: string | undefined;
@@ -4361,6 +4469,9 @@ export declare const UpdateMatchBody: zod.ZodObject<{
     scheduledAt?: Date | undefined;
     round?: string | undefined;
     isLocked?: boolean | undefined;
+    streamStartedAt?: Date | null | undefined;
+    scoringLocation?: "field" | "studio" | undefined;
+    broadcastOffsetSeconds?: number | undefined;
 }, {
     fieldId?: string | undefined;
     notes?: string | undefined;
@@ -4369,6 +4480,9 @@ export declare const UpdateMatchBody: zod.ZodObject<{
     scheduledAt?: Date | undefined;
     round?: string | undefined;
     isLocked?: boolean | undefined;
+    streamStartedAt?: Date | null | undefined;
+    scoringLocation?: "field" | "studio" | undefined;
+    broadcastOffsetSeconds?: number | undefined;
 }>;
 export declare const UpdateMatchResponse: zod.ZodObject<{
     id: zod.ZodString;
@@ -4388,6 +4502,8 @@ export declare const UpdateMatchResponse: zod.ZodObject<{
     bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     isLocked: zod.ZodBoolean;
     notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+    broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     homeTeam: zod.ZodOptional<zod.ZodObject<{
         id: zod.ZodString;
         clubId: zod.ZodString;
@@ -4527,6 +4643,18 @@ export declare const UpdateMatchResponse: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -4552,16 +4680,6 @@ export declare const UpdateMatchResponse: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -4588,6 +4706,18 @@ export declare const UpdateMatchResponse: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -4613,16 +4743,6 @@ export declare const UpdateMatchResponse: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -4670,6 +4790,8 @@ export declare const UpdateMatchScoreResponse: zod.ZodObject<{
     bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     isLocked: zod.ZodBoolean;
     notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+    broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     homeTeam: zod.ZodOptional<zod.ZodObject<{
         id: zod.ZodString;
         clubId: zod.ZodString;
@@ -4809,6 +4931,18 @@ export declare const UpdateMatchScoreResponse: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -4834,16 +4968,6 @@ export declare const UpdateMatchScoreResponse: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -4870,6 +4994,18 @@ export declare const UpdateMatchScoreResponse: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -4895,16 +5031,6 @@ export declare const UpdateMatchScoreResponse: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -4949,6 +5075,8 @@ export declare const UpdateMatchClockResponse: zod.ZodObject<{
     bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     isLocked: zod.ZodBoolean;
     notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+    broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     homeTeam: zod.ZodOptional<zod.ZodObject<{
         id: zod.ZodString;
         clubId: zod.ZodString;
@@ -5088,6 +5216,18 @@ export declare const UpdateMatchClockResponse: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -5113,16 +5253,6 @@ export declare const UpdateMatchClockResponse: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -5149,6 +5279,18 @@ export declare const UpdateMatchClockResponse: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -5174,16 +5316,6 @@ export declare const UpdateMatchClockResponse: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -5228,6 +5360,8 @@ export declare const UpdateMatchStatusResponse: zod.ZodObject<{
     bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     isLocked: zod.ZodBoolean;
     notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+    broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     homeTeam: zod.ZodOptional<zod.ZodObject<{
         id: zod.ZodString;
         clubId: zod.ZodString;
@@ -5367,6 +5501,18 @@ export declare const UpdateMatchStatusResponse: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -5392,16 +5538,6 @@ export declare const UpdateMatchStatusResponse: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -5428,6 +5564,18 @@ export declare const UpdateMatchStatusResponse: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -5453,16 +5601,6 @@ export declare const UpdateMatchStatusResponse: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -5500,6 +5638,8 @@ export declare const AdvanceChukkerResponse: zod.ZodObject<{
     bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     isLocked: zod.ZodBoolean;
     notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+    broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     homeTeam: zod.ZodOptional<zod.ZodObject<{
         id: zod.ZodString;
         clubId: zod.ZodString;
@@ -5639,6 +5779,18 @@ export declare const AdvanceChukkerResponse: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -5664,16 +5816,6 @@ export declare const AdvanceChukkerResponse: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -5700,6 +5842,18 @@ export declare const AdvanceChukkerResponse: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -5726,16 +5880,6 @@ export declare const AdvanceChukkerResponse: zod.ZodObject<{
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
     } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
-    } | undefined;
     tournament?: {
         id: string;
         clubId: string;
@@ -5743,6 +5887,45 @@ export declare const AdvanceChukkerResponse: zod.ZodObject<{
         name: string;
         chukkersPerMatch: number;
     } | undefined;
+}>;
+/**
+ * @summary Realign the YouTube stream anchor for this match (admin only)
+ */
+export declare const SyncMatchAnchorParams: zod.ZodObject<{
+    matchId: zod.ZodString;
+}, "strip", zod.ZodTypeAny, {
+    matchId: string;
+}, {
+    matchId: string;
+}>;
+export declare const SyncMatchAnchorBody: zod.ZodObject<{
+    mode: zod.ZodEnum<["event", "nudge", "restore"]>;
+    eventId: zod.ZodOptional<zod.ZodString>;
+    videoSeconds: zod.ZodOptional<zod.ZodNumber>;
+    shiftSeconds: zod.ZodOptional<zod.ZodNumber>;
+    restoreToIso: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+}, "strip", zod.ZodTypeAny, {
+    mode: "event" | "nudge" | "restore";
+    eventId?: string | undefined;
+    videoSeconds?: number | undefined;
+    shiftSeconds?: number | undefined;
+    restoreToIso?: string | null | undefined;
+}, {
+    mode: "event" | "nudge" | "restore";
+    eventId?: string | undefined;
+    videoSeconds?: number | undefined;
+    shiftSeconds?: number | undefined;
+    restoreToIso?: string | null | undefined;
+}>;
+export declare const SyncMatchAnchorResponse: zod.ZodObject<{
+    streamStartedAt: zod.ZodNullable<zod.ZodDate>;
+    previousStreamStartedAt: zod.ZodNullable<zod.ZodDate>;
+}, "strip", zod.ZodTypeAny, {
+    streamStartedAt: Date | null;
+    previousStreamStartedAt: Date | null;
+}, {
+    streamStartedAt: Date | null;
+    previousStreamStartedAt: Date | null;
 }>;
 /**
  * @summary List match events
@@ -5757,19 +5940,29 @@ export declare const ListMatchEventsParams: zod.ZodObject<{
 export declare const ListMatchEventsResponseItem: zod.ZodObject<{
     id: zod.ZodString;
     matchId: zod.ZodString;
-    eventType: zod.ZodEnum<["goal", "score_correction", "chukker_start", "chukker_end", "match_start", "match_end", "clock_start", "clock_pause"]>;
+    eventType: zod.ZodEnum<["goal", "score_correction", "chukker_start", "chukker_end", "match_start", "match_end", "clock_start", "clock_pause", "penalty", "horse_change", "safety", "injury_timeout", "bowl_in", "knock_in", "foul", "penalty_goal", "shot_on_goal", "penalty_in", "penalty_out", "throw_in_won", "foul_committed", "fouls_won"]>;
     teamId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    playerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    playerName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    distance: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["20", "30", "40"]>>>;
+    severity: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["1", "2", "3", "4", "5a", "5b"]>>>;
     chukker: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     clockSeconds: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     scoreSnapshot: zod.ZodOptional<zod.ZodNullable<zod.ZodObject<{}, "passthrough", zod.ZodTypeAny, zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough">, zod.objectInputType<{}, zod.ZodTypeAny, "passthrough">>>>;
+    description: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     createdBy: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     createdAt: zod.ZodOptional<zod.ZodDate>;
 }, "strip", zod.ZodTypeAny, {
     id: string;
     matchId: string;
-    eventType: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause";
+    eventType: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause" | "penalty" | "horse_change" | "safety" | "injury_timeout" | "bowl_in" | "knock_in" | "foul" | "penalty_goal" | "shot_on_goal" | "penalty_in" | "penalty_out" | "throw_in_won" | "foul_committed" | "fouls_won";
     teamId?: string | null | undefined;
+    description?: string | null | undefined;
     createdAt?: Date | undefined;
+    playerId?: string | null | undefined;
+    playerName?: string | null | undefined;
+    distance?: "20" | "30" | "40" | null | undefined;
+    severity?: "1" | "2" | "3" | "4" | "5a" | "5b" | null | undefined;
     chukker?: number | null | undefined;
     clockSeconds?: number | null | undefined;
     scoreSnapshot?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
@@ -5777,9 +5970,14 @@ export declare const ListMatchEventsResponseItem: zod.ZodObject<{
 }, {
     id: string;
     matchId: string;
-    eventType: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause";
+    eventType: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause" | "penalty" | "horse_change" | "safety" | "injury_timeout" | "bowl_in" | "knock_in" | "foul" | "penalty_goal" | "shot_on_goal" | "penalty_in" | "penalty_out" | "throw_in_won" | "foul_committed" | "fouls_won";
     teamId?: string | null | undefined;
+    description?: string | null | undefined;
     createdAt?: Date | undefined;
+    playerId?: string | null | undefined;
+    playerName?: string | null | undefined;
+    distance?: "20" | "30" | "40" | null | undefined;
+    severity?: "1" | "2" | "3" | "4" | "5a" | "5b" | null | undefined;
     chukker?: number | null | undefined;
     clockSeconds?: number | null | undefined;
     scoreSnapshot?: zod.objectInputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
@@ -5788,19 +5986,29 @@ export declare const ListMatchEventsResponseItem: zod.ZodObject<{
 export declare const ListMatchEventsResponse: zod.ZodArray<zod.ZodObject<{
     id: zod.ZodString;
     matchId: zod.ZodString;
-    eventType: zod.ZodEnum<["goal", "score_correction", "chukker_start", "chukker_end", "match_start", "match_end", "clock_start", "clock_pause"]>;
+    eventType: zod.ZodEnum<["goal", "score_correction", "chukker_start", "chukker_end", "match_start", "match_end", "clock_start", "clock_pause", "penalty", "horse_change", "safety", "injury_timeout", "bowl_in", "knock_in", "foul", "penalty_goal", "shot_on_goal", "penalty_in", "penalty_out", "throw_in_won", "foul_committed", "fouls_won"]>;
     teamId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    playerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    playerName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    distance: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["20", "30", "40"]>>>;
+    severity: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["1", "2", "3", "4", "5a", "5b"]>>>;
     chukker: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     clockSeconds: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     scoreSnapshot: zod.ZodOptional<zod.ZodNullable<zod.ZodObject<{}, "passthrough", zod.ZodTypeAny, zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough">, zod.objectInputType<{}, zod.ZodTypeAny, "passthrough">>>>;
+    description: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     createdBy: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     createdAt: zod.ZodOptional<zod.ZodDate>;
 }, "strip", zod.ZodTypeAny, {
     id: string;
     matchId: string;
-    eventType: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause";
+    eventType: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause" | "penalty" | "horse_change" | "safety" | "injury_timeout" | "bowl_in" | "knock_in" | "foul" | "penalty_goal" | "shot_on_goal" | "penalty_in" | "penalty_out" | "throw_in_won" | "foul_committed" | "fouls_won";
     teamId?: string | null | undefined;
+    description?: string | null | undefined;
     createdAt?: Date | undefined;
+    playerId?: string | null | undefined;
+    playerName?: string | null | undefined;
+    distance?: "20" | "30" | "40" | null | undefined;
+    severity?: "1" | "2" | "3" | "4" | "5a" | "5b" | null | undefined;
     chukker?: number | null | undefined;
     clockSeconds?: number | null | undefined;
     scoreSnapshot?: zod.objectOutputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
@@ -5808,14 +6016,409 @@ export declare const ListMatchEventsResponse: zod.ZodArray<zod.ZodObject<{
 }, {
     id: string;
     matchId: string;
-    eventType: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause";
+    eventType: "goal" | "score_correction" | "chukker_start" | "chukker_end" | "match_start" | "match_end" | "clock_start" | "clock_pause" | "penalty" | "horse_change" | "safety" | "injury_timeout" | "bowl_in" | "knock_in" | "foul" | "penalty_goal" | "shot_on_goal" | "penalty_in" | "penalty_out" | "throw_in_won" | "foul_committed" | "fouls_won";
     teamId?: string | null | undefined;
+    description?: string | null | undefined;
     createdAt?: Date | undefined;
+    playerId?: string | null | undefined;
+    playerName?: string | null | undefined;
+    distance?: "20" | "30" | "40" | null | undefined;
+    severity?: "1" | "2" | "3" | "4" | "5a" | "5b" | null | undefined;
     chukker?: number | null | undefined;
     clockSeconds?: number | null | undefined;
     scoreSnapshot?: zod.objectInputType<{}, zod.ZodTypeAny, "passthrough"> | null | undefined;
     createdBy?: string | null | undefined;
 }>, "many">;
+/**
+ * @summary List share links for a match (admin only)
+ */
+export declare const ListMatchShareLinksParams: zod.ZodObject<{
+    matchId: zod.ZodString;
+}, "strip", zod.ZodTypeAny, {
+    matchId: string;
+}, {
+    matchId: string;
+}>;
+export declare const ListMatchShareLinksResponseItem: zod.ZodObject<{
+    id: zod.ZodString;
+    matchId: zod.ZodString;
+    pageType: zod.ZodEnum<["stats", "gfx"]>;
+    token: zod.ZodString;
+    createdAt: zod.ZodDate;
+    expiresAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    revokedAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    active: zod.ZodBoolean;
+}, "strip", zod.ZodTypeAny, {
+    id: string;
+    token: string;
+    createdAt: Date;
+    active: boolean;
+    matchId: string;
+    pageType: "stats" | "gfx";
+    expiresAt?: Date | null | undefined;
+    revokedAt?: Date | null | undefined;
+}, {
+    id: string;
+    token: string;
+    createdAt: Date;
+    active: boolean;
+    matchId: string;
+    pageType: "stats" | "gfx";
+    expiresAt?: Date | null | undefined;
+    revokedAt?: Date | null | undefined;
+}>;
+export declare const ListMatchShareLinksResponse: zod.ZodArray<zod.ZodObject<{
+    id: zod.ZodString;
+    matchId: zod.ZodString;
+    pageType: zod.ZodEnum<["stats", "gfx"]>;
+    token: zod.ZodString;
+    createdAt: zod.ZodDate;
+    expiresAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    revokedAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    active: zod.ZodBoolean;
+}, "strip", zod.ZodTypeAny, {
+    id: string;
+    token: string;
+    createdAt: Date;
+    active: boolean;
+    matchId: string;
+    pageType: "stats" | "gfx";
+    expiresAt?: Date | null | undefined;
+    revokedAt?: Date | null | undefined;
+}, {
+    id: string;
+    token: string;
+    createdAt: Date;
+    active: boolean;
+    matchId: string;
+    pageType: "stats" | "gfx";
+    expiresAt?: Date | null | undefined;
+    revokedAt?: Date | null | undefined;
+}>, "many">;
+/**
+ * Auto-revokes the previous active link of the same page type before issuing a new one.
+ * @summary Create (or regenerate) a share link
+ */
+export declare const CreateMatchShareLinkParams: zod.ZodObject<{
+    matchId: zod.ZodString;
+}, "strip", zod.ZodTypeAny, {
+    matchId: string;
+}, {
+    matchId: string;
+}>;
+export declare const CreateMatchShareLinkBody: zod.ZodObject<{
+    pageType: zod.ZodEnum<["stats", "gfx"]>;
+}, "strip", zod.ZodTypeAny, {
+    pageType: "stats" | "gfx";
+}, {
+    pageType: "stats" | "gfx";
+}>;
+/**
+ * @summary Revoke a share link
+ */
+export declare const RevokeMatchShareLinkParams: zod.ZodObject<{
+    matchId: zod.ZodString;
+    linkId: zod.ZodString;
+}, "strip", zod.ZodTypeAny, {
+    matchId: string;
+    linkId: string;
+}, {
+    matchId: string;
+    linkId: string;
+}>;
+export declare const RevokeMatchShareLinkResponse: zod.ZodObject<{
+    message: zod.ZodOptional<zod.ZodString>;
+}, "strip", zod.ZodTypeAny, {
+    message?: string | undefined;
+}, {
+    message?: string | undefined;
+}>;
+/**
+ * Returns matchId and pageType for valid tokens. Returns reason codes (not_found, revoked, expired, match_missing) on failure.
+ * @summary Resolve a public share token
+ */
+export declare const ResolveShareTokenParams: zod.ZodObject<{
+    token: zod.ZodString;
+}, "strip", zod.ZodTypeAny, {
+    token: string;
+}, {
+    token: string;
+}>;
+export declare const ResolveShareTokenResponse: zod.ZodObject<{
+    matchId: zod.ZodString;
+    pageType: zod.ZodEnum<["stats", "gfx"]>;
+    expiresAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+}, "strip", zod.ZodTypeAny, {
+    matchId: string;
+    pageType: "stats" | "gfx";
+    expiresAt?: Date | null | undefined;
+}, {
+    matchId: string;
+    pageType: "stats" | "gfx";
+    expiresAt?: Date | null | undefined;
+}>;
+/**
+ * Broadcast surface for the Player Stats lower-third graphic. URL-gated
+only — no auth gate, same posture as the scorebug endpoint.
+Intentionally exposes the public `headshotUrl` for the on-air photo;
+the private `broadcastImageUrl` is never returned here.
+
+ * @summary Get per-player + per-tournament stats for the Player Stats lower-third graphic
+ */
+export declare const GetMatchPlayerStatsParams: zod.ZodObject<{
+    matchId: zod.ZodString;
+    playerId: zod.ZodString;
+}, "strip", zod.ZodTypeAny, {
+    matchId: string;
+    playerId: string;
+}, {
+    matchId: string;
+    playerId: string;
+}>;
+export declare const GetMatchPlayerStatsResponse: zod.ZodObject<{
+    tournamentName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    player: zod.ZodObject<{
+        id: zod.ZodString;
+        name: zod.ZodString;
+        headshotUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        teamSide: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["home", "away"]>>>;
+    }, "strip", zod.ZodTypeAny, {
+        id: string;
+        name: string;
+        headshotUrl?: string | null | undefined;
+        teamSide?: "home" | "away" | null | undefined;
+    }, {
+        id: string;
+        name: string;
+        headshotUrl?: string | null | undefined;
+        teamSide?: "home" | "away" | null | undefined;
+    }>;
+    team: zod.ZodOptional<zod.ZodNullable<zod.ZodObject<{
+        id: zod.ZodString;
+        name: zod.ZodString;
+        logoUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        primaryColor: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    }, "strip", zod.ZodTypeAny, {
+        id: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+    }, {
+        id: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+    }>>>;
+    match: zod.ZodObject<{
+        goals: zod.ZodNumber;
+        shotsOnGoal: zod.ZodNumber;
+        penaltyGoals: zod.ZodNumber;
+        throwInsWon: zod.ZodNumber;
+    }, "strip", zod.ZodTypeAny, {
+        goals: number;
+        shotsOnGoal: number;
+        penaltyGoals: number;
+        throwInsWon: number;
+    }, {
+        goals: number;
+        shotsOnGoal: number;
+        penaltyGoals: number;
+        throwInsWon: number;
+    }>;
+    tournament: zod.ZodObject<{
+        goals: zod.ZodNumber;
+        avgPerMatch: zod.ZodNumber;
+        shotsOnGoal: zod.ZodNumber;
+        conversion: zod.ZodNumber;
+    }, "strip", zod.ZodTypeAny, {
+        goals: number;
+        shotsOnGoal: number;
+        avgPerMatch: number;
+        conversion: number;
+    }, {
+        goals: number;
+        shotsOnGoal: number;
+        avgPerMatch: number;
+        conversion: number;
+    }>;
+}, "strip", zod.ZodTypeAny, {
+    tournament: {
+        goals: number;
+        shotsOnGoal: number;
+        avgPerMatch: number;
+        conversion: number;
+    };
+    player: {
+        id: string;
+        name: string;
+        headshotUrl?: string | null | undefined;
+        teamSide?: "home" | "away" | null | undefined;
+    };
+    match: {
+        goals: number;
+        shotsOnGoal: number;
+        penaltyGoals: number;
+        throwInsWon: number;
+    };
+    team?: {
+        id: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+    } | null | undefined;
+    tournamentName?: string | null | undefined;
+}, {
+    tournament: {
+        goals: number;
+        shotsOnGoal: number;
+        avgPerMatch: number;
+        conversion: number;
+    };
+    player: {
+        id: string;
+        name: string;
+        headshotUrl?: string | null | undefined;
+        teamSide?: "home" | "away" | null | undefined;
+    };
+    match: {
+        goals: number;
+        shotsOnGoal: number;
+        penaltyGoals: number;
+        throwInsWon: number;
+    };
+    team?: {
+        id: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+    } | null | undefined;
+    tournamentName?: string | null | undefined;
+}>;
+/**
+ * Broadcast surface for the Team Lineup graphic. Intentionally exposes
+each player's `broadcastImageUrl` so the on-air overlay can render the
+broadcast aux photo. Public/spectator surfaces still strip aux URLs.
+
+ * @summary Get the 4-player starting lineup for one side of a match
+ */
+export declare const GetMatchLineupParams: zod.ZodObject<{
+    matchId: zod.ZodString;
+    teamSide: zod.ZodEnum<["home", "away"]>;
+}, "strip", zod.ZodTypeAny, {
+    matchId: string;
+    teamSide: "home" | "away";
+}, {
+    matchId: string;
+    teamSide: "home" | "away";
+}>;
+export declare const GetMatchLineupResponse: zod.ZodObject<{
+    tournament: zod.ZodOptional<zod.ZodNullable<zod.ZodObject<{
+        id: zod.ZodString;
+        name: zod.ZodString;
+    }, "strip", zod.ZodTypeAny, {
+        id: string;
+        name: string;
+    }, {
+        id: string;
+        name: string;
+    }>>>;
+    team: zod.ZodOptional<zod.ZodNullable<zod.ZodObject<{
+        id: zod.ZodString;
+        name: zod.ZodString;
+        logoUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        totalHandicap: zod.ZodNumber;
+    }, "strip", zod.ZodTypeAny, {
+        id: string;
+        name: string;
+        totalHandicap: number;
+        logoUrl?: string | null | undefined;
+    }, {
+        id: string;
+        name: string;
+        totalHandicap: number;
+        logoUrl?: string | null | undefined;
+    }>>>;
+    players: zod.ZodArray<zod.ZodObject<{
+        id: zod.ZodString;
+        name: zod.ZodString;
+        position: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
+        handicap: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        dateOfBirth: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+        homeClubName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        headshotUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        broadcastImageUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        tournamentGoals: zod.ZodNumber;
+        avgGoalsPerMatch: zod.ZodNumber;
+    }, "strip", zod.ZodTypeAny, {
+        id: string;
+        name: string;
+        tournamentGoals: number;
+        avgGoalsPerMatch: number;
+        handicap?: string | null | undefined;
+        headshotUrl?: string | null | undefined;
+        position?: number | null | undefined;
+        dateOfBirth?: Date | null | undefined;
+        homeClubName?: string | null | undefined;
+        broadcastImageUrl?: string | null | undefined;
+    }, {
+        id: string;
+        name: string;
+        tournamentGoals: number;
+        avgGoalsPerMatch: number;
+        handicap?: string | null | undefined;
+        headshotUrl?: string | null | undefined;
+        position?: number | null | undefined;
+        dateOfBirth?: Date | null | undefined;
+        homeClubName?: string | null | undefined;
+        broadcastImageUrl?: string | null | undefined;
+    }>, "many">;
+}, "strip", zod.ZodTypeAny, {
+    players: {
+        id: string;
+        name: string;
+        tournamentGoals: number;
+        avgGoalsPerMatch: number;
+        handicap?: string | null | undefined;
+        headshotUrl?: string | null | undefined;
+        position?: number | null | undefined;
+        dateOfBirth?: Date | null | undefined;
+        homeClubName?: string | null | undefined;
+        broadcastImageUrl?: string | null | undefined;
+    }[];
+    team?: {
+        id: string;
+        name: string;
+        totalHandicap: number;
+        logoUrl?: string | null | undefined;
+    } | null | undefined;
+    tournament?: {
+        id: string;
+        name: string;
+    } | null | undefined;
+}, {
+    players: {
+        id: string;
+        name: string;
+        tournamentGoals: number;
+        avgGoalsPerMatch: number;
+        handicap?: string | null | undefined;
+        headshotUrl?: string | null | undefined;
+        position?: number | null | undefined;
+        dateOfBirth?: Date | null | undefined;
+        homeClubName?: string | null | undefined;
+        broadcastImageUrl?: string | null | undefined;
+    }[];
+    team?: {
+        id: string;
+        name: string;
+        totalHandicap: number;
+        logoUrl?: string | null | undefined;
+    } | null | undefined;
+    tournament?: {
+        id: string;
+        name: string;
+    } | null | undefined;
+}>;
 /**
  * @summary List all live matches
  */
@@ -5837,6 +6440,8 @@ export declare const ListLiveMatchesResponseItem: zod.ZodObject<{
     bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     isLocked: zod.ZodBoolean;
     notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+    broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     homeTeam: zod.ZodOptional<zod.ZodObject<{
         id: zod.ZodString;
         clubId: zod.ZodString;
@@ -5976,6 +6581,18 @@ export declare const ListLiveMatchesResponseItem: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -6001,16 +6618,6 @@ export declare const ListLiveMatchesResponseItem: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -6037,6 +6644,18 @@ export declare const ListLiveMatchesResponseItem: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -6062,16 +6681,6 @@ export declare const ListLiveMatchesResponseItem: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -6099,6 +6708,8 @@ export declare const ListLiveMatchesResponse: zod.ZodArray<zod.ZodObject<{
     bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     isLocked: zod.ZodBoolean;
     notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+    broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     homeTeam: zod.ZodOptional<zod.ZodObject<{
         id: zod.ZodString;
         clubId: zod.ZodString;
@@ -6238,6 +6849,18 @@ export declare const ListLiveMatchesResponse: zod.ZodArray<zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -6263,16 +6886,6 @@ export declare const ListLiveMatchesResponse: zod.ZodArray<zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -6299,6 +6912,18 @@ export declare const ListLiveMatchesResponse: zod.ZodArray<zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -6325,16 +6950,6 @@ export declare const ListLiveMatchesResponse: zod.ZodArray<zod.ZodObject<{
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
     } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
-    } | undefined;
     tournament?: {
         id: string;
         clubId: string;
@@ -6348,10 +6963,13 @@ export declare const ListLiveMatchesResponse: zod.ZodArray<zod.ZodObject<{
  */
 export declare const ListTodayMatchesQueryParams: zod.ZodObject<{
     clubId: zod.ZodOptional<zod.ZodString>;
+    tz: zod.ZodOptional<zod.ZodString>;
 }, "strip", zod.ZodTypeAny, {
     clubId?: string | undefined;
+    tz?: string | undefined;
 }, {
     clubId?: string | undefined;
+    tz?: string | undefined;
 }>;
 export declare const ListTodayMatchesResponseItem: zod.ZodObject<{
     id: zod.ZodString;
@@ -6371,6 +6989,8 @@ export declare const ListTodayMatchesResponseItem: zod.ZodObject<{
     bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     isLocked: zod.ZodBoolean;
     notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+    broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     homeTeam: zod.ZodOptional<zod.ZodObject<{
         id: zod.ZodString;
         clubId: zod.ZodString;
@@ -6510,6 +7130,18 @@ export declare const ListTodayMatchesResponseItem: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -6535,16 +7167,6 @@ export declare const ListTodayMatchesResponseItem: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -6571,6 +7193,18 @@ export declare const ListTodayMatchesResponseItem: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -6596,16 +7230,6 @@ export declare const ListTodayMatchesResponseItem: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -6633,6 +7257,8 @@ export declare const ListTodayMatchesResponse: zod.ZodArray<zod.ZodObject<{
     bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     isLocked: zod.ZodBoolean;
     notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+    broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     homeTeam: zod.ZodOptional<zod.ZodObject<{
         id: zod.ZodString;
         clubId: zod.ZodString;
@@ -6772,6 +7398,18 @@ export declare const ListTodayMatchesResponse: zod.ZodArray<zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -6797,16 +7435,6 @@ export declare const ListTodayMatchesResponse: zod.ZodArray<zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -6833,6 +7461,18 @@ export declare const ListTodayMatchesResponse: zod.ZodArray<zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -6859,6 +7499,192 @@ export declare const ListTodayMatchesResponse: zod.ZodArray<zod.ZodObject<{
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
     } | undefined;
+    tournament?: {
+        id: string;
+        clubId: string;
+        clubName: string;
+        name: string;
+        chukkersPerMatch: number;
+    } | undefined;
+}>, "many">;
+/**
+ * @summary List upcoming matches
+ */
+export declare const ListUpcomingMatchesQueryParams: zod.ZodObject<{
+    limit: zod.ZodOptional<zod.ZodNumber>;
+    offset: zod.ZodOptional<zod.ZodNumber>;
+    clubId: zod.ZodOptional<zod.ZodString>;
+    clubIds: zod.ZodOptional<zod.ZodString>;
+}, "strip", zod.ZodTypeAny, {
+    clubId?: string | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
+    clubIds?: string | undefined;
+}, {
+    clubId?: string | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
+    clubIds?: string | undefined;
+}>;
+export declare const ListUpcomingMatchesResponseItem: zod.ZodObject<{
+    id: zod.ZodString;
+    tournamentId: zod.ZodString;
+    homeTeamId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    awayTeamId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    fieldId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    scheduledAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    homeScore: zod.ZodNumber;
+    awayScore: zod.ZodNumber;
+    currentChukker: zod.ZodNumber;
+    clockStartedAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    clockElapsedSeconds: zod.ZodNumber;
+    clockIsRunning: zod.ZodBoolean;
+    status: zod.ZodEnum<["scheduled", "live", "halftime", "final", "postponed", "cancelled"]>;
+    round: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
+    isLocked: zod.ZodBoolean;
+    notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+    broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeTeam: zod.ZodOptional<zod.ZodObject<{
+        id: zod.ZodString;
+        clubId: zod.ZodString;
+        name: zod.ZodString;
+        shortName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        logoUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        logoThumbUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        primaryColor: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        handicap: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        contactName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        contactPhone: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    }, "strip", zod.ZodTypeAny, {
+        id: string;
+        clubId: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        shortName?: string | null | undefined;
+        logoThumbUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+        handicap?: string | null | undefined;
+        contactName?: string | null | undefined;
+        contactPhone?: string | null | undefined;
+        notes?: string | null | undefined;
+    }, {
+        id: string;
+        clubId: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        shortName?: string | null | undefined;
+        logoThumbUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+        handicap?: string | null | undefined;
+        contactName?: string | null | undefined;
+        contactPhone?: string | null | undefined;
+        notes?: string | null | undefined;
+    }>>;
+    awayTeam: zod.ZodOptional<zod.ZodObject<{
+        id: zod.ZodString;
+        clubId: zod.ZodString;
+        name: zod.ZodString;
+        shortName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        logoUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        logoThumbUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        primaryColor: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        handicap: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        contactName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        contactPhone: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    }, "strip", zod.ZodTypeAny, {
+        id: string;
+        clubId: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        shortName?: string | null | undefined;
+        logoThumbUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+        handicap?: string | null | undefined;
+        contactName?: string | null | undefined;
+        contactPhone?: string | null | undefined;
+        notes?: string | null | undefined;
+    }, {
+        id: string;
+        clubId: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        shortName?: string | null | undefined;
+        logoThumbUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+        handicap?: string | null | undefined;
+        contactName?: string | null | undefined;
+        contactPhone?: string | null | undefined;
+        notes?: string | null | undefined;
+    }>>;
+    field: zod.ZodOptional<zod.ZodObject<{
+        id: zod.ZodString;
+        clubId: zod.ZodString;
+        name: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        number: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
+        lat: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        lng: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        surfaceType: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        isActive: zod.ZodOptional<zod.ZodBoolean>;
+    }, "strip", zod.ZodTypeAny, {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    }, {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    }>>;
+    tournament: zod.ZodOptional<zod.ZodObject<{
+        id: zod.ZodString;
+        name: zod.ZodString;
+        chukkersPerMatch: zod.ZodNumber;
+        clubId: zod.ZodString;
+        clubName: zod.ZodString;
+    }, "strip", zod.ZodTypeAny, {
+        id: string;
+        clubId: string;
+        clubName: string;
+        name: string;
+        chukkersPerMatch: number;
+    }, {
+        id: string;
+        clubId: string;
+        clubName: string;
+        name: string;
+        chukkersPerMatch: number;
+    }>>;
+}, "strip", zod.ZodTypeAny, {
+    status: "scheduled" | "live" | "halftime" | "final" | "postponed" | "cancelled";
+    id: string;
+    tournamentId: string;
+    homeScore: number;
+    awayScore: number;
+    currentChukker: number;
+    clockElapsedSeconds: number;
+    clockIsRunning: boolean;
+    isLocked: boolean;
+    fieldId?: string | null | undefined;
+    notes?: string | null | undefined;
+    homeTeamId?: string | null | undefined;
+    awayTeamId?: string | null | undefined;
+    scheduledAt?: Date | null | undefined;
+    clockStartedAt?: Date | null | undefined;
+    round?: string | null | undefined;
+    bracketPosition?: number | null | undefined;
     field?: {
         id: string;
         clubId: string;
@@ -6868,6 +7694,365 @@ export declare const ListTodayMatchesResponse: zod.ZodArray<zod.ZodObject<{
         lng?: string | null | undefined;
         surfaceType?: string | null | undefined;
         isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
+    homeTeam?: {
+        id: string;
+        clubId: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        shortName?: string | null | undefined;
+        logoThumbUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+        handicap?: string | null | undefined;
+        contactName?: string | null | undefined;
+        contactPhone?: string | null | undefined;
+        notes?: string | null | undefined;
+    } | undefined;
+    awayTeam?: {
+        id: string;
+        clubId: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        shortName?: string | null | undefined;
+        logoThumbUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+        handicap?: string | null | undefined;
+        contactName?: string | null | undefined;
+        contactPhone?: string | null | undefined;
+        notes?: string | null | undefined;
+    } | undefined;
+    tournament?: {
+        id: string;
+        clubId: string;
+        clubName: string;
+        name: string;
+        chukkersPerMatch: number;
+    } | undefined;
+}, {
+    status: "scheduled" | "live" | "halftime" | "final" | "postponed" | "cancelled";
+    id: string;
+    tournamentId: string;
+    homeScore: number;
+    awayScore: number;
+    currentChukker: number;
+    clockElapsedSeconds: number;
+    clockIsRunning: boolean;
+    isLocked: boolean;
+    fieldId?: string | null | undefined;
+    notes?: string | null | undefined;
+    homeTeamId?: string | null | undefined;
+    awayTeamId?: string | null | undefined;
+    scheduledAt?: Date | null | undefined;
+    clockStartedAt?: Date | null | undefined;
+    round?: string | null | undefined;
+    bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
+    homeTeam?: {
+        id: string;
+        clubId: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        shortName?: string | null | undefined;
+        logoThumbUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+        handicap?: string | null | undefined;
+        contactName?: string | null | undefined;
+        contactPhone?: string | null | undefined;
+        notes?: string | null | undefined;
+    } | undefined;
+    awayTeam?: {
+        id: string;
+        clubId: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        shortName?: string | null | undefined;
+        logoThumbUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+        handicap?: string | null | undefined;
+        contactName?: string | null | undefined;
+        contactPhone?: string | null | undefined;
+        notes?: string | null | undefined;
+    } | undefined;
+    tournament?: {
+        id: string;
+        clubId: string;
+        clubName: string;
+        name: string;
+        chukkersPerMatch: number;
+    } | undefined;
+}>;
+export declare const ListUpcomingMatchesResponse: zod.ZodArray<zod.ZodObject<{
+    id: zod.ZodString;
+    tournamentId: zod.ZodString;
+    homeTeamId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    awayTeamId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    fieldId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    scheduledAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    homeScore: zod.ZodNumber;
+    awayScore: zod.ZodNumber;
+    currentChukker: zod.ZodNumber;
+    clockStartedAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    clockElapsedSeconds: zod.ZodNumber;
+    clockIsRunning: zod.ZodBoolean;
+    status: zod.ZodEnum<["scheduled", "live", "halftime", "final", "postponed", "cancelled"]>;
+    round: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
+    isLocked: zod.ZodBoolean;
+    notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+    broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeTeam: zod.ZodOptional<zod.ZodObject<{
+        id: zod.ZodString;
+        clubId: zod.ZodString;
+        name: zod.ZodString;
+        shortName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        logoUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        logoThumbUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        primaryColor: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        handicap: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        contactName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        contactPhone: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    }, "strip", zod.ZodTypeAny, {
+        id: string;
+        clubId: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        shortName?: string | null | undefined;
+        logoThumbUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+        handicap?: string | null | undefined;
+        contactName?: string | null | undefined;
+        contactPhone?: string | null | undefined;
+        notes?: string | null | undefined;
+    }, {
+        id: string;
+        clubId: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        shortName?: string | null | undefined;
+        logoThumbUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+        handicap?: string | null | undefined;
+        contactName?: string | null | undefined;
+        contactPhone?: string | null | undefined;
+        notes?: string | null | undefined;
+    }>>;
+    awayTeam: zod.ZodOptional<zod.ZodObject<{
+        id: zod.ZodString;
+        clubId: zod.ZodString;
+        name: zod.ZodString;
+        shortName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        logoUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        logoThumbUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        primaryColor: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        handicap: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        contactName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        contactPhone: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    }, "strip", zod.ZodTypeAny, {
+        id: string;
+        clubId: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        shortName?: string | null | undefined;
+        logoThumbUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+        handicap?: string | null | undefined;
+        contactName?: string | null | undefined;
+        contactPhone?: string | null | undefined;
+        notes?: string | null | undefined;
+    }, {
+        id: string;
+        clubId: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        shortName?: string | null | undefined;
+        logoThumbUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+        handicap?: string | null | undefined;
+        contactName?: string | null | undefined;
+        contactPhone?: string | null | undefined;
+        notes?: string | null | undefined;
+    }>>;
+    field: zod.ZodOptional<zod.ZodObject<{
+        id: zod.ZodString;
+        clubId: zod.ZodString;
+        name: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        number: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
+        lat: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        lng: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        surfaceType: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        isActive: zod.ZodOptional<zod.ZodBoolean>;
+    }, "strip", zod.ZodTypeAny, {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    }, {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    }>>;
+    tournament: zod.ZodOptional<zod.ZodObject<{
+        id: zod.ZodString;
+        name: zod.ZodString;
+        chukkersPerMatch: zod.ZodNumber;
+        clubId: zod.ZodString;
+        clubName: zod.ZodString;
+    }, "strip", zod.ZodTypeAny, {
+        id: string;
+        clubId: string;
+        clubName: string;
+        name: string;
+        chukkersPerMatch: number;
+    }, {
+        id: string;
+        clubId: string;
+        clubName: string;
+        name: string;
+        chukkersPerMatch: number;
+    }>>;
+}, "strip", zod.ZodTypeAny, {
+    status: "scheduled" | "live" | "halftime" | "final" | "postponed" | "cancelled";
+    id: string;
+    tournamentId: string;
+    homeScore: number;
+    awayScore: number;
+    currentChukker: number;
+    clockElapsedSeconds: number;
+    clockIsRunning: boolean;
+    isLocked: boolean;
+    fieldId?: string | null | undefined;
+    notes?: string | null | undefined;
+    homeTeamId?: string | null | undefined;
+    awayTeamId?: string | null | undefined;
+    scheduledAt?: Date | null | undefined;
+    clockStartedAt?: Date | null | undefined;
+    round?: string | null | undefined;
+    bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
+    homeTeam?: {
+        id: string;
+        clubId: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        shortName?: string | null | undefined;
+        logoThumbUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+        handicap?: string | null | undefined;
+        contactName?: string | null | undefined;
+        contactPhone?: string | null | undefined;
+        notes?: string | null | undefined;
+    } | undefined;
+    awayTeam?: {
+        id: string;
+        clubId: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        shortName?: string | null | undefined;
+        logoThumbUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+        handicap?: string | null | undefined;
+        contactName?: string | null | undefined;
+        contactPhone?: string | null | undefined;
+        notes?: string | null | undefined;
+    } | undefined;
+    tournament?: {
+        id: string;
+        clubId: string;
+        clubName: string;
+        name: string;
+        chukkersPerMatch: number;
+    } | undefined;
+}, {
+    status: "scheduled" | "live" | "halftime" | "final" | "postponed" | "cancelled";
+    id: string;
+    tournamentId: string;
+    homeScore: number;
+    awayScore: number;
+    currentChukker: number;
+    clockElapsedSeconds: number;
+    clockIsRunning: boolean;
+    isLocked: boolean;
+    fieldId?: string | null | undefined;
+    notes?: string | null | undefined;
+    homeTeamId?: string | null | undefined;
+    awayTeamId?: string | null | undefined;
+    scheduledAt?: Date | null | undefined;
+    clockStartedAt?: Date | null | undefined;
+    round?: string | null | undefined;
+    bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
+    homeTeam?: {
+        id: string;
+        clubId: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        shortName?: string | null | undefined;
+        logoThumbUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+        handicap?: string | null | undefined;
+        contactName?: string | null | undefined;
+        contactPhone?: string | null | undefined;
+        notes?: string | null | undefined;
+    } | undefined;
+    awayTeam?: {
+        id: string;
+        clubId: string;
+        name: string;
+        logoUrl?: string | null | undefined;
+        shortName?: string | null | undefined;
+        logoThumbUrl?: string | null | undefined;
+        primaryColor?: string | null | undefined;
+        handicap?: string | null | undefined;
+        contactName?: string | null | undefined;
+        contactPhone?: string | null | undefined;
+        notes?: string | null | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -6909,6 +8094,8 @@ export declare const GetAdminDashboardResponse: zod.ZodObject<{
         bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
         isLocked: zod.ZodBoolean;
         notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+        broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
         homeTeam: zod.ZodOptional<zod.ZodObject<{
             id: zod.ZodString;
             clubId: zod.ZodString;
@@ -7048,6 +8235,18 @@ export declare const GetAdminDashboardResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -7073,16 +8272,6 @@ export declare const GetAdminDashboardResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -7109,6 +8298,18 @@ export declare const GetAdminDashboardResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -7134,16 +8335,6 @@ export declare const GetAdminDashboardResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -7175,6 +8366,18 @@ export declare const GetAdminDashboardResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -7200,16 +8403,6 @@ export declare const GetAdminDashboardResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -7241,6 +8434,18 @@ export declare const GetAdminDashboardResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -7266,16 +8471,6 @@ export declare const GetAdminDashboardResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -7435,9 +8630,9 @@ export declare const GetMyTeamAssignmentsResponseItem: zod.ZodObject<{
     teamId: string;
     teamName: string;
     tournamentId?: string | null | undefined;
+    tournamentName?: string | null | undefined;
     teamLogoUrl?: string | null | undefined;
     teamPrimaryColor?: string | null | undefined;
-    tournamentName?: string | null | undefined;
 }, {
     clubName: string;
     clubSlug: string;
@@ -7445,9 +8640,9 @@ export declare const GetMyTeamAssignmentsResponseItem: zod.ZodObject<{
     teamId: string;
     teamName: string;
     tournamentId?: string | null | undefined;
+    tournamentName?: string | null | undefined;
     teamLogoUrl?: string | null | undefined;
     teamPrimaryColor?: string | null | undefined;
-    tournamentName?: string | null | undefined;
 }>;
 export declare const GetMyTeamAssignmentsResponse: zod.ZodArray<zod.ZodObject<{
     assignmentId: zod.ZodString;
@@ -7466,9 +8661,9 @@ export declare const GetMyTeamAssignmentsResponse: zod.ZodArray<zod.ZodObject<{
     teamId: string;
     teamName: string;
     tournamentId?: string | null | undefined;
+    tournamentName?: string | null | undefined;
     teamLogoUrl?: string | null | undefined;
     teamPrimaryColor?: string | null | undefined;
-    tournamentName?: string | null | undefined;
 }, {
     clubName: string;
     clubSlug: string;
@@ -7476,9 +8671,9 @@ export declare const GetMyTeamAssignmentsResponse: zod.ZodArray<zod.ZodObject<{
     teamId: string;
     teamName: string;
     tournamentId?: string | null | undefined;
+    tournamentName?: string | null | undefined;
     teamLogoUrl?: string | null | undefined;
     teamPrimaryColor?: string | null | undefined;
-    tournamentName?: string | null | undefined;
 }>, "many">;
 /**
  * @summary Get team manager dashboard
@@ -7548,6 +8743,8 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
         bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
         isLocked: zod.ZodBoolean;
         notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+        broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
         homeTeam: zod.ZodOptional<zod.ZodObject<{
             id: zod.ZodString;
             clubId: zod.ZodString;
@@ -7687,6 +8884,18 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -7712,16 +8921,6 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -7748,6 +8947,18 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -7773,16 +8984,6 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -7810,6 +9011,8 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
         bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
         isLocked: zod.ZodBoolean;
         notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+        broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
         homeTeam: zod.ZodOptional<zod.ZodObject<{
             id: zod.ZodString;
             clubId: zod.ZodString;
@@ -7949,6 +9152,18 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -7974,16 +9189,6 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -8010,6 +9215,18 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -8035,16 +9252,6 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -8167,6 +9374,18 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -8192,16 +9411,6 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -8230,6 +9439,18 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -8255,16 +9476,6 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -8328,6 +9539,18 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -8353,16 +9576,6 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -8391,6 +9604,18 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -8416,16 +9641,6 @@ export declare const GetMyTeamDashboardResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -8471,6 +9686,8 @@ export declare const GetMyTeamScheduleResponseItem: zod.ZodObject<{
     bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     isLocked: zod.ZodBoolean;
     notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+    broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     homeTeam: zod.ZodOptional<zod.ZodObject<{
         id: zod.ZodString;
         clubId: zod.ZodString;
@@ -8610,6 +9827,18 @@ export declare const GetMyTeamScheduleResponseItem: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -8635,16 +9864,6 @@ export declare const GetMyTeamScheduleResponseItem: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -8671,6 +9890,18 @@ export declare const GetMyTeamScheduleResponseItem: zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -8696,16 +9927,6 @@ export declare const GetMyTeamScheduleResponseItem: zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -8733,6 +9954,8 @@ export declare const GetMyTeamScheduleResponse: zod.ZodArray<zod.ZodObject<{
     bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
     isLocked: zod.ZodBoolean;
     notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+    broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
     homeTeam: zod.ZodOptional<zod.ZodObject<{
         id: zod.ZodString;
         clubId: zod.ZodString;
@@ -8872,6 +10095,18 @@ export declare const GetMyTeamScheduleResponse: zod.ZodArray<zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -8897,16 +10132,6 @@ export declare const GetMyTeamScheduleResponse: zod.ZodArray<zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -8933,6 +10158,18 @@ export declare const GetMyTeamScheduleResponse: zod.ZodArray<zod.ZodObject<{
     clockStartedAt?: Date | null | undefined;
     round?: string | null | undefined;
     bracketPosition?: number | null | undefined;
+    field?: {
+        id: string;
+        clubId: string;
+        number?: number | null | undefined;
+        name?: string | null | undefined;
+        lat?: string | null | undefined;
+        lng?: string | null | undefined;
+        surfaceType?: string | null | undefined;
+        isActive?: boolean | undefined;
+    } | undefined;
+    broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+    broadcastPlayerId?: string | null | undefined;
     homeTeam?: {
         id: string;
         clubId: string;
@@ -8958,16 +10195,6 @@ export declare const GetMyTeamScheduleResponse: zod.ZodArray<zod.ZodObject<{
         contactName?: string | null | undefined;
         contactPhone?: string | null | undefined;
         notes?: string | null | undefined;
-    } | undefined;
-    field?: {
-        id: string;
-        clubId: string;
-        number?: number | null | undefined;
-        name?: string | null | undefined;
-        lat?: string | null | undefined;
-        lng?: string | null | undefined;
-        surfaceType?: string | null | undefined;
-        isActive?: boolean | undefined;
     } | undefined;
     tournament?: {
         id: string;
@@ -9513,6 +10740,8 @@ export declare const GetWidgetFixturesResponse: zod.ZodObject<{
         bracketPosition: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
         isLocked: zod.ZodBoolean;
         notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        broadcastStyle: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["option1", "option2", "stats", "stats_mini", "field", "lineup_home", "lineup_away", "player_stats"]>>>;
+        broadcastPlayerId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
         homeTeam: zod.ZodOptional<zod.ZodObject<{
             id: zod.ZodString;
             clubId: zod.ZodString;
@@ -9652,6 +10881,18 @@ export declare const GetWidgetFixturesResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -9677,16 +10918,6 @@ export declare const GetWidgetFixturesResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -9713,6 +10944,18 @@ export declare const GetWidgetFixturesResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -9738,16 +10981,6 @@ export declare const GetWidgetFixturesResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -9790,6 +11023,18 @@ export declare const GetWidgetFixturesResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -9815,16 +11060,6 @@ export declare const GetWidgetFixturesResponse: zod.ZodObject<{
             contactName?: string | null | undefined;
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
-        } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
         } | undefined;
         tournament?: {
             id: string;
@@ -9867,6 +11102,18 @@ export declare const GetWidgetFixturesResponse: zod.ZodObject<{
         clockStartedAt?: Date | null | undefined;
         round?: string | null | undefined;
         bracketPosition?: number | null | undefined;
+        field?: {
+            id: string;
+            clubId: string;
+            number?: number | null | undefined;
+            name?: string | null | undefined;
+            lat?: string | null | undefined;
+            lng?: string | null | undefined;
+            surfaceType?: string | null | undefined;
+            isActive?: boolean | undefined;
+        } | undefined;
+        broadcastStyle?: "option1" | "option2" | "stats" | "stats_mini" | "field" | "lineup_home" | "lineup_away" | "player_stats" | null | undefined;
+        broadcastPlayerId?: string | null | undefined;
         homeTeam?: {
             id: string;
             clubId: string;
@@ -9893,16 +11140,6 @@ export declare const GetWidgetFixturesResponse: zod.ZodObject<{
             contactPhone?: string | null | undefined;
             notes?: string | null | undefined;
         } | undefined;
-        field?: {
-            id: string;
-            clubId: string;
-            number?: number | null | undefined;
-            name?: string | null | undefined;
-            lat?: string | null | undefined;
-            lng?: string | null | undefined;
-            surfaceType?: string | null | undefined;
-            isActive?: boolean | undefined;
-        } | undefined;
         tournament?: {
             id: string;
             clubId: string;
@@ -9912,6 +11149,797 @@ export declare const GetWidgetFixturesResponse: zod.ZodObject<{
         } | undefined;
     }[];
 }>;
+/**
+ * @summary List/search players
+ */
+export declare const ListPlayersQueryParams: zod.ZodObject<{
+    search: zod.ZodOptional<zod.ZodString>;
+    clubId: zod.ZodOptional<zod.ZodString>;
+    teamId: zod.ZodOptional<zod.ZodString>;
+}, "strip", zod.ZodTypeAny, {
+    clubId?: string | undefined;
+    teamId?: string | undefined;
+    search?: string | undefined;
+}, {
+    clubId?: string | undefined;
+    teamId?: string | undefined;
+    search?: string | undefined;
+}>;
+export declare const ListPlayersResponseItem: zod.ZodObject<{
+    id: zod.ZodString;
+    name: zod.ZodString;
+    handicap: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    headshotUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubSlug: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    lastMatchDate: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    careerGoals: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
+    careerGames: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
+}, "strip", zod.ZodTypeAny, {
+    id: string;
+    name: string;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    homeClubName?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    homeClubSlug?: string | null | undefined;
+    lastMatchDate?: Date | null | undefined;
+    careerGoals?: number | null | undefined;
+    careerGames?: number | null | undefined;
+}, {
+    id: string;
+    name: string;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    homeClubName?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    homeClubSlug?: string | null | undefined;
+    lastMatchDate?: Date | null | undefined;
+    careerGoals?: number | null | undefined;
+    careerGames?: number | null | undefined;
+}>;
+export declare const ListPlayersResponse: zod.ZodArray<zod.ZodObject<{
+    id: zod.ZodString;
+    name: zod.ZodString;
+    handicap: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    headshotUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubSlug: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    lastMatchDate: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    careerGoals: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
+    careerGames: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
+}, "strip", zod.ZodTypeAny, {
+    id: string;
+    name: string;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    homeClubName?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    homeClubSlug?: string | null | undefined;
+    lastMatchDate?: Date | null | undefined;
+    careerGoals?: number | null | undefined;
+    careerGames?: number | null | undefined;
+}, {
+    id: string;
+    name: string;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    homeClubName?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    homeClubSlug?: string | null | undefined;
+    lastMatchDate?: Date | null | undefined;
+    careerGoals?: number | null | undefined;
+    careerGames?: number | null | undefined;
+}>, "many">;
+/**
+ * @summary Create a player
+ */
+export declare const CreatePlayerBody: zod.ZodObject<{
+    name: zod.ZodString;
+    handicap: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    headshotUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    headshotSourceUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastImageUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastImageSourceUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    dateOfBirth: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    bio: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    managedByUserId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+}, "strip", zod.ZodTypeAny, {
+    name: string;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    dateOfBirth?: Date | null | undefined;
+    broadcastImageUrl?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    headshotSourceUrl?: string | null | undefined;
+    broadcastImageSourceUrl?: string | null | undefined;
+    bio?: string | null | undefined;
+    managedByUserId?: string | null | undefined;
+}, {
+    name: string;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    dateOfBirth?: Date | null | undefined;
+    broadcastImageUrl?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    headshotSourceUrl?: string | null | undefined;
+    broadcastImageSourceUrl?: string | null | undefined;
+    bio?: string | null | undefined;
+    managedByUserId?: string | null | undefined;
+}>;
+/**
+ * @summary Top players by career goals and games played
+ */
+export declare const listTopPlayersQueryLimitDefault = 8;
+export declare const ListTopPlayersQueryParams: zod.ZodObject<{
+    limit: zod.ZodDefault<zod.ZodNumber>;
+}, "strip", zod.ZodTypeAny, {
+    limit: number;
+}, {
+    limit?: number | undefined;
+}>;
+export declare const ListTopPlayersResponseItem: zod.ZodObject<{
+    id: zod.ZodString;
+    name: zod.ZodString;
+    handicap: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    headshotUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubSlug: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    lastMatchDate: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    careerGoals: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
+    careerGames: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
+}, "strip", zod.ZodTypeAny, {
+    id: string;
+    name: string;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    homeClubName?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    homeClubSlug?: string | null | undefined;
+    lastMatchDate?: Date | null | undefined;
+    careerGoals?: number | null | undefined;
+    careerGames?: number | null | undefined;
+}, {
+    id: string;
+    name: string;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    homeClubName?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    homeClubSlug?: string | null | undefined;
+    lastMatchDate?: Date | null | undefined;
+    careerGoals?: number | null | undefined;
+    careerGames?: number | null | undefined;
+}>;
+export declare const ListTopPlayersResponse: zod.ZodArray<zod.ZodObject<{
+    id: zod.ZodString;
+    name: zod.ZodString;
+    handicap: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    headshotUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubSlug: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    lastMatchDate: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    careerGoals: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
+    careerGames: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
+}, "strip", zod.ZodTypeAny, {
+    id: string;
+    name: string;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    homeClubName?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    homeClubSlug?: string | null | undefined;
+    lastMatchDate?: Date | null | undefined;
+    careerGoals?: number | null | undefined;
+    careerGames?: number | null | undefined;
+}, {
+    id: string;
+    name: string;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    homeClubName?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    homeClubSlug?: string | null | undefined;
+    lastMatchDate?: Date | null | undefined;
+    careerGoals?: number | null | undefined;
+    careerGames?: number | null | undefined;
+}>, "many">;
+/**
+ * @summary Public player profile with computed stats
+ */
+export declare const GetPlayerProfileParams: zod.ZodObject<{
+    playerId: zod.ZodString;
+}, "strip", zod.ZodTypeAny, {
+    playerId: string;
+}, {
+    playerId: string;
+}>;
+export declare const GetPlayerProfileResponse: zod.ZodObject<{
+    id: zod.ZodString;
+    name: zod.ZodString;
+    handicap: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    headshotUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    dateOfBirth: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    bio: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubSlug: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    managedByUserId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    hasLinkedUser: zod.ZodOptional<zod.ZodBoolean>;
+    headshotSourceUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastImageUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastImageSourceUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    age: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
+    stats: zod.ZodObject<{
+        seasonGoals: zod.ZodNumber;
+        seasonWins: zod.ZodNumber;
+        careerGoals: zod.ZodNumber;
+        careerWins: zod.ZodNumber;
+        mvpAwards: zod.ZodNumber;
+        bppAwards: zod.ZodNumber;
+    }, "strip", zod.ZodTypeAny, {
+        careerGoals: number;
+        seasonGoals: number;
+        seasonWins: number;
+        careerWins: number;
+        mvpAwards: number;
+        bppAwards: number;
+    }, {
+        careerGoals: number;
+        seasonGoals: number;
+        seasonWins: number;
+        careerWins: number;
+        mvpAwards: number;
+        bppAwards: number;
+    }>;
+    teams: zod.ZodArray<zod.ZodObject<{
+        teamId: zod.ZodString;
+        teamName: zod.ZodString;
+        teamLogoUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        seasonYear: zod.ZodNumber;
+        isActive: zod.ZodBoolean;
+    }, "strip", zod.ZodTypeAny, {
+        teamId: string;
+        teamName: string;
+        isActive: boolean;
+        seasonYear: number;
+        teamLogoUrl?: string | null | undefined;
+    }, {
+        teamId: string;
+        teamName: string;
+        isActive: boolean;
+        seasonYear: number;
+        teamLogoUrl?: string | null | undefined;
+    }>, "many">;
+    horses: zod.ZodArray<zod.ZodObject<{
+        id: zod.ZodString;
+        playerId: zod.ZodString;
+        horseName: zod.ZodString;
+        owner: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        breeder: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        ownedAndBredBy: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        sire: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        dam: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        age: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
+        color: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        sex: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        typeOrBreed: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    }, "strip", zod.ZodTypeAny, {
+        id: string;
+        playerId: string;
+        horseName: string;
+        owner?: string | null | undefined;
+        notes?: string | null | undefined;
+        age?: number | null | undefined;
+        breeder?: string | null | undefined;
+        ownedAndBredBy?: string | null | undefined;
+        sire?: string | null | undefined;
+        dam?: string | null | undefined;
+        color?: string | null | undefined;
+        sex?: string | null | undefined;
+        typeOrBreed?: string | null | undefined;
+    }, {
+        id: string;
+        playerId: string;
+        horseName: string;
+        owner?: string | null | undefined;
+        notes?: string | null | undefined;
+        age?: number | null | undefined;
+        breeder?: string | null | undefined;
+        ownedAndBredBy?: string | null | undefined;
+        sire?: string | null | undefined;
+        dam?: string | null | undefined;
+        color?: string | null | undefined;
+        sex?: string | null | undefined;
+        typeOrBreed?: string | null | undefined;
+    }>, "many">;
+    recentMatches: zod.ZodArray<zod.ZodObject<{
+        matchId: zod.ZodString;
+        scheduledAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+        status: zod.ZodEnum<["scheduled", "live", "halftime", "final", "postponed", "cancelled"]>;
+        tournamentId: zod.ZodString;
+        tournamentName: zod.ZodString;
+        playerSide: zod.ZodOptional<zod.ZodNullable<zod.ZodEnum<["home", "away"]>>>;
+        playerTeamName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        playerTeamLogoUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        opponentTeamName: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        opponentTeamLogoUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+        playerScore: zod.ZodNumber;
+        opponentScore: zod.ZodNumber;
+        result: zod.ZodEnum<["win", "loss", "draw", "pending"]>;
+        playerGoals: zod.ZodNumber;
+    }, "strip", zod.ZodTypeAny, {
+        status: "scheduled" | "live" | "halftime" | "final" | "postponed" | "cancelled";
+        tournamentId: string;
+        matchId: string;
+        tournamentName: string;
+        playerScore: number;
+        opponentScore: number;
+        result: "win" | "loss" | "draw" | "pending";
+        playerGoals: number;
+        scheduledAt?: Date | null | undefined;
+        playerSide?: "home" | "away" | null | undefined;
+        playerTeamName?: string | null | undefined;
+        playerTeamLogoUrl?: string | null | undefined;
+        opponentTeamName?: string | null | undefined;
+        opponentTeamLogoUrl?: string | null | undefined;
+    }, {
+        status: "scheduled" | "live" | "halftime" | "final" | "postponed" | "cancelled";
+        tournamentId: string;
+        matchId: string;
+        tournamentName: string;
+        playerScore: number;
+        opponentScore: number;
+        result: "win" | "loss" | "draw" | "pending";
+        playerGoals: number;
+        scheduledAt?: Date | null | undefined;
+        playerSide?: "home" | "away" | null | undefined;
+        playerTeamName?: string | null | undefined;
+        playerTeamLogoUrl?: string | null | undefined;
+        opponentTeamName?: string | null | undefined;
+        opponentTeamLogoUrl?: string | null | undefined;
+    }>, "many">;
+}, "strip", zod.ZodTypeAny, {
+    id: string;
+    name: string;
+    teams: {
+        teamId: string;
+        teamName: string;
+        isActive: boolean;
+        seasonYear: number;
+        teamLogoUrl?: string | null | undefined;
+    }[];
+    stats: {
+        careerGoals: number;
+        seasonGoals: number;
+        seasonWins: number;
+        careerWins: number;
+        mvpAwards: number;
+        bppAwards: number;
+    };
+    recentMatches: {
+        status: "scheduled" | "live" | "halftime" | "final" | "postponed" | "cancelled";
+        tournamentId: string;
+        matchId: string;
+        tournamentName: string;
+        playerScore: number;
+        opponentScore: number;
+        result: "win" | "loss" | "draw" | "pending";
+        playerGoals: number;
+        scheduledAt?: Date | null | undefined;
+        playerSide?: "home" | "away" | null | undefined;
+        playerTeamName?: string | null | undefined;
+        playerTeamLogoUrl?: string | null | undefined;
+        opponentTeamName?: string | null | undefined;
+        opponentTeamLogoUrl?: string | null | undefined;
+    }[];
+    horses: {
+        id: string;
+        playerId: string;
+        horseName: string;
+        owner?: string | null | undefined;
+        notes?: string | null | undefined;
+        age?: number | null | undefined;
+        breeder?: string | null | undefined;
+        ownedAndBredBy?: string | null | undefined;
+        sire?: string | null | undefined;
+        dam?: string | null | undefined;
+        color?: string | null | undefined;
+        sex?: string | null | undefined;
+        typeOrBreed?: string | null | undefined;
+    }[];
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    dateOfBirth?: Date | null | undefined;
+    homeClubName?: string | null | undefined;
+    broadcastImageUrl?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    homeClubSlug?: string | null | undefined;
+    headshotSourceUrl?: string | null | undefined;
+    broadcastImageSourceUrl?: string | null | undefined;
+    bio?: string | null | undefined;
+    managedByUserId?: string | null | undefined;
+    hasLinkedUser?: boolean | undefined;
+    age?: number | null | undefined;
+}, {
+    id: string;
+    name: string;
+    teams: {
+        teamId: string;
+        teamName: string;
+        isActive: boolean;
+        seasonYear: number;
+        teamLogoUrl?: string | null | undefined;
+    }[];
+    stats: {
+        careerGoals: number;
+        seasonGoals: number;
+        seasonWins: number;
+        careerWins: number;
+        mvpAwards: number;
+        bppAwards: number;
+    };
+    recentMatches: {
+        status: "scheduled" | "live" | "halftime" | "final" | "postponed" | "cancelled";
+        tournamentId: string;
+        matchId: string;
+        tournamentName: string;
+        playerScore: number;
+        opponentScore: number;
+        result: "win" | "loss" | "draw" | "pending";
+        playerGoals: number;
+        scheduledAt?: Date | null | undefined;
+        playerSide?: "home" | "away" | null | undefined;
+        playerTeamName?: string | null | undefined;
+        playerTeamLogoUrl?: string | null | undefined;
+        opponentTeamName?: string | null | undefined;
+        opponentTeamLogoUrl?: string | null | undefined;
+    }[];
+    horses: {
+        id: string;
+        playerId: string;
+        horseName: string;
+        owner?: string | null | undefined;
+        notes?: string | null | undefined;
+        age?: number | null | undefined;
+        breeder?: string | null | undefined;
+        ownedAndBredBy?: string | null | undefined;
+        sire?: string | null | undefined;
+        dam?: string | null | undefined;
+        color?: string | null | undefined;
+        sex?: string | null | undefined;
+        typeOrBreed?: string | null | undefined;
+    }[];
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    dateOfBirth?: Date | null | undefined;
+    homeClubName?: string | null | undefined;
+    broadcastImageUrl?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    homeClubSlug?: string | null | undefined;
+    headshotSourceUrl?: string | null | undefined;
+    broadcastImageSourceUrl?: string | null | undefined;
+    bio?: string | null | undefined;
+    managedByUserId?: string | null | undefined;
+    hasLinkedUser?: boolean | undefined;
+    age?: number | null | undefined;
+}>;
+/**
+ * @summary Full edit (admin)
+ */
+export declare const UpdatePlayerParams: zod.ZodObject<{
+    playerId: zod.ZodString;
+}, "strip", zod.ZodTypeAny, {
+    playerId: string;
+}, {
+    playerId: string;
+}>;
+export declare const UpdatePlayerBody: zod.ZodObject<{
+    name: zod.ZodOptional<zod.ZodString>;
+    handicap: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    homeClubId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    headshotUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    headshotSourceUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastImageUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastImageSourceUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    dateOfBirth: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    bio: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    managedByUserId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    isActive: zod.ZodOptional<zod.ZodBoolean>;
+}, "strip", zod.ZodTypeAny, {
+    name?: string | undefined;
+    isActive?: boolean | undefined;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    dateOfBirth?: Date | null | undefined;
+    broadcastImageUrl?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    headshotSourceUrl?: string | null | undefined;
+    broadcastImageSourceUrl?: string | null | undefined;
+    bio?: string | null | undefined;
+    managedByUserId?: string | null | undefined;
+}, {
+    name?: string | undefined;
+    isActive?: boolean | undefined;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    dateOfBirth?: Date | null | undefined;
+    broadcastImageUrl?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    headshotSourceUrl?: string | null | undefined;
+    broadcastImageSourceUrl?: string | null | undefined;
+    bio?: string | null | undefined;
+    managedByUserId?: string | null | undefined;
+}>;
+export declare const UpdatePlayerResponse: zod.ZodObject<{
+    id: zod.ZodString;
+    name: zod.ZodString;
+    handicap: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    headshotUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    headshotSourceUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastImageUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastImageSourceUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    dateOfBirth: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    homeClubId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    bio: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    managedByUserId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    isActive: zod.ZodBoolean;
+    createdAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    updatedAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+}, "strip", zod.ZodTypeAny, {
+    id: string;
+    name: string;
+    isActive: boolean;
+    createdAt?: Date | null | undefined;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    dateOfBirth?: Date | null | undefined;
+    broadcastImageUrl?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    headshotSourceUrl?: string | null | undefined;
+    broadcastImageSourceUrl?: string | null | undefined;
+    bio?: string | null | undefined;
+    managedByUserId?: string | null | undefined;
+    updatedAt?: Date | null | undefined;
+}, {
+    id: string;
+    name: string;
+    isActive: boolean;
+    createdAt?: Date | null | undefined;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    dateOfBirth?: Date | null | undefined;
+    broadcastImageUrl?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    headshotSourceUrl?: string | null | undefined;
+    broadcastImageSourceUrl?: string | null | undefined;
+    bio?: string | null | undefined;
+    managedByUserId?: string | null | undefined;
+    updatedAt?: Date | null | undefined;
+}>;
+/**
+ * @summary Delete a player (admin)
+ */
+export declare const DeletePlayerParams: zod.ZodObject<{
+    playerId: zod.ZodString;
+}, "strip", zod.ZodTypeAny, {
+    playerId: string;
+}, {
+    playerId: string;
+}>;
+export declare const DeletePlayerResponse: zod.ZodObject<{
+    message: zod.ZodString;
+}, "strip", zod.ZodTypeAny, {
+    message: string;
+}, {
+    message: string;
+}>;
+/**
+ * @summary Self-edit limited profile fields
+ */
+export declare const UpdateMyProfileParams: zod.ZodObject<{
+    playerId: zod.ZodString;
+}, "strip", zod.ZodTypeAny, {
+    playerId: string;
+}, {
+    playerId: string;
+}>;
+export declare const UpdateMyProfileBody: zod.ZodObject<{
+    name: zod.ZodOptional<zod.ZodString>;
+    headshotUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    headshotSourceUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastImageUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastImageSourceUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    dateOfBirth: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    homeClubId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    bio: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+}, "strip", zod.ZodTypeAny, {
+    name?: string | undefined;
+    headshotUrl?: string | null | undefined;
+    dateOfBirth?: Date | null | undefined;
+    broadcastImageUrl?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    headshotSourceUrl?: string | null | undefined;
+    broadcastImageSourceUrl?: string | null | undefined;
+    bio?: string | null | undefined;
+}, {
+    name?: string | undefined;
+    headshotUrl?: string | null | undefined;
+    dateOfBirth?: Date | null | undefined;
+    broadcastImageUrl?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    headshotSourceUrl?: string | null | undefined;
+    broadcastImageSourceUrl?: string | null | undefined;
+    bio?: string | null | undefined;
+}>;
+export declare const UpdateMyProfileResponse: zod.ZodObject<{
+    id: zod.ZodString;
+    name: zod.ZodString;
+    handicap: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    headshotUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    headshotSourceUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastImageUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastImageSourceUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    dateOfBirth: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    homeClubId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    bio: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    managedByUserId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    isActive: zod.ZodBoolean;
+    createdAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    updatedAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+}, "strip", zod.ZodTypeAny, {
+    id: string;
+    name: string;
+    isActive: boolean;
+    createdAt?: Date | null | undefined;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    dateOfBirth?: Date | null | undefined;
+    broadcastImageUrl?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    headshotSourceUrl?: string | null | undefined;
+    broadcastImageSourceUrl?: string | null | undefined;
+    bio?: string | null | undefined;
+    managedByUserId?: string | null | undefined;
+    updatedAt?: Date | null | undefined;
+}, {
+    id: string;
+    name: string;
+    isActive: boolean;
+    createdAt?: Date | null | undefined;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    dateOfBirth?: Date | null | undefined;
+    broadcastImageUrl?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    headshotSourceUrl?: string | null | undefined;
+    broadcastImageSourceUrl?: string | null | undefined;
+    bio?: string | null | undefined;
+    managedByUserId?: string | null | undefined;
+    updatedAt?: Date | null | undefined;
+}>;
+/**
+ * @summary Add a horse to a player's string
+ */
+export declare const AddPlayerHorseParams: zod.ZodObject<{
+    playerId: zod.ZodString;
+}, "strip", zod.ZodTypeAny, {
+    playerId: string;
+}, {
+    playerId: string;
+}>;
+export declare const AddPlayerHorseBody: zod.ZodObject<{
+    horseName: zod.ZodString;
+    owner: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    breeder: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    ownedAndBredBy: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    sire: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    dam: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    age: zod.ZodOptional<zod.ZodNullable<zod.ZodNumber>>;
+    color: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    sex: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    typeOrBreed: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    notes: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+}, "strip", zod.ZodTypeAny, {
+    horseName: string;
+    owner?: string | null | undefined;
+    notes?: string | null | undefined;
+    age?: number | null | undefined;
+    breeder?: string | null | undefined;
+    ownedAndBredBy?: string | null | undefined;
+    sire?: string | null | undefined;
+    dam?: string | null | undefined;
+    color?: string | null | undefined;
+    sex?: string | null | undefined;
+    typeOrBreed?: string | null | undefined;
+}, {
+    horseName: string;
+    owner?: string | null | undefined;
+    notes?: string | null | undefined;
+    age?: number | null | undefined;
+    breeder?: string | null | undefined;
+    ownedAndBredBy?: string | null | undefined;
+    sire?: string | null | undefined;
+    dam?: string | null | undefined;
+    color?: string | null | undefined;
+    sex?: string | null | undefined;
+    typeOrBreed?: string | null | undefined;
+}>;
+/**
+ * @summary Remove a horse
+ */
+export declare const RemovePlayerHorseParams: zod.ZodObject<{
+    playerId: zod.ZodString;
+    horseId: zod.ZodString;
+}, "strip", zod.ZodTypeAny, {
+    playerId: string;
+    horseId: string;
+}, {
+    playerId: string;
+    horseId: string;
+}>;
+export declare const RemovePlayerHorseResponse: zod.ZodObject<{
+    message: zod.ZodString;
+}, "strip", zod.ZodTypeAny, {
+    message: string;
+}, {
+    message: string;
+}>;
+/**
+ * @summary Get the player record linked to the current user, if any
+ */
+export declare const GetMyLinkedPlayerResponse: zod.ZodUnion<[zod.ZodObject<{
+    id: zod.ZodString;
+    name: zod.ZodString;
+    handicap: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    headshotUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    headshotSourceUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastImageUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    broadcastImageSourceUrl: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    dateOfBirth: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    homeClubId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    bio: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    managedByUserId: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
+    isActive: zod.ZodBoolean;
+    createdAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+    updatedAt: zod.ZodOptional<zod.ZodNullable<zod.ZodDate>>;
+}, "strip", zod.ZodTypeAny, {
+    id: string;
+    name: string;
+    isActive: boolean;
+    createdAt?: Date | null | undefined;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    dateOfBirth?: Date | null | undefined;
+    broadcastImageUrl?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    headshotSourceUrl?: string | null | undefined;
+    broadcastImageSourceUrl?: string | null | undefined;
+    bio?: string | null | undefined;
+    managedByUserId?: string | null | undefined;
+    updatedAt?: Date | null | undefined;
+}, {
+    id: string;
+    name: string;
+    isActive: boolean;
+    createdAt?: Date | null | undefined;
+    handicap?: string | null | undefined;
+    headshotUrl?: string | null | undefined;
+    dateOfBirth?: Date | null | undefined;
+    broadcastImageUrl?: string | null | undefined;
+    homeClubId?: string | null | undefined;
+    headshotSourceUrl?: string | null | undefined;
+    broadcastImageSourceUrl?: string | null | undefined;
+    bio?: string | null | undefined;
+    managedByUserId?: string | null | undefined;
+    updatedAt?: Date | null | undefined;
+}>, zod.ZodNull]>;
 /**
  * @summary Publish a tournament
  */

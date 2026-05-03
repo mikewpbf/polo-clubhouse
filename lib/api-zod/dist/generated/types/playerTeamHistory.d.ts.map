@@ -1,0 +1,1 @@
+{"version":3,"file":"playerTeamHistory.d.ts","sourceRoot":"","sources":["../../../src/generated/types/playerTeamHistory.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AAEH,MAAM,WAAW,iBAAiB;IAChC,MAAM,EAAE,MAAM,CAAC;IACf,QAAQ,EAAE,MAAM,CAAC;IACjB,WAAW,CAAC,EAAE,MAAM,GAAG,IAAI,CAAC;IAC5B,UAAU,EAAE,MAAM,CAAC;IACnB,oEAAoE;IACpE,QAAQ,EAAE,OAAO,CAAC;CACnB"}

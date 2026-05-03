@@ -15,5 +15,19 @@ export declare const MatchEventEventType: {
     readonly match_end: "match_end";
     readonly clock_start: "clock_start";
     readonly clock_pause: "clock_pause";
+    readonly penalty: "penalty";
+    readonly horse_change: "horse_change";
+    readonly safety: "safety";
+    readonly injury_timeout: "injury_timeout";
+    readonly bowl_in: "bowl_in";
+    readonly knock_in: "knock_in";
+    readonly foul: "foul";
+    readonly penalty_goal: "penalty_goal";
+    readonly shot_on_goal: "shot_on_goal";
+    readonly penalty_in: "penalty_in";
+    readonly penalty_out: "penalty_out";
+    readonly throw_in_won: "throw_in_won";
+    readonly foul_committed: "foul_committed";
+    readonly fouls_won: "fouls_won";
 };
 //# sourceMappingURL=matchEventEventType.d.ts.map

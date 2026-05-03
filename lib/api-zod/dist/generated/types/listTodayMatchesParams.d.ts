@@ -7,5 +7,6 @@
  */
 export type ListTodayMatchesParams = {
     clubId?: string;
+    tz?: string;
 };
 //# sourceMappingURL=listTodayMatchesParams.d.ts.map

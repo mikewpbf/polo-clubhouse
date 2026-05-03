@@ -5,6 +5,7 @@
  * Polo Manager API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { UpdateMatchRequestScoringLocation } from "./updateMatchRequestScoringLocation";
 export interface UpdateMatchRequest {
     homeTeamId?: string;
     awayTeamId?: string;
@@ -13,5 +14,8 @@ export interface UpdateMatchRequest {
     round?: string;
     isLocked?: boolean;
     notes?: string;
+    streamStartedAt?: Date | null;
+    scoringLocation?: UpdateMatchRequestScoringLocation;
+    broadcastOffsetSeconds?: number;
 }
 //# sourceMappingURL=updateMatchRequest.d.ts.map

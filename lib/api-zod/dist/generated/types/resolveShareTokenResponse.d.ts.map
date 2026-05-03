@@ -1,0 +1,1 @@
+{"version":3,"file":"resolveShareTokenResponse.d.ts","sourceRoot":"","sources":["../../../src/generated/types/resolveShareTokenResponse.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AACH,OAAO,KAAK,EAAE,iCAAiC,EAAE,MAAM,qCAAqC,CAAC;AAE7F;;GAEG;AACH,MAAM,WAAW,yBAAyB;IACxC,OAAO,EAAE,MAAM,CAAC;IAChB,QAAQ,EAAE,iCAAiC,CAAC;IAC5C,SAAS,CAAC,EAAE,IAAI,GAAG,IAAI,CAAC;CACzB"}

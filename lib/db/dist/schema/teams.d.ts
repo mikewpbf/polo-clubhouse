@@ -219,6 +219,23 @@ export declare const teamsTable: import("drizzle-orm/pg-core").PgTableWithColumn
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        jerseyImageUrl: import("drizzle-orm/pg-core").PgColumn<{
+            name: "jersey_image_url";
+            tableName: "teams";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
     };
     dialect: "pg";
 }>;
@@ -234,6 +251,7 @@ export declare const insertTeamSchema: z.ZodObject<{
     contactName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     contactPhone: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     notes: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    jerseyImageUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, {
     out: {};
     in: {};

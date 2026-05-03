@@ -257,23 +257,27 @@ export interface TeamDetail {
 export interface CreateTeamRequest {
   name: string;
   shortName?: string;
+  scoreboardName?: string | null;
   primaryColor?: string;
   handicap?: string;
   contactName?: string;
   contactPhone?: string;
   notes?: string;
   logoUrl?: string;
+  jerseyImageUrl?: string | null;
 }
 
 export interface UpdateTeamRequest {
   name?: string;
   shortName?: string;
+  scoreboardName?: string | null;
   primaryColor?: string;
   handicap?: string;
   contactName?: string;
   contactPhone?: string;
   notes?: string;
   logoUrl?: string;
+  jerseyImageUrl?: string | null;
 }
 
 export type TournamentWithClubStatus =
@@ -463,6 +467,8 @@ export interface CreateTournamentRequest {
   chukkerDurationMinutes?: number;
   hasThirdPlace?: boolean;
   isVisitingLeague?: boolean;
+  logoUrl?: string | null;
+  jumbotronBgColor?: string | null;
 }
 
 export type UpdateTournamentRequestFormat =
@@ -506,6 +512,8 @@ export interface UpdateTournamentRequest {
   isVisitingLeague?: boolean;
   status?: UpdateTournamentRequestStatus;
   aiRecommendation?: UpdateTournamentRequestAiRecommendation;
+  logoUrl?: string | null;
+  jumbotronBgColor?: string | null;
 }
 
 export interface AddTournamentTeamRequest {

@@ -500,11 +500,48 @@ export declare const tournamentsTable: import("drizzle-orm/pg-core").PgTableWith
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        logoUrl: import("drizzle-orm/pg-core").PgColumn<{
+            name: "logo_url";
+            tableName: "tournaments";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        jumbotronBgColor: import("drizzle-orm/pg-core").PgColumn<{
+            name: "jumbotron_bg_color";
+            tableName: "tournaments";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 7;
+        }>;
     };
     dialect: "pg";
 }>;
 export declare const insertTournamentSchema: z.ZodObject<{
     name: z.ZodString;
+    logoUrl: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     sponsored: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;
     sponsoredRank: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     clubId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
@@ -543,6 +580,7 @@ export declare const insertTournamentSchema: z.ZodObject<{
     bppHorseId: z.ZodOptional<z.ZodNullable<z.ZodUUID>>;
     bppDisplaySettings: z.ZodOptional<z.ZodNullable<z.ZodType<import("drizzle-zod").Json, unknown, z.core.$ZodTypeInternals<import("drizzle-zod").Json, unknown>>>>;
     bppGamesOverride: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
+    jumbotronBgColor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, {
     out: {};
     in: {};

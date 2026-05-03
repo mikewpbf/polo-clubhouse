@@ -52,6 +52,31 @@ function initials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+function rankPhrase(rank: number, total: number, label: string): string | null {
+  if (!rank || total <= 1) return null;
+  if (rank === 1) return `#1 in ${label}`;
+  if (rank <= 3) return `#${rank} in ${label}`;
+  if (rank <= 5 && total >= 5) return `top 5 in ${label}`;
+  if (rank <= 10 && total >= 10) return `top 10 in ${label}`;
+  return `${ordinal(rank)} in ${label}`;
+}
+
+function hexToRgb(hex: string | null): string | null {
+  if (!hex) return null;
+  const m = hex.trim().match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (!m) return null;
+  let h = m[1];
+  if (h.length === 3) h = h.split("").map(c => c + c).join("");
+  const n = parseInt(h, 16);
+  return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
+}
+
 function formatAvg(value: number): string {
   if (!Number.isFinite(value)) return "0.0";
   return value.toFixed(1);
@@ -231,6 +256,18 @@ export default function PlayerStatsOverlay(props: PlayerStatsOverlayProps = {}) 
   }
   if (!data) return null;
 
+  const teamRgb = hexToRgb(data.team?.primaryColor ?? null);
+  const ranks = data.tournamentRanks;
+  const rankPhrases: string[] = [];
+  if (ranks) {
+    const g = rankPhrase(ranks.goalsRank ?? 0, ranks.goalsLeaders, "goals");
+    const s = rankPhrase(ranks.shotsRank ?? 0, ranks.shotsLeaders, "shots");
+    if (g) rankPhrases.push(g);
+    if (s) rankPhrases.push(s);
+  }
+  const pillBg = teamRgb ? `rgba(${teamRgb},0.18)` : "rgba(255,255,255,0.08)";
+  const pillBorder = teamRgb ? `rgba(${teamRgb},0.45)` : "rgba(255,255,255,0.15)";
+
   return (
     <div style={{
       position: "fixed",
@@ -327,6 +364,27 @@ export default function PlayerStatsOverlay(props: PlayerStatsOverlayProps = {}) 
               }}>
                 {data.player.name}
               </span>
+              {rankPhrases.length > 0 && (
+                <div style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  background: pillBg,
+                  border: `1px solid ${pillBorder}`,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: 1.2,
+                  textTransform: "uppercase",
+                  color: "#fff",
+                  whiteSpace: "nowrap",
+                }}>
+                  <span style={{ color: "rgba(255,255,255,0.6)" }}>Tournament Leaders</span>
+                  <span style={{ color: "rgba(255,255,255,0.35)" }}>·</span>
+                  <span>{rankPhrases.join(" · ")}</span>
+                </div>
+              )}
               {data.team && (
                 <div style={{
                   display: "flex",

@@ -1236,8 +1236,8 @@ export function MatchControl({ mode = "full", shareToken, matchId: matchIdProp, 
                 { label: "Stats", val: "stats" },
                 { label: "Mini Stats", val: "stats_mini" },
                 { label: "Field", val: "field" },
-                { label: "Lineup — Home", val: "lineup_home" },
-                { label: "Lineup — Away", val: "lineup_away" },
+                { label: `Lineup — ${match.homeTeam?.shortName || match.homeTeam?.name || "Home"}`, val: "lineup_home" },
+                { label: `Lineup — ${match.awayTeam?.shortName || match.awayTeam?.name || "Away"}`, val: "lineup_away" },
               ] as const).map((b) => {
                 const active = b.val === "option1" ? (match.broadcastStyle || "option1") === "option1" : match.broadcastStyle === b.val;
                 return (

@@ -3,12 +3,20 @@ import { getStoredToken, useAuth } from "@/hooks/use-auth";
 import { AdminLayout } from "./AdminLayout";
 import { PageLoading } from "@/components/LoadingBar";
 import { Link } from "wouter";
-import { Trophy, Users, Calendar, Activity, Building2, ChevronRight } from "lucide-react";
+import { Trophy, Users, Calendar, Activity, Building2, ChevronRight, ImageIcon, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { snapAndUploadMatchPreview } from "@/lib/matchPreviewSnap";
 
-async function apiFetch(path: string) {
+async function apiFetch(path: string, options: RequestInit = {}) {
   const token = getStoredToken();
   const res = await fetch(`/api${path}`, {
-    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
+    },
   });
   if (!res.ok) throw new Error("Failed to fetch");
   return res.json();
@@ -21,6 +29,86 @@ interface DashboardData {
   upcomingMatches: number;
   liveMatches: number;
   recentTournaments: Array<{ id: string; name: string; status: string; teamCount?: number }>;
+  allTournaments: Array<{ id: string; name: string }>;
+}
+
+function MatchPreviewMaintenancePanel({ tournaments }: { tournaments: Array<{ id: string; name: string }> }) {
+  const { toast } = useToast();
+  const [selectedId, setSelectedId] = useState<string>(tournaments[0]?.id ?? "");
+  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+
+  const handleClick = async () => {
+    if (busy || !selectedId) return;
+    setBusy(true);
+    setProgress(null);
+    try {
+      const matches = await apiFetch(`/tournaments/${selectedId}/matches`);
+      const ids: string[] = Array.isArray(matches) ? matches.map((m: any) => m.id).filter(Boolean) : [];
+      if (ids.length === 0) {
+        toast({ title: "No matches to refresh", description: "This tournament has no matches yet." });
+        return;
+      }
+      let succeeded = 0;
+      let failed = 0;
+      for (let i = 0; i < ids.length; i++) {
+        setProgress({ done: i, total: ids.length });
+        const ok = await snapAndUploadMatchPreview(ids[i]);
+        if (ok) succeeded++; else failed++;
+      }
+      setProgress({ done: ids.length, total: ids.length });
+      toast({
+        title: failed > 0 ? "Regenerated with errors" : "Previews regenerated",
+        description: `${succeeded}/${ids.length} match previews refreshed${failed > 0 ? ` · ${failed} failed` : ""}.`,
+        variant: failed > 0 ? "destructive" : "default",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Failed to regenerate",
+        description: err?.message || "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setBusy(false);
+      setProgress(null);
+    }
+  };
+
+  const label = busy
+    ? progress ? `Refreshing ${progress.done}/${progress.total}…` : "Loading…"
+    : "Regenerate match previews";
+
+  return (
+    <div>
+      <h2 className="font-display font-bold text-lg text-ink mb-2">Maintenance</h2>
+      <p className="text-[13px] text-ink2 mb-4">
+        Force-refresh the link-preview thumbnails (iMessage / Facebook unfurls) for every match in a tournament.
+        Match previews are normally generated automatically — only use this after a template or branding change.
+      </p>
+      <div className="bg-white rounded-[12px] p-4 card-shadow flex flex-col sm:flex-row gap-3 sm:items-center">
+        <select
+          value={selectedId}
+          onChange={(e) => setSelectedId(e.target.value)}
+          disabled={busy || tournaments.length === 0}
+          className="flex-1 h-10 rounded-[8px] border border-line bg-surface px-3 text-[14px] text-ink"
+        >
+          {tournaments.length === 0 && <option value="">No tournaments</option>}
+          {tournaments.map((t) => (
+            <option key={t.id} value={t.id}>{t.name}</option>
+          ))}
+        </select>
+        <Button
+          onClick={handleClick}
+          disabled={busy || !selectedId}
+          className="gap-1.5"
+          title="Re-renders thumbnails using the Match Graphics template. Keep this tab open until it finishes."
+        >
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+          {label}
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 export function AdminDashboard() {
@@ -29,7 +117,7 @@ export function AdminDashboard() {
   const clubName = user?.clubMemberships?.[0]?.clubName;
   const [d, setD] = useState<DashboardData>({
     clubCount: 0, tournamentCount: 0, teamCount: 0,
-    upcomingMatches: 0, liveMatches: 0, recentTournaments: [],
+    upcomingMatches: 0, liveMatches: 0, recentTournaments: [], allTournaments: [],
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -50,6 +138,9 @@ export function AdminDashboard() {
         liveMatches: Array.isArray(liveMatches) ? liveMatches.length : 0,
         recentTournaments: Array.isArray(tournaments)
           ? tournaments.slice(0, 5).map((t: any) => ({ id: t.id, name: t.name, status: t.status || "draft", teamCount: t.teamCount ?? 0 }))
+          : [],
+        allTournaments: Array.isArray(tournaments)
+          ? tournaments.map((t: any) => ({ id: t.id, name: t.name }))
           : [],
       });
     }).finally(() => setIsLoading(false));
@@ -120,6 +211,8 @@ export function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {isSuperAdmin && <MatchPreviewMaintenancePanel tournaments={d.allTournaments} />}
       </div>
     </AdminLayout>
   );

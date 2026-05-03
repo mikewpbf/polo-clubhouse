@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Trophy, Calendar, X, Trash2, Pencil, Users, Sparkles, Check, Loader2, CalendarOff, CalendarCheck, ChevronDown, ChevronRight, BarChart3, RotateCcw, Star, Award, ImageIcon } from "lucide-react";
+import { Plus, Trophy, Calendar, X, Trash2, Pencil, Users, Sparkles, Check, Loader2, CalendarOff, CalendarCheck, ChevronDown, ChevronRight, BarChart3, RotateCcw, Star, Award } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { TournamentExportButton } from "@/components/TournamentExportImage";
 import { ImageCropUpload } from "@/components/ImageCropUpload";
-import { snapMatchPreviewInBackground, snapAndUploadMatchPreview } from "@/lib/matchPreviewSnap";
+import { snapMatchPreviewInBackground } from "@/lib/matchPreviewSnap";
 
 interface TournamentItem {
   id: string;
@@ -2013,74 +2013,6 @@ function TournamentForm({
   );
 }
 
-function RegeneratePreviewsButton({ tournamentId }: { tournamentId: string }) {
-  const { toast } = useToast();
-  const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
-
-  const handleClick = async () => {
-    if (busy) return;
-    setBusy(true);
-    setProgress(null);
-    try {
-      // Fetch every match in this tournament, then run the high-fidelity
-      // client-side snap (BoldDiagonal template -> html-to-image -> R2)
-      // sequentially. Sequential because each snap mounts a 1920x1080
-      // off-screen renderer; doing many at once would peg the main thread.
-      const matches = await apiFetch(`/tournaments/${tournamentId}/matches`);
-      const ids: string[] = Array.isArray(matches) ? matches.map((m: any) => m.id).filter(Boolean) : [];
-      if (ids.length === 0) {
-        toast({ title: "No matches to refresh", description: "This tournament has no matches yet." });
-        return;
-      }
-
-      let succeeded = 0;
-      let failed = 0;
-      for (let i = 0; i < ids.length; i++) {
-        setProgress({ done: i, total: ids.length });
-        const ok = await snapAndUploadMatchPreview(ids[i]);
-        if (ok) succeeded++; else failed++;
-      }
-      setProgress({ done: ids.length, total: ids.length });
-
-      toast({
-        title: failed > 0 ? "Regenerated with errors" : "Previews regenerated",
-        description: `${succeeded}/${ids.length} match previews refreshed${failed > 0 ? ` · ${failed} failed` : ""}.`,
-        variant: failed > 0 ? "destructive" : "default",
-      });
-    } catch (err: any) {
-      toast({
-        title: "Failed to regenerate",
-        description: err?.message || "Unknown error",
-        variant: "destructive",
-      });
-    } finally {
-      setBusy(false);
-      setProgress(null);
-    }
-  };
-
-  const label = busy
-    ? progress
-      ? `Refreshing ${progress.done}/${progress.total}…`
-      : "Loading…"
-    : "Previews";
-
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="bg-surface border-line gap-1.5"
-      onClick={handleClick}
-      disabled={busy}
-      title="Re-render link-preview thumbnails for every match in this tournament using the Match Graphics template"
-    >
-      {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
-      {label}
-    </Button>
-  );
-}
-
 export function AdminTournaments() {
   const [tournamentsList, setTournamentsList] = useState<TournamentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -2170,7 +2102,6 @@ export function AdminTournaments() {
                 <Pencil className="w-3.5 h-3.5 mr-1.5" /> Edit
               </Button>
               <TournamentExportButton tournamentId={t.id} />
-              <RegeneratePreviewsButton tournamentId={t.id} />
             </div>
           </Card>
         ))}

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 pnpm install --frozen-lockfile
-pnpm --filter db push
+pnpm --filter @workspace/db run migrate
 
 # Post-deploy smoke check for /match and /share routing (Task #105).
 # Skips with a notice if LIVE_DEPLOYMENT_URL or LIVE_MATCH_ID isn't set

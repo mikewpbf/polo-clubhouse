@@ -1,7 +1,7 @@
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { Calendar, Users, Building2, Trophy, Activity, LogOut, Home, Shield, Sparkles, Settings, UserCircle, Target, BarChart3, ChevronDown, ChevronRight } from "lucide-react";
+import { Calendar, Users, Building2, Trophy, Activity, LogOut, Home, Shield, Sparkles, Settings, UserCircle, Target, BarChart3 } from "lucide-react";
 import { triggerAdminPreviewAutoBackfill } from "@/lib/matchPreviewSnap";
 import { useListTodayMatches, useListLiveMatches } from "@workspace/api-client-react";
 
@@ -15,85 +15,6 @@ interface SidebarMatch {
   awayTeam?: { name?: string; shortName?: string } | null;
   field?: { name?: string } | null;
   tournament?: { name?: string } | null;
-}
-
-function teamLabel(t: SidebarMatch["homeTeam"]): string {
-  return t?.shortName || t?.name || "TBD";
-}
-
-function MatchControlMenu({
-  label,
-  icon: Icon,
-  basePath,
-  matches,
-  isLoading,
-  isActive,
-  defaultOpen,
-}: {
-  label: string;
-  icon: typeof Target;
-  basePath: string;
-  matches: SidebarMatch[];
-  isLoading: boolean;
-  isActive: boolean;
-  defaultOpen: boolean;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  const [location] = useLocation();
-  // Keep the menu open whenever the user is on one of its child routes — a
-  // collapse on navigation would feel like the sidebar "lost" the selection.
-  useEffect(() => {
-    if (isActive) setOpen(true);
-  }, [isActive]);
-  const Chevron = open ? ChevronDown : ChevronRight;
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className={`flex w-full items-center px-3 py-2.5 rounded-[8px] text-[14px] font-sans font-medium transition-colors ${
-          isActive ? "bg-g50 text-g900" : "text-ink2 hover:bg-bg2 hover:text-ink"
-        }`}
-        aria-expanded={open}
-      >
-        <Icon className={`w-[18px] h-[18px] mr-3 ${isActive ? "text-g500" : "text-ink3"}`} />
-        <span className="flex-1 text-left">{label}</span>
-        <Chevron className="w-4 h-4 text-ink3" />
-      </button>
-      {open && (
-        <div className="mt-0.5 ml-2 pl-3 border-l border-line/60 space-y-0.5">
-          {isLoading ? (
-            <div className="px-3 py-1.5 text-[12px] text-ink3 font-sans">Loading…</div>
-          ) : matches.length === 0 ? (
-            <div className="px-3 py-1.5 text-[12px] text-ink3 font-sans">No live or upcoming matches</div>
-          ) : (
-            matches.map((m) => {
-              const href = `${basePath}/${m.id}`;
-              const matchActive = location === href;
-              const isLive = m.status === "live" || m.status === "halftime";
-              return (
-                <Link
-                  key={m.id}
-                  href={href}
-                  className={`flex items-center px-3 py-1.5 rounded-[6px] text-[12.5px] font-sans transition-colors ${
-                    matchActive ? "bg-g50 text-g900 font-medium" : "text-ink2 hover:bg-bg2 hover:text-ink"
-                  }`}
-                  title={`${teamLabel(m.homeTeam)} vs ${teamLabel(m.awayTeam)}${m.field?.name ? ` · ${m.field.name}` : ""}`}
-                >
-                  {isLive && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-live animate-live-dot mr-2 flex-shrink-0" />
-                  )}
-                  <span className="truncate">
-                    {teamLabel(m.homeTeam)} <span className="text-ink3">vs</span> {teamLabel(m.awayTeam)}
-                  </span>
-                </Link>
-              );
-            })
-          )}
-        </div>
-      )}
-    </div>
-  );
 }
 
 export function AdminLayout({ children }: { children: ReactNode }) {
@@ -125,11 +46,11 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     ? undefined
     : user?.clubMemberships?.map((m: { clubId: string }) => m.clubId).join(",") || undefined;
 
-  const { data: todayMatches, isLoading: todayLoading } = useListTodayMatches(
+  const { data: todayMatches } = useListTodayMatches(
     { clubIds: clubIds || undefined, tz: Intl.DateTimeFormat().resolvedOptions().timeZone } as any,
     { query: { enabled: canControlMatches, refetchInterval: 30000 } as any },
   );
-  const { data: liveMatches, isLoading: liveLoading } = useListLiveMatches({
+  const { data: liveMatches } = useListLiveMatches({
     query: { enabled: canControlMatches, refetchInterval: 10000 } as any,
   });
 
@@ -165,7 +86,6 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     });
   }, [canControlMatches, isSuperAdmin, liveMatches, todayMatches]);
 
-  const matchesLoading = canControlMatches && (todayLoading || liveLoading);
   const onScoreControl = location.startsWith("/admin/score-control");
   const onStatsControl = location.startsWith("/admin/stats-control");
 
@@ -215,31 +135,36 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 {item.label}
               </Link>
             );
-            // Insert the Score Control + Stats Control collapsible menus
-            // immediately after Match Day so the related items cluster
-            // together in the nav.
+            // Insert Score Control + Stats Control as plain nav links right
+            // after Match Day. Per user preference, no sidebar dropdown — the
+            // pages themselves expose a match-picker dropdown. We default to
+            // the first live/upcoming match in the user's club scope, or fall
+            // back to Match Day when there is nothing scoreable.
             if (item.href === "/admin/matchday" && canControlMatches) {
+              const defaultMatchId = sidebarMatches[0]?.id;
+              const scoreHref = defaultMatchId ? `/admin/score-control/${defaultMatchId}` : "/admin/matchday";
+              const statsHref = defaultMatchId ? `/admin/stats-control/${defaultMatchId}` : "/admin/matchday";
               return (
                 <div key={item.href}>
                   {link}
-                  <MatchControlMenu
-                    label="Score Control"
-                    icon={Target}
-                    basePath="/admin/score-control"
-                    matches={sidebarMatches}
-                    isLoading={!!matchesLoading}
-                    isActive={onScoreControl}
-                    defaultOpen={onScoreControl}
-                  />
-                  <MatchControlMenu
-                    label="Stats Control"
-                    icon={BarChart3}
-                    basePath="/admin/stats-control"
-                    matches={sidebarMatches}
-                    isLoading={!!matchesLoading}
-                    isActive={onStatsControl}
-                    defaultOpen={onStatsControl}
-                  />
+                  <Link
+                    href={scoreHref}
+                    className={`flex items-center px-3 py-2.5 rounded-[8px] text-[14px] font-sans font-medium transition-colors ${
+                      onScoreControl ? "bg-g50 text-g900" : "text-ink2 hover:bg-bg2 hover:text-ink"
+                    }`}
+                  >
+                    <Target className={`w-[18px] h-[18px] mr-3 ${onScoreControl ? "text-g500" : "text-ink3"}`} />
+                    Score Control
+                  </Link>
+                  <Link
+                    href={statsHref}
+                    className={`flex items-center px-3 py-2.5 rounded-[8px] text-[14px] font-sans font-medium transition-colors ${
+                      onStatsControl ? "bg-g50 text-g900" : "text-ink2 hover:bg-bg2 hover:text-ink"
+                    }`}
+                  >
+                    <BarChart3 className={`w-[18px] h-[18px] mr-3 ${onStatsControl ? "text-g500" : "text-ink3"}`} />
+                    Stats Control
+                  </Link>
                 </div>
               );
             }

@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import { flushSync } from "react-dom";
 import { toPng } from "html-to-image";
 import { getStoredToken } from "@/hooks/use-auth";
 import { BoldDiagonal } from "@/components/MatchGraphicTemplates";
@@ -77,31 +78,49 @@ export async function snapAndUploadMatchPreview(matchId: string): Promise<boolea
 
   const data = await buildScorelessGraphicData(match);
 
-  // Off-screen 1920x1080 host. Position fixed well outside the viewport so it
-  // never paints into the visible page; html-to-image still measures it.
+  // Off-screen 1920x1080 host. Kept inside the viewport (opacity 0, pointer
+  // events off, fixed top-left) so the browser actually performs layout +
+  // paint on it — html-to-image silently captures empty pixels for
+  // elements painted "off-screen" via huge negative translates in some
+  // browsers / html-to-image versions, which is why earlier attempts using
+  // `left: -99999px` produced a fully transparent (black-on-flatten) PNG.
   const host = document.createElement("div");
   host.style.position = "fixed";
-  host.style.left = "-99999px";
+  host.style.left = "0";
   host.style.top = "0";
   host.style.width = "1920px";
   host.style.height = "1080px";
   host.style.pointerEvents = "none";
+  host.style.opacity = "0";
   host.style.zIndex = "-1";
   document.body.appendChild(host);
 
   const root = createRoot(host);
   let success = false;
   try {
-    await new Promise<void>((resolve) => {
+    // flushSync forces React 18 to commit synchronously inside this call —
+    // without it, `root.render(...)` schedules the commit asynchronously and
+    // the subsequent toPng() can run before any DOM nodes exist, capturing
+    // a blank canvas.
+    flushSync(() => {
       root.render(<BoldDiagonal data={data} orientation="horizontal" />);
-      // Two RAFs: first lets React commit, second lets layout/paint settle.
+    });
+
+    // Wait for any <img> elements (team logos) inside the host to finish
+    // loading. Logos are inlined as data URLs by buildScorelessGraphicData,
+    // but the browser still needs a tick to decode them and complete layout.
+    await waitForImages(host);
+
+    // Two RAFs to ensure layout + paint complete before measurement.
+    await new Promise<void>((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });
+
     // Warm-up render (mirrors the MatchGraphics download path) — first toPng
     // pass primes font/image loading, second produces the final PNG.
     const opts = { width: 1920, height: 1080, pixelRatio: 1, skipFonts: true };
     await toPng(host, opts);
-    await new Promise(r => setTimeout(r, 100));
+    await new Promise(r => setTimeout(r, 150));
     const dataUrl = await toPng(host, opts);
     const blob = await dataUrlToBlob(dataUrl);
     success = await uploadPreview(matchId, blob);
@@ -112,6 +131,28 @@ export async function snapAndUploadMatchPreview(matchId: string): Promise<boolea
     if (host.parentNode) host.parentNode.removeChild(host);
   }
   return success;
+}
+
+// Resolve when every <img> descendant inside `host` has either completed
+// loading (`complete && naturalWidth > 0`) or fired error/load. Bounded by
+// a 3s ceiling so a single hung image never wedges the whole snap.
+async function waitForImages(host: HTMLElement): Promise<void> {
+  const imgs = Array.from(host.querySelectorAll("img"));
+  if (imgs.length === 0) return;
+  const waits = imgs.map((img) => {
+    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      const done = () => {
+        img.removeEventListener("load", done);
+        img.removeEventListener("error", done);
+        resolve();
+      };
+      img.addEventListener("load", done);
+      img.addEventListener("error", done);
+    });
+  });
+  const ceiling = new Promise<void>((resolve) => setTimeout(resolve, 3000));
+  await Promise.race([Promise.all(waits).then(() => undefined), ceiling]);
 }
 
 // Convenience wrapper that swallows everything (including thrown promises).

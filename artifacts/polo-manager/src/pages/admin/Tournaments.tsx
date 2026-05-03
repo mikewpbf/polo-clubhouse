@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Trophy, Calendar, X, Trash2, Pencil, Users, Sparkles, Check, Loader2, CalendarOff, CalendarCheck, ChevronDown, ChevronRight, BarChart3, RotateCcw, Star, Award } from "lucide-react";
+import { Plus, Trophy, Calendar, X, Trash2, Pencil, Users, Sparkles, Check, Loader2, CalendarOff, CalendarCheck, ChevronDown, ChevronRight, BarChart3, RotateCcw, Star, Award, ImageIcon } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { TournamentExportButton } from "@/components/TournamentExportImage";
@@ -2013,6 +2013,51 @@ function TournamentForm({
   );
 }
 
+function RegeneratePreviewsButton({ tournamentId }: { tournamentId: string }) {
+  const { toast } = useToast();
+  const [busy, setBusy] = useState(false);
+
+  const handleClick = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const result = await apiFetch(`/tournaments/${tournamentId}/regenerate-match-previews`, {
+        method: "POST",
+      });
+      const total = result?.total ?? 0;
+      const regenerated = result?.regenerated ?? 0;
+      const failed = result?.failed ?? 0;
+      toast({
+        title: failed > 0 ? "Regenerated with errors" : "Previews regenerated",
+        description: `${regenerated}/${total} match previews refreshed${failed > 0 ? ` · ${failed} failed` : ""}.`,
+        variant: failed > 0 ? "destructive" : "default",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Failed to regenerate",
+        description: err?.message || "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="bg-surface border-line gap-1.5"
+      onClick={handleClick}
+      disabled={busy}
+      title="Re-render link-preview thumbnails for every match in this tournament"
+    >
+      {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+      {busy ? "Regenerating…" : "Previews"}
+    </Button>
+  );
+}
+
 export function AdminTournaments() {
   const [tournamentsList, setTournamentsList] = useState<TournamentItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -2102,6 +2147,7 @@ export function AdminTournaments() {
                 <Pencil className="w-3.5 h-3.5 mr-1.5" /> Edit
               </Button>
               <TournamentExportButton tournamentId={t.id} />
+              <RegeneratePreviewsButton tournamentId={t.id} />
             </div>
           </Card>
         ))}

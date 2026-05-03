@@ -1314,10 +1314,13 @@ router.get("/matches/:matchId/lineup/:teamSide", async (req, res) => {
       eq(teamPlayersTable.seasonYear, seasonYear),
       eq(teamPlayersTable.isActive, true),
     ));
-    // Restrict to starting lineup positions 1..4. Anything outside that range
-    // (e.g. position 5 substitutes, or rows with a null position) is excluded
-    // per the Team Lineup graphic spec.
-    const links = allLinks.filter(l => l.position !== null && l.position >= 1 && l.position <= 4);
+    // When positions ARE assigned, restrict to the starting four (positions
+    // 1..4) and exclude position-5 substitutes. When positions are NOT
+    // assigned (null), include the player — most rosters in the wild don't
+    // bother filling in positions, and the user expectation is that the
+    // lineup graphic just shows the team's active players. The cap-at-4
+    // slice below still bounds the result either way.
+    const links = allLinks.filter(l => l.position === null || (l.position >= 1 && l.position <= 4));
     const linkedIds = links.map(l => l.playerId).filter((x): x is string => !!x);
 
     let rosterPlayers: InferSelectModel<typeof playersTable>[] = [];

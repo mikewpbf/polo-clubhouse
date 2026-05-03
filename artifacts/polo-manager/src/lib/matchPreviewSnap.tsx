@@ -78,12 +78,13 @@ export async function snapAndUploadMatchPreview(matchId: string): Promise<boolea
 
   const data = await buildScorelessGraphicData(match);
 
-  // Off-screen 1920x1080 host. Kept inside the viewport (opacity 0, pointer
-  // events off, fixed top-left) so the browser actually performs layout +
-  // paint on it — html-to-image silently captures empty pixels for
-  // elements painted "off-screen" via huge negative translates in some
-  // browsers / html-to-image versions, which is why earlier attempts using
-  // `left: -99999px` produced a fully transparent (black-on-flatten) PNG.
+  // 1920x1080 host pinned to the top-left of the viewport so the browser
+  // actually performs layout + paint on it (off-screen positioning via
+  // `left: -99999px` skips paint in some browsers / html-to-image versions,
+  // and `opacity: 0` is cloned by html-to-image — both produce a fully
+  // transparent PNG that renders as gray/black in iMessage). Hidden from
+  // the user by sitting BEHIND the page (z-index: -1) — the opaque body
+  // background covers it. pointer-events: none keeps it un-clickable.
   const host = document.createElement("div");
   host.style.position = "fixed";
   host.style.left = "0";
@@ -91,7 +92,6 @@ export async function snapAndUploadMatchPreview(matchId: string): Promise<boolea
   host.style.width = "1920px";
   host.style.height = "1080px";
   host.style.pointerEvents = "none";
-  host.style.opacity = "0";
   host.style.zIndex = "-1";
   document.body.appendChild(host);
 
